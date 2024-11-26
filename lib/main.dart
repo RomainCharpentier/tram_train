@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tram_train/env_config.dart';
 import 'home_page.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 void main() async {
   await EnvConfig.load();
@@ -14,9 +13,9 @@ class EnvInheritedWidget extends InheritedWidget {
 
   const EnvInheritedWidget({
     super.key,
-    required Widget child,
+    required super.child,
     required this.apiKey,
-  }) : super(child: child);
+  });
 
   static EnvInheritedWidget? of(BuildContext context) {
     return context.dependOnInheritedWidgetOfExactType<EnvInheritedWidget>();
