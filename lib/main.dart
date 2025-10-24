@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:tram_train/env_config.dart';
-import 'home_page.dart';
+import 'package:tram_train/dependency_injection.dart';
+import 'package:tram_train/view/pages/home_page.dart';
 
 void main() async {
   await EnvConfig.load();
+  await DependencyInjection.initialize();
 
   runApp(const MyApp());
 }

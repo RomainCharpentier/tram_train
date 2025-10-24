@@ -1,0 +1,94 @@
+import 'station.dart';
+
+enum TrainStatus {
+  onTime,
+  delayed,
+  early,
+  cancelled,
+  unknown,
+}
+
+class Train {
+  final String id;
+  final String direction;
+  final DateTime departureTime;
+  final DateTime? baseDepartureTime;
+  final TrainStatus status;
+  final int? delayMinutes;
+  final List<String> additionalInfo;
+  final Station station;
+
+  const Train({
+    required this.id,
+    required this.direction,
+    required this.departureTime,
+    this.baseDepartureTime,
+    required this.status,
+    this.delayMinutes,
+    this.additionalInfo = const [],
+    required this.station,
+  });
+
+  factory Train.fromTimes({
+    required String id,
+    required String direction,
+    required DateTime departureTime,
+    required DateTime baseDepartureTime,
+    required Station station,
+    List<String> additionalInfo = const [],
+  }) {
+    final difference = departureTime.difference(baseDepartureTime).inMinutes;
+    
+    TrainStatus status;
+    int? delayMinutes;
+    
+    if (difference > 0) {
+      status = TrainStatus.delayed;
+      delayMinutes = difference;
+    } else if (difference < 0) {
+      status = TrainStatus.early;
+      delayMinutes = difference.abs();
+    } else {
+      status = TrainStatus.onTime;
+    }
+
+    return Train(
+      id: id,
+      direction: direction,
+      departureTime: departureTime,
+      baseDepartureTime: baseDepartureTime,
+      status: status,
+      delayMinutes: delayMinutes,
+      additionalInfo: additionalInfo,
+      station: station,
+    );
+  }
+
+  String get statusText {
+    switch (status) {
+      case TrainStatus.onTime:
+        return 'À l\'heure';
+      case TrainStatus.delayed:
+        return 'En retard (+$delayMinutes min)';
+      case TrainStatus.early:
+        return 'En avance ($delayMinutes min)';
+      case TrainStatus.cancelled:
+        return 'Annulé';
+      case TrainStatus.unknown:
+        return 'Statut inconnu';
+    }
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Train &&
+          runtimeType == other.runtimeType &&
+          id == other.id;
+
+  @override
+  int get hashCode => id.hashCode;
+
+  @override
+  String toString() => 'Train(id: $id, direction: $direction, status: $status)';
+}

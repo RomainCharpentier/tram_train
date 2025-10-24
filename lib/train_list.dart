@@ -29,8 +29,8 @@ class _TrainListState extends State<TrainList> {
       final response = await http.get(
         Uri.parse(apiUrl),
         headers: {
-          'Authorization': 'Basic ${EnvConfig.apiKey}'
-        }, // Utilisation de EnvConfig
+          'Authorization': 'Basic ${base64Encode(utf8.encode('${EnvConfig.apiKey}:'))}'
+        }, // Utilisation de EnvConfig avec encodage base64
       );
 
       if (response.statusCode == 200) {
@@ -97,8 +97,8 @@ class _TrainListState extends State<TrainList> {
             : Colors.orange[50];
 
     return DataRow(
-      color: MaterialStateProperty.resolveWith<Color?>(
-          (Set<MaterialState> states) => rowColor),
+      color: WidgetStateProperty.resolveWith<Color?>(
+          (Set<WidgetState> states) => rowColor),
       cells: <DataCell>[
         DataCell(Text(direction.contains("Nantes") ? "Nantes" : "Chapelle")),
         DataCell(Text(_formatDate(trainTime))),

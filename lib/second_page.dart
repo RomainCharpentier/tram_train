@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:tram_train/env_config.dart';
 
 class SecondPage extends StatefulWidget {
@@ -81,7 +80,7 @@ class _SecondPageState extends State<SecondPage> {
     try {
       final response = await http.get(
         Uri.parse(apiUrl),
-        headers: {'Authorization': 'Basic ${EnvConfig.apiKey}'},
+        headers: {'Authorization': 'Basic ${base64Encode(utf8.encode('${EnvConfig.apiKey}:'))}'},
       );
 
       if (response.statusCode == 200) {
