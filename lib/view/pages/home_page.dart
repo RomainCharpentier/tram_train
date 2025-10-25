@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../dependency_injection.dart';
-import '../../domain/models/station.dart';
 import 'train_list_page.dart';
 import 'trip_management_page.dart';
 

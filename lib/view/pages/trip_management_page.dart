@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../domain/models/trip.dart';
-import '../../domain/models/station.dart';
 import '../../dependency_injection.dart';
 import '../widgets/loading_widget.dart';
 import '../widgets/error_widget.dart' as custom;
