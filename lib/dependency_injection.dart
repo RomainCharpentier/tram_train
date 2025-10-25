@@ -1,23 +1,19 @@
 import 'package:http/http.dart' as http;
 import 'domain/models/station.dart';
-import 'domain/providers/train_repository.dart';
-import 'domain/providers/trip_repository.dart';
-import 'infrastructure/data_sources/sncf_train_repository.dart';
-import 'infrastructure/data_sources/local_trip_repository.dart';
-import 'domain/services/get_train_departures_use_case.dart';
-import 'domain/services/manage_trip_use_case.dart';
-import 'domain/services/train_list_controller.dart';
-import 'domain/services/trip_controller.dart';
+import 'domain/services/train_service.dart';
+import 'domain/services/trip_service.dart';
+import 'infrastructure/gateways/sncf_gateway.dart';
+import 'infrastructure/gateways/local_storage_gateway.dart';
+import 'infrastructure/mappers/sncf_mapper.dart';
+import 'infrastructure/mappers/trip_mapper.dart';
 import 'env_config.dart';
 
 class DependencyInjection {
   static late final DependencyInjection _instance;
   static DependencyInjection get instance => _instance;
 
-  late final TrainRepository _trainRepository;
-  late final TripRepository _tripRepository;
-  late final GetTrainDeparturesUseCase _getTrainDeparturesUseCase;
-  late final ManageTripUseCase _manageTripUseCase;
+  late final TrainService _trainService;
+  late final TripService _tripService;
 
   static const Station babiniereStation = Station(
     id: 'SNCF:87590349',
@@ -39,25 +35,23 @@ class DependencyInjection {
   DependencyInjection._();
 
   Future<void> _setupDependencies() async {
-    _trainRepository = SncfTrainRepository(
+    final sncfMapper = SncfMapper();
+    final tripMapper = TripMapper();
+    
+    final sncfGateway = SncfGateway(
       httpClient: http.Client(),
       apiKey: EnvConfig.apiKey ?? '',
+      mapper: sncfMapper,
+    );
+    
+    final storageGateway = LocalStorageGateway(
+      mapper: tripMapper,
     );
 
-    _tripRepository = LocalTripRepository();
-
-    _getTrainDeparturesUseCase = GetTrainDeparturesUseCase(_trainRepository);
-    _manageTripUseCase = ManageTripUseCase(_tripRepository);
+    _trainService = TrainService(sncfGateway);
+    _tripService = TripService(storageGateway);
   }
 
-  TrainListController createTrainListController() {
-    return TrainListController(_getTrainDeparturesUseCase);
-  }
-
-  TripController createTripController() {
-    return TripController(_manageTripUseCase);
-  }
-
-  GetTrainDeparturesUseCase get getTrainDeparturesUseCase => _getTrainDeparturesUseCase;
-  ManageTripUseCase get manageTripUseCase => _manageTripUseCase;
+  TrainService get trainService => _trainService;
+  TripService get tripService => _tripService;
 }

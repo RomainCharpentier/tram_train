@@ -1,16 +1,12 @@
 import 'package:flutter/material.dart';
-import '../../domain/services/trip_controller.dart';
+import '../../domain/models/trip.dart';
+import '../../domain/models/station.dart';
+import '../../dependency_injection.dart';
 import '../widgets/loading_widget.dart';
 import '../widgets/error_widget.dart' as custom;
-import '../../dependency_injection.dart';
 
 class TripManagementPage extends StatefulWidget {
-  final TripController controller;
-
-  const TripManagementPage({
-    super.key,
-    required this.controller,
-  });
+  const TripManagementPage({super.key});
 
   @override
   State<TripManagementPage> createState() => _TripManagementPageState();
@@ -27,24 +23,36 @@ class _TripManagementPageState extends State<TripManagementPage> {
     'Dimanche'
   ];
 
+  List<Trip> _trips = [];
+  bool _isLoading = false;
+  String? _error;
   String? _selectedDay;
   TimeOfDay? _selectedTime;
 
   @override
   void initState() {
     super.initState();
-    widget.controller.addListener(_onControllerUpdate);
-    widget.controller.loadTrips();
+    _loadTrips();
   }
 
-  @override
-  void dispose() {
-    widget.controller.removeListener(_onControllerUpdate);
-    super.dispose();
-  }
+  Future<void> _loadTrips() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
 
-  void _onControllerUpdate() {
-    setState(() {});
+    try {
+      final trips = await DependencyInjection.instance.tripService.getAllTrips();
+      setState(() {
+        _trips = trips;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = 'Erreur lors du chargement des trajets: $e';
+        _isLoading = false;
+      });
+    }
   }
 
   @override
@@ -111,27 +119,27 @@ class _TripManagementPageState extends State<TripManagementPage> {
   }
 
   Widget _buildTripsList() {
-    if (widget.controller.isLoading) {
+    if (_isLoading) {
       return const LoadingWidget();
     }
 
-    if (widget.controller.error != null) {
+    if (_error != null) {
       return custom.CustomErrorWidget(
-        message: widget.controller.error!,
-        onRetry: widget.controller.loadTrips,
+        message: _error!,
+        onRetry: _loadTrips,
       );
     }
 
-    if (widget.controller.trips.isEmpty) {
+    if (_trips.isEmpty) {
       return const Center(
         child: Text('Aucun trajet enregistré'),
       );
     }
 
     return ListView.builder(
-      itemCount: widget.controller.trips.length,
+      itemCount: _trips.length,
       itemBuilder: (context, index) {
-        final trip = widget.controller.trips[index];
+        final trip = _trips[index];
         return ListTile(
           leading: const Icon(Icons.route),
           title: Text('${trip.station.name} - ${trip.dayOfWeek}'),
@@ -161,19 +169,26 @@ class _TripManagementPageState extends State<TripManagementPage> {
     return _selectedDay != null && _selectedTime != null;
   }
 
-  void _createTrip() {
+  Future<void> _createTrip() async {
     if (_selectedDay != null && _selectedTime != null) {
-      widget.controller.createTrip(
-        station: DependencyInjection.babiniereStation,
-        dayOfWeek: _selectedDay!,
-        time: _selectedTime!.format(context),
-      );
-      
-      // Reset form
-      setState(() {
-        _selectedDay = null;
-        _selectedTime = null;
-      });
+      try {
+        await DependencyInjection.instance.tripService.createTrip(
+          station: DependencyInjection.babiniereStation,
+          dayOfWeek: _selectedDay!,
+          time: _selectedTime!.format(context),
+        );
+        
+        // Reset form and reload trips
+        setState(() {
+          _selectedDay = null;
+          _selectedTime = null;
+        });
+        _loadTrips();
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur lors de la création: $e')),
+        );
+      }
     }
   }
 
@@ -189,9 +204,16 @@ class _TripManagementPageState extends State<TripManagementPage> {
             child: const Text('Annuler'),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(context);
-              widget.controller.deleteTrip(tripId);
+              try {
+                await DependencyInjection.instance.tripService.deleteTrip(tripId);
+                _loadTrips();
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Erreur lors de la suppression: $e')),
+                );
+              }
             },
             child: const Text('Supprimer'),
           ),

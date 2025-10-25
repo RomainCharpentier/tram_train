@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../dependency_injection.dart';
+import '../../domain/models/station.dart';
 import 'train_list_page.dart';
 import 'trip_management_page.dart';
 
@@ -78,12 +79,10 @@ class HomePage extends StatelessWidget {
   }
 
   void _navigateToTrainList(BuildContext context) {
-    final controller = DependencyInjection.instance.createTrainListController();
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => TrainListPage(
-          controller: controller,
           station: DependencyInjection.babiniereStation,
         ),
       ),
@@ -91,11 +90,10 @@ class HomePage extends StatelessWidget {
   }
 
   void _navigateToTripManagement(BuildContext context) {
-    final controller = DependencyInjection.instance.createTripController();
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => TripManagementPage(controller: controller),
+        builder: (context) => TripManagementPage(),
       ),
     );
   }

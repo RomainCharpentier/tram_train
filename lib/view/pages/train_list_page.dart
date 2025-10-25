@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
 import '../../domain/models/station.dart';
-import '../../domain/services/train_list_controller.dart';
+import '../../domain/models/train.dart';
+import '../../dependency_injection.dart';
 import '../widgets/train_card.dart';
 import '../widgets/loading_widget.dart';
 import '../widgets/error_widget.dart' as custom;
 
 class TrainListPage extends StatefulWidget {
-  final TrainListController controller;
   final Station station;
 
   const TrainListPage({
     super.key,
-    required this.controller,
     required this.station,
   });
 
@@ -20,21 +19,34 @@ class TrainListPage extends StatefulWidget {
 }
 
 class _TrainListPageState extends State<TrainListPage> {
+  List<Train> _trains = [];
+  bool _isLoading = false;
+  String? _error;
+
   @override
   void initState() {
     super.initState();
-    widget.controller.addListener(_onControllerUpdate);
-    widget.controller.loadDepartures(widget.station);
+    _loadTrains();
   }
 
-  @override
-  void dispose() {
-    widget.controller.removeListener(_onControllerUpdate);
-    super.dispose();
-  }
+  Future<void> _loadTrains() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
 
-  void _onControllerUpdate() {
-    setState(() {});
+    try {
+      final trains = await DependencyInjection.instance.trainService.getDepartures(widget.station);
+      setState(() {
+        _trains = trains;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = 'Erreur lors du chargement des trains: $e';
+        _isLoading = false;
+      });
+    }
   }
 
   @override
@@ -45,7 +57,7 @@ class _TrainListPageState extends State<TrainListPage> {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: widget.controller.refresh,
+            onPressed: _loadTrains,
           ),
         ],
       ),
@@ -54,29 +66,29 @@ class _TrainListPageState extends State<TrainListPage> {
   }
 
   Widget _buildBody() {
-    if (widget.controller.isLoading) {
+    if (_isLoading) {
       return const LoadingWidget();
     }
 
-    if (widget.controller.error != null) {
+    if (_error != null) {
       return custom.CustomErrorWidget(
-        message: widget.controller.error!,
-        onRetry: () => widget.controller.refresh(),
+        message: _error!,
+        onRetry: _loadTrains,
       );
     }
 
-    if (widget.controller.trains.isEmpty) {
+    if (_trains.isEmpty) {
       return const Center(
         child: Text('Aucun train disponible'),
       );
     }
 
     return RefreshIndicator(
-      onRefresh: widget.controller.refresh,
+      onRefresh: _loadTrains,
       child: ListView.builder(
-        itemCount: widget.controller.trains.length,
+        itemCount: _trains.length,
         itemBuilder: (context, index) {
-          final train = widget.controller.trains[index];
+          final train = _trains[index];
           return TrainCard(train: train);
         },
       ),
