@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
+import '../../domain/models/station.dart';
 import '../../dependency_injection.dart';
 import 'train_list_page.dart';
 import 'trip_management_page.dart';
+import 'alert_management_page.dart';
+import 'notification_pause_page.dart';
+import 'favorite_stations_page.dart';
+import 'station_search_page.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -52,6 +57,34 @@ class HomePage extends StatelessWidget {
               Icons.route,
               () => _navigateToTripManagement(context),
             ),
+            const SizedBox(height: 16),
+            _buildActionButton(
+              context,
+              'Gestion des Alertes',
+              Icons.notifications,
+              () => _navigateToAlertManagement(context),
+            ),
+            const SizedBox(height: 16),
+            _buildActionButton(
+              context,
+              'Pauses de Notifications',
+              Icons.pause_circle,
+              () => _navigateToNotificationPause(context),
+            ),
+            const SizedBox(height: 16),
+                _buildActionButton(
+                  context,
+                  'Gares Favorites',
+                  Icons.star,
+                  () => _navigateToFavoriteStations(context),
+                ),
+                const SizedBox(height: 16),
+                _buildActionButton(
+                  context,
+                  'Rechercher une Gare',
+                  Icons.search,
+                  () => _navigateToStationSearch(context),
+                ),
           ],
         ),
       ),
@@ -95,5 +128,51 @@ class HomePage extends StatelessWidget {
         builder: (context) => TripManagementPage(),
       ),
     );
+  }
+
+  void _navigateToAlertManagement(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const AlertManagementPage(),
+      ),
+    );
+  }
+
+  void _navigateToNotificationPause(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const NotificationPausePage(),
+      ),
+    );
+  }
+
+  void _navigateToFavoriteStations(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const FavoriteStationsPage(),
+      ),
+    );
+  }
+
+  void _navigateToStationSearch(BuildContext context) async {
+    final selectedStation = await Navigator.push<Station>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const StationSearchPage(),
+      ),
+    );
+    
+    if (selectedStation != null) {
+      // Optionnel : afficher un message de confirmation
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Gare sélectionnée: ${selectedStation.name}'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    }
   }
 }

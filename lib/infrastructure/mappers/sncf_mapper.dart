@@ -35,14 +35,14 @@ class SncfMapper {
   /// Convertit les lieux SNCF vers des gares
   List<Station> mapPlacesToStations(Map<String, dynamic> response) {
     final places = (response['places'] as List<dynamic>?)
-        ?.map((place) => _mapPlaceToStation(place))
+        ?.map((place) => mapPlaceToStation(place))
         .toList() ?? [];
     
     return places;
   }
 
   /// Convertit un lieu SNCF vers une gare
-  Station _mapPlaceToStation(Map<String, dynamic> place) {
+  Station mapPlaceToStation(Map<String, dynamic> place) {
     return Station(
       id: place['id'] as String? ?? '',
       name: place['name'] as String? ?? '',
@@ -188,14 +188,14 @@ class SncfMapper {
   /// Convertit les gares d'une ligne
   List<Station> mapLineStations(Map<String, dynamic> response) {
     final stopAreas = (response['stop_areas'] as List<dynamic>?)
-        ?.map((stopArea) => _mapStopAreaToStation(stopArea))
+        ?.map((stopArea) => mapStopAreaToStation(stopArea))
         .toList() ?? [];
 
     return stopAreas;
   }
 
   /// Convertit une zone d'arrêt vers une gare
-  Station _mapStopAreaToStation(Map<String, dynamic> stopArea) {
+  Station mapStopAreaToStation(Map<String, dynamic> stopArea) {
     return Station(
       id: stopArea['id'] as String? ?? '',
       name: stopArea['name'] as String? ?? '',
