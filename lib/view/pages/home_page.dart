@@ -76,7 +76,6 @@ class _HomePageState extends State<HomePage> {
         
         await DependencyInjection.instance.tripService.saveTrip(testTrip);
         activeTrips.add(testTrip);
-        print('✅ Trajet de test créé: ${testTrip.departureStation.name} → ${testTrip.arrivalStation.name}');
       }
       
       setState(() {
@@ -99,23 +98,16 @@ class _HomePageState extends State<HomePage> {
   Future<void> _loadNextTrains() async {
     final nextTrains = <Train>[];
     
-    print('🔄 Chargement des horaires pour ${_activeTrips.length} trajets actifs');
-    
     for (final trip in _activeTrips) {
       try {
-        print('🚂 Recherche des trains pour ${trip.departureStation.name} (${trip.departureStation.id})');
         final trains = await DependencyInjection.instance.trainService.getNextDepartures(
           trip.departureStation,
         );
-        print('✅ Trouvé ${trains.length} trains pour ${trip.departureStation.name}');
         nextTrains.addAll(trains);
       } catch (e) {
-        print('❌ Erreur pour ${trip.departureStation.name}: $e');
         // Ignorer les erreurs pour un trajet spécifique
       }
     }
-    
-    print('📊 Total: ${nextTrains.length} trains chargés');
     
     setState(() {
       _nextTrains = nextTrains;

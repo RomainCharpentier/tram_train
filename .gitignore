@@ -13,6 +13,7 @@
 .history
 .svn/
 .env.*
+CONTEXT.md
 
 # IntelliJ related
 *.iml

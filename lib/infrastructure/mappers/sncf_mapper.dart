@@ -124,9 +124,9 @@ class SncfMapper {
         ? DateTime.parse(to['arrival_date_time'] as String)
         : DateTime.now();
     
-    // Détecter les correspondances : plus d'une section = correspondance
-    final hasConnections = sections.length > 1;
-    final connectionCount = sections.length - 1;
+    // Détecter les vraies correspondances (changement de véhicule/mode)
+    final hasConnections = _hasRealConnections(sections);
+    final connectionCount = _countRealConnections(sections);
     
     return Train.fromTimes(
       id: journey['id'] as String? ?? '',
@@ -149,6 +149,117 @@ class SncfMapper {
     final hours = duration.inHours;
     final minutes = duration.inMinutes % 60;
     return '${hours}h${minutes.toString().padLeft(2, '0')}';
+  }
+
+  /// Vérifie s'il y a de vraies correspondances (changement de véhicule/mode)
+  bool _hasRealConnections(List<dynamic> sections) {
+    if (sections.length <= 1) return false;
+    
+    print('🔍 Analyse des correspondances: ${sections.length} sections');
+    
+    // Filtrer les sections qui ont un mode de transport réel
+    final transportSections = <Map<String, dynamic>>[];
+    
+    for (int i = 0; i < sections.length; i++) {
+      final section = sections[i];
+      final sectionData = section as Map<String, dynamic>;
+      final displayInfo = sectionData['display_informations'] as Map<String, dynamic>? ?? {};
+      
+      final currentMode = displayInfo['physical_mode'] as String?;
+      final currentLine = displayInfo['commercial_mode'] as String?;
+      
+      print('  Section $i: mode=$currentMode, ligne=$currentLine');
+      
+      // Ne garder que les sections avec un mode de transport réel
+      if (currentMode != null && currentMode.isNotEmpty) {
+        transportSections.add({
+          'mode': currentMode,
+          'line': currentLine,
+          'index': i,
+        });
+      }
+    }
+    
+    print('  📊 Sections de transport: ${transportSections.length}');
+    
+    // Si moins de 2 sections de transport, pas de correspondance
+    if (transportSections.length < 2) {
+      print('  ❌ Moins de 2 sections de transport');
+      return false;
+    }
+    
+    // Vérifier les changements entre sections de transport
+    for (int i = 1; i < transportSections.length; i++) {
+      final prev = transportSections[i - 1];
+      final curr = transportSections[i];
+      
+      final prevMode = prev['mode'] as String;
+      final currMode = curr['mode'] as String;
+      final prevLine = prev['line'] as String?;
+      final currLine = curr['line'] as String?;
+      
+      if (prevMode != currMode) {
+        print('  ✅ Changement de mode détecté: $prevMode → $currMode');
+        return true;
+      }
+      
+      if (prevLine != null && currLine != null && prevLine != currLine) {
+        print('  ✅ Changement de ligne détecté: $prevLine → $currLine');
+        return true;
+      }
+    }
+    
+    print('  ❌ Aucune correspondance détectée');
+    return false;
+  }
+
+  /// Compte le nombre de vraies correspondances
+  int _countRealConnections(List<dynamic> sections) {
+    if (sections.length <= 1) return 0;
+    
+    // Filtrer les sections qui ont un mode de transport réel
+    final transportSections = <Map<String, dynamic>>[];
+    
+    for (int i = 0; i < sections.length; i++) {
+      final section = sections[i];
+      final sectionData = section as Map<String, dynamic>;
+      final displayInfo = sectionData['display_informations'] as Map<String, dynamic>? ?? {};
+      
+      final currentMode = displayInfo['physical_mode'] as String?;
+      final currentLine = displayInfo['commercial_mode'] as String?;
+      
+      // Ne garder que les sections avec un mode de transport réel
+      if (currentMode != null && currentMode.isNotEmpty) {
+        transportSections.add({
+          'mode': currentMode,
+          'line': currentLine,
+        });
+      }
+    }
+    
+    // Si moins de 2 sections de transport, pas de correspondance
+    if (transportSections.length < 2) return 0;
+    
+    int connectionCount = 0;
+    
+    // Compter les changements entre sections de transport
+    for (int i = 1; i < transportSections.length; i++) {
+      final prev = transportSections[i - 1];
+      final curr = transportSections[i];
+      
+      final prevMode = prev['mode'] as String;
+      final currMode = curr['mode'] as String;
+      final prevLine = prev['line'] as String?;
+      final currLine = curr['line'] as String?;
+      
+      if (prevMode != currMode) {
+        connectionCount++;
+      } else if (prevLine != null && currLine != null && prevLine != currLine) {
+        connectionCount++;
+      }
+    }
+    
+    return connectionCount;
   }
 
   /// Convertit les informations de gare

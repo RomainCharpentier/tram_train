@@ -208,9 +208,6 @@ class _EditTripPageState extends State<EditTripPage> {
   }
 
   Future<void> _selectStation(bool isDeparture) async {
-    print('🔍 Édition - Sélection de gare: ${isDeparture ? "départ" : "arrivée"}');
-    print('📍 Gare de départ actuelle: ${_departureStation.name}');
-    
     final result = await Navigator.push<Station>(
       context,
       MaterialPageRoute(
@@ -221,7 +218,6 @@ class _EditTripPageState extends State<EditTripPage> {
     );
     
     if (result != null) {
-      print('✅ Gare sélectionnée: ${result.name}');
       setState(() {
         if (isDeparture) {
           _departureStation = result;
@@ -234,8 +230,6 @@ class _EditTripPageState extends State<EditTripPage> {
       if (!isDeparture) {
         _validateConnection();
       }
-    } else {
-      print('❌ Aucune gare sélectionnée');
     }
   }
   
@@ -244,22 +238,20 @@ class _EditTripPageState extends State<EditTripPage> {
     if (_arrivalStation == null) return;
     
     try {
-      print('🔍 Validation immédiate: ${_departureStation.name} → ${_arrivalStation.name}');
-      
-      final areConnected = await ConnectedStationsService.areStationsConnected(
+      final result = await ConnectedStationsService.checkConnection(
         _departureStation,
         _arrivalStation,
+        directOnly: false, // Par défaut, accepter tous les trajets
       );
 
       setState(() {
-        if (!areConnected) {
-          _connectionError = '⚠️ Les gares ${_departureStation.name} et ${_arrivalStation.name} ne sont pas directement connectées.\nVeuillez choisir des gares reliées par un trajet direct.';
+        if (!result.isConnected) {
+          _connectionError = '⚠️ ${result.message}';
         } else {
           _connectionError = null; // Pas d'erreur si connectées
         }
       });
     } catch (e) {
-      print('❌ Erreur lors de la validation: $e');
       setState(() {
         _connectionError = 'Erreur lors de la validation: $e';
       });
@@ -290,18 +282,18 @@ class _EditTripPageState extends State<EditTripPage> {
   Future<void> _saveTrip() async {
     try {
       // Vérifier que les gares sont connectées
-      final areConnected = await ConnectedStationsService.areStationsConnected(
+      final result = await ConnectedStationsService.checkConnection(
         _departureStation,
         _arrivalStation,
+        directOnly: false, // Par défaut, accepter tous les trajets
       );
 
-      if (!areConnected) {
+      if (!result.isConnected) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                '⚠️ Les gares ${_departureStation.name} et ${_arrivalStation.name} ne sont pas directement connectées.\n'
-                'Veuillez choisir des gares reliées par un trajet direct.',
+                '⚠️ ${result.message}',
               ),
               backgroundColor: Colors.orange,
               duration: const Duration(seconds: 5),

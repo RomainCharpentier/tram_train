@@ -41,11 +41,9 @@ class _TripSchedulePageState extends State<TripSchedulePage> {
     });
 
     try {
-      print('🚂 Chargement des horaires pour ${widget.trip.departureStation.name} → ${widget.trip.arrivalStation.name}');
       final trains = await DependencyInjection.instance.trainService.getNextDepartures(
         widget.trip.departureStation,
       );
-      print('✅ Trouvé ${trains.length} trains');
       
       // Filtrer les trains qui vont vers la destination
       final filteredTrains = trains.where((train) => 
@@ -53,7 +51,6 @@ class _TripSchedulePageState extends State<TripSchedulePage> {
         widget.trip.arrivalStation.name.toLowerCase().contains(train.direction.toLowerCase())
       ).toList();
       
-      print('🎯 ${filteredTrains.length} trains filtrés pour ${widget.trip.arrivalStation.name}');
       
       setState(() {
         _allTrains = filteredTrains;
@@ -61,7 +58,6 @@ class _TripSchedulePageState extends State<TripSchedulePage> {
         _isLoading = false;
       });
     } catch (e) {
-      print('❌ Erreur lors du chargement: $e');
       setState(() {
         _error = 'Impossible de charger les horaires: $e';
         _isLoading = false;

@@ -2,108 +2,134 @@ import 'package:train_qil/domain/models/station.dart';
 import 'package:train_qil/domain/models/train.dart';
 import 'package:train_qil/infrastructure/dependency_injection.dart';
 
+/// Résultat de vérification de connexion entre deux gares
+class ConnectionResult {
+  final bool isConnected;
+  final int totalJourneys;
+  final int directJourneys;
+  final String message;
+  
+  ConnectionResult({
+    required this.isConnected,
+    required this.totalJourneys,
+    required this.directJourneys,
+    required this.message,
+  });
+}
+
 /// Service pour gérer les connexions entre gares
 class ConnectedStationsService {
-  /// Récupère les gares connectées à une gare donnée (destinations finales uniquement)
-  static Future<List<Station>> getConnectedStations(Station station) async {
-    print('🔍 Recherche des gares connectées pour: ${station.name} (ID: ${station.id})');
-    
+  /// Récupère les noms des destinations connectées à une gare donnée
+  static Future<List<String>> getConnectedDestinationNames(Station station) async {
     try {
       final trainService = DependencyInjection.instance.trainService;
       
       // Utiliser l'API SNCF pour récupérer les départs depuis cette gare
-      print('🌐 Appel API SNCF pour: ${station.name}');
       final departures = await trainService.getNextDepartures(station);
       
       // Extraire seulement les destinations finales (pas les arrêts intermédiaires)
-      final allDestinations = <String, Station>{};
+      final destinationNames = <String>{};
       
       for (final departure in departures) {
         final direction = departure.direction;
-        if (direction.isNotEmpty && !allDestinations.containsKey(direction)) {
-          allDestinations[direction] = Station(
-            id: 'TEMP_${direction.hashCode}',
-            name: direction,
-            description: 'Destination depuis ${station.name}',
-          );
+        if (direction.isNotEmpty) {
+          destinationNames.add(direction);
         }
       }
       
-      print('📍 Destinations finales trouvées via API: ${allDestinations.length}');
-      for (final destination in allDestinations.values) {
-        print('  - ${destination.name} (${destination.id})');
-      }
-      
-      return allDestinations.values.toList();
+      return destinationNames.toList();
       
     } catch (e) {
-      print('❌ Erreur API pour ${station.name}: $e');
-      
-      // Fallback : retourner une liste vide pour forcer la recherche globale
-      print('📍 Aucune connexion trouvée - Recherche globale recommandée');
+      // Fallback : retourner une liste vide
       return [];
     }
   }
   
-  /// Vérifie si deux gares sont connectées directement
-  static Future<bool> areStationsConnected(Station departure, Station arrival, {bool directOnly = true}) async {
-    print('🔍 Vérification de connexion: ${departure.name} → ${arrival.name} (direct uniquement: $directOnly)');
-    
+  /// Récupère les gares connectées à une gare donnée (destinations finales uniquement)
+  /// Cette méthode est dépréciée - utiliser getConnectedDestinationNames à la place
+  @Deprecated('Utiliser getConnectedDestinationNames et faire une recherche globale')
+  static Future<List<Station>> getConnectedStations(Station station) async {
+    // Retourner une liste vide pour forcer la recherche globale
+    return [];
+  }
+  
+
+  /// Vérifie si deux gares sont connectées
+  static Future<ConnectionResult> checkConnection(Station departure, Station arrival, {bool directOnly = true}) async {
     try {
       final trainService = DependencyInjection.instance.trainService;
       
-      // Utiliser l'API des trajets pour vérifier s'il existe un trajet direct
-      print('🌐 Vérification via API des trajets: ${departure.name} → ${arrival.name}');
+      // Utiliser l'API des trajets pour vérifier s'il existe un trajet
       final journeys = await trainService.findJourneysBetween(departure, arrival);
       
-      // Filtrer les trajets selon le critère (direct ou tous)
-      List<Train> filteredJourneys = journeys;
-      if (directOnly) {
-        // Filtrer pour ne garder que les trajets directs
-        filteredJourneys = journeys.where((journey) => journey.isDirect).toList();
-        print('🔍 Filtrage des trajets directs: ${journeys.length} → ${filteredJourneys.length}');
+      final totalJourneys = journeys.length;
+      final directJourneys = journeys.where((journey) => journey.isDirect).length;
+      
+      // Déterminer le résultat selon les critères
+      if (totalJourneys == 0) {
+        return ConnectionResult(
+          isConnected: false,
+          totalJourneys: 0,
+          directJourneys: 0,
+          message: 'Aucun trajet trouvé',
+        );
       }
       
-      final isConnected = filteredJourneys.isNotEmpty;
-      
-      print('🚂 Trajets trouvés: ${journeys.length} (filtrés: ${filteredJourneys.length})');
-      if (filteredJourneys.isNotEmpty) {
-        print('✅ Résultat: CONNECTÉ - ${filteredJourneys.length} trajet(s) trouvé(s)');
-        
-        // Afficher les détails des trajets pour debug
-        for (int i = 0; i < filteredJourneys.length && i < 3; i++) {
-          final journey = filteredJourneys[i];
-          print('  Trajet ${i + 1}: ${journey.direction} (${journey.status})');
-        }
-        if (filteredJourneys.length > 3) {
-          print('  ... et ${filteredJourneys.length - 3} autres trajets');
+      if (directOnly) {
+        // Mode "direct uniquement"
+        if (directJourneys > 0) {
+          return ConnectionResult(
+            isConnected: true,
+            totalJourneys: totalJourneys,
+            directJourneys: directJourneys,
+            message: 'CONNECTÉ - $directJourneys trajet(s) direct(s) trouvé(s)',
+          );
+        } else {
+          return ConnectionResult(
+            isConnected: false,
+            totalJourneys: totalJourneys,
+            directJourneys: 0,
+            message: 'NON CONNECTÉ - Aucun trajet direct trouvé (${totalJourneys} trajet(s) avec correspondances)',
+          );
         }
       } else {
-        print('❌ Résultat: NON CONNECTÉ - Aucun trajet trouvé');
+        // Mode "tous les trajets"
+        return ConnectionResult(
+          isConnected: true,
+          totalJourneys: totalJourneys,
+          directJourneys: directJourneys,
+          message: 'CONNECTÉ - $totalJourneys trajet(s) trouvé(s) ($directJourneys direct(s))',
+        );
       }
-      
-      return isConnected;
     } catch (e) {
-      print('❌ Erreur lors de la vérification de connexion: $e');
-      
       // Fallback : vérifier via les destinations finales
-      print('🔄 Fallback: vérification via destinations finales');
       try {
         final connectedStations = await getConnectedStations(departure);
         final isConnected = connectedStations.any((s) =>
             _areStationNamesSimilar(s.name, arrival.name) || s.id == arrival.id);
         
-        print('📍 Gares connectées disponibles: ${connectedStations.length}');
-        for (var s in connectedStations) {
-          print('  - ${s.name} (${s.id})');
-        }
-        print('✅ Résultat fallback: ${isConnected ? 'CONNECTÉ' : 'NON CONNECTÉ'}');
-        return isConnected;
+        return ConnectionResult(
+          isConnected: isConnected,
+          totalJourneys: isConnected ? 1 : 0,
+          directJourneys: isConnected ? 1 : 0,
+          message: isConnected ? 'CONNECTÉ - Vérifié via destinations' : 'NON CONNECTÉ - Aucune connexion trouvée',
+        );
       } catch (fallbackError) {
-        print('❌ Erreur fallback: $fallbackError');
-        return false;
+        return ConnectionResult(
+          isConnected: false,
+          totalJourneys: 0,
+          directJourneys: 0,
+          message: 'NON CONNECTÉ - Erreur lors de la vérification',
+        );
       }
     }
+  }
+
+  /// Vérifie si deux gares sont connectées directement (méthode de compatibilité)
+  @Deprecated('Utiliser checkConnection à la place')
+  static Future<bool> areStationsConnected(Station departure, Station arrival, {bool directOnly = true}) async {
+    final result = await checkConnection(departure, arrival, directOnly: directOnly);
+    return result.isConnected;
   }
   
   /// Compare deux noms de gares de manière flexible

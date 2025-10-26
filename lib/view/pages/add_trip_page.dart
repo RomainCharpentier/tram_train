@@ -342,9 +342,6 @@ class _AddTripPageState extends State<AddTripPage> {
   }
 
   Future<void> _selectStation(bool isDeparture) async {
-    print('🔍 Sélection de gare: ${isDeparture ? "départ" : "arrivée"}');
-    print('📍 Gare de départ actuelle: ${_departureStation?.name ?? "non sélectionnée"}');
-    
     final result = await Navigator.push<Station>(
       context,
       MaterialPageRoute(
@@ -355,7 +352,6 @@ class _AddTripPageState extends State<AddTripPage> {
     );
     
     if (result != null) {
-      print('✅ Gare sélectionnée: ${result.name}');
       setState(() {
         if (isDeparture) {
           _departureStation = result;
@@ -368,8 +364,6 @@ class _AddTripPageState extends State<AddTripPage> {
       if (!isDeparture && _departureStation != null) {
         _validateConnection();
       }
-    } else {
-      print('❌ Aucune gare sélectionnée');
     }
   }
   
@@ -378,29 +372,21 @@ class _AddTripPageState extends State<AddTripPage> {
     if (_departureStation == null || _arrivalStation == null) return;
     
     try {
-      print('🔍 Validation immédiate: ${_departureStation!.name} → ${_arrivalStation!.name}');
-      
-      // Utiliser le service avec l'option directOnly
-      final areConnected = await ConnectedStationsService.areStationsConnected(
+      // Utiliser la nouvelle méthode avec plus d'informations
+      final result = await ConnectedStationsService.checkConnection(
         _departureStation!,
         _arrivalStation!,
         directOnly: _directTrainsOnly,
       );
-      
-      // Récupérer le nombre de trajets pour l'affichage
-      final trainService = DependencyInjection.instance.trainService;
-      final journeys = await trainService.findJourneysBetween(_departureStation!, _arrivalStation!);
 
       setState(() {
-        if (!areConnected) {
-          _connectionError = '⚠️ Les gares ${_departureStation!.name} et ${_arrivalStation!.name} ne sont pas connectées.\n${_directTrainsOnly ? "Aucun trajet direct trouvé." : "Aucun trajet trouvé."}';
+        if (!result.isConnected) {
+          _connectionError = '⚠️ ${result.message}';
         } else {
-          final trainType = _directTrainsOnly ? "direct(s)" : "disponible(s)";
-          _connectionError = '✅ Connexion trouvée ! ${journeys.length} trajet(s) $trainType entre ${_departureStation!.name} et ${_arrivalStation!.name}';
+          _connectionError = '✅ ${result.message}';
         }
       });
     } catch (e) {
-      print('❌ Erreur lors de la validation: $e');
       setState(() {
         _connectionError = 'Erreur lors de la validation: $e';
       });
@@ -435,18 +421,18 @@ class _AddTripPageState extends State<AddTripPage> {
 
     try {
       // Vérifier que les gares sont connectées
-      final areConnected = await ConnectedStationsService.areStationsConnected(
+      final result = await ConnectedStationsService.checkConnection(
         _departureStation!,
         _arrivalStation!,
+        directOnly: _directTrainsOnly,
       );
 
-      if (!areConnected) {
+      if (!result.isConnected) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                '⚠️ Les gares ${_departureStation!.name} et ${_arrivalStation!.name} ne sont pas directement connectées.\n'
-                'Veuillez choisir des gares reliées par un trajet direct.',
+                '⚠️ ${result.message}',
               ),
               backgroundColor: Colors.orange,
               duration: const Duration(seconds: 5),

@@ -24,17 +24,11 @@ class SncfGateway implements TrainGateway {
   Future<List<Train>> getDepartures(Station station) async {
     final apiUrl = 'https://api.sncf.com/v1/coverage/sncf/stop_areas/stop_area:${station.id}/departures';
     
-    print('🌐 Appel API: $apiUrl');
-    print('🔑 API Key: ${_apiKey.substring(0, 8)}...');
-    
     try {
       final response = await _makeApiCall(apiUrl);
-      print('📡 Réponse API reçue: ${response.keys.join(', ')}');
       final trains = _mapper.mapDeparturesToTrains(response, station);
-      print('🚂 Trains mappés: ${trains.length}');
       return trains;
     } catch (e) {
-      print('❌ Erreur API: $e');
       throw SncfGatewayException('Erreur lors de la récupération des départs: $e');
     }
   }

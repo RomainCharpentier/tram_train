@@ -42,14 +42,11 @@ class _StationSearchPageState extends State<StationSearchPage> {
     super.dispose();
   }
 
-  /// Charge les gares connectées à la gare de départ
+  /// Charge les destinations connectées à la gare de départ
   Future<void> _loadConnectedStations() async {
     if (widget.departureStation == null) {
-      print('❌ Aucune gare de départ fournie');
       return;
     }
-    
-    print('🔗 Chargement des gares connectées à: ${widget.departureStation!.name}');
     
     setState(() {
       _isLoading = true;
@@ -57,14 +54,12 @@ class _StationSearchPageState extends State<StationSearchPage> {
     });
 
     try {
-      final connectedStations = await ConnectedStationsService.getConnectedStations(widget.departureStation!);
-      print('📍 Gares connectées trouvées: ${connectedStations.length}');
-      for (final station in connectedStations) {
-        print('  - ${station.name} (${station.id})');
-      }
+      // Récupérer les noms des destinations connectées
+      final destinationNames = await ConnectedStationsService.getConnectedDestinationNames(widget.departureStation!);
       
-      final results = connectedStations.map((station) => 
-        SearchResult.exact(station, metadata: {'connected': true})
+      // Créer des résultats de recherche avec des suggestions
+      final results = destinationNames.map((name) => 
+        SearchResult.suggestion(Station(id: 'TEMP_${name.hashCode}', name: name), metadata: {'connected': true, 'suggestion': true})
       ).toList();
       
       setState(() {
@@ -72,9 +67,8 @@ class _StationSearchPageState extends State<StationSearchPage> {
         _isLoading = false;
       });
     } catch (e) {
-      print('❌ Erreur lors du chargement des gares connectées: $e');
       setState(() {
-        _error = 'Erreur lors du chargement des gares connectées: $e';
+        _error = 'Erreur lors du chargement des destinations connectées: $e';
         _isLoading = false;
       });
     }
@@ -445,14 +439,15 @@ class _StationSearchPageState extends State<StationSearchPage> {
 
   Widget _buildStationCard(SearchResult<Station> result) {
     final station = result.data;
+    final isSuggestion = result.metadata?['suggestion'] == true;
     
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: _getTypeColor(result.type),
+          backgroundColor: isSuggestion ? Colors.orange : _getTypeColor(result.type),
           child: Icon(
-            _getTypeIcon(result.type),
+            isSuggestion ? Icons.lightbulb_outline : _getTypeIcon(result.type),
             color: Colors.white,
           ),
         ),
@@ -464,6 +459,11 @@ class _StationSearchPageState extends State<StationSearchPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(station.description ?? ''),
+            if (isSuggestion)
+              Text(
+                'Suggestion - Cliquez pour rechercher cette gare',
+                style: TextStyle(color: Colors.orange[600], fontStyle: FontStyle.italic),
+              ),
             if (result.metadata?['distance'] != null)
               Text(
                 'Distance: ${(result.metadata!['distance'] as double).toStringAsFixed(1)} km',
@@ -488,7 +488,13 @@ class _StationSearchPageState extends State<StationSearchPage> {
             ),
           ],
         ),
-        onTap: () => _selectStation(station),
+        onTap: () {
+          if (isSuggestion) {
+            _selectSuggestion(station.name);
+          } else {
+            _selectStation(station);
+          }
+        },
       ),
     );
   }
@@ -535,5 +541,34 @@ class _StationSearchPageState extends State<StationSearchPage> {
 
   void _selectStation(Station station) {
     Navigator.pop(context, station);
+  }
+  
+  /// Gère la sélection d'une suggestion de destination
+  Future<void> _selectSuggestion(String destinationName) async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+    
+    try {
+      // Rechercher la vraie station correspondant à cette destination
+      final results = await DependencyInjection.instance.stationSearchService.searchStations(destinationName);
+      
+      if (results.isNotEmpty) {
+        // Prendre le premier résultat (le plus pertinent)
+        final station = results.first.data;
+        Navigator.pop(context, station);
+      } else {
+        setState(() {
+          _error = 'Aucune gare trouvée pour "$destinationName"';
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _error = 'Erreur lors de la recherche de "$destinationName": $e';
+        _isLoading = false;
+      });
+    }
   }
 }
