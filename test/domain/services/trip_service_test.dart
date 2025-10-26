@@ -39,14 +39,14 @@ void main() {
 
     test('should save trip successfully', () async {
       // Arrange
-      final station1 = Station(id: '1', name: 'Station 1');
-      final station2 = Station(id: '2', name: 'Station 2');
+      const station1 = Station(id: '1', name: 'Station 1');
+      const station2 = Station(id: '2', name: 'Station 2');
       final trip = Trip(
         id: 'trip_1',
         departureStation: station1,
         arrivalStation: station2,
         days: [DayOfWeek.monday, DayOfWeek.friday],
-        time: TimeOfDay(hour: 8, minute: 30),
+        time: const TimeOfDay(hour: 8, minute: 30),
         createdAt: DateTime.now(),
       );
 
@@ -61,14 +61,14 @@ void main() {
 
     test('should get all trips', () async {
       // Arrange
-      final station1 = Station(id: '1', name: 'Station 1');
-      final station2 = Station(id: '2', name: 'Station 2');
+      const station1 = Station(id: '1', name: 'Station 1');
+      const station2 = Station(id: '2', name: 'Station 2');
       final trip1 = Trip(
         id: 'trip_1',
         departureStation: station1,
         arrivalStation: station2,
         days: [DayOfWeek.monday],
-        time: TimeOfDay(hour: 8, minute: 30),
+        time: const TimeOfDay(hour: 8, minute: 30),
         createdAt: DateTime.now(),
       );
       final trip2 = Trip(
@@ -76,7 +76,7 @@ void main() {
         departureStation: station2,
         arrivalStation: station1,
         days: [DayOfWeek.friday],
-        time: TimeOfDay(hour: 17, minute: 0),
+        time: const TimeOfDay(hour: 17, minute: 0),
         createdAt: DateTime.now(),
       );
 
@@ -92,14 +92,14 @@ void main() {
 
     test('should delete trip successfully', () async {
       // Arrange
-      final station1 = Station(id: '1', name: 'Station 1');
-      final station2 = Station(id: '2', name: 'Station 2');
+      const station1 = Station(id: '1', name: 'Station 1');
+      const station2 = Station(id: '2', name: 'Station 2');
       final trip = Trip(
         id: 'trip_1',
         departureStation: station1,
         arrivalStation: station2,
         days: [DayOfWeek.monday],
-        time: TimeOfDay(hour: 8, minute: 30),
+        time: const TimeOfDay(hour: 8, minute: 30),
         createdAt: DateTime.now(),
       );
       await tripService.saveTrip(trip);
@@ -114,14 +114,14 @@ void main() {
 
     test('should filter trips by day', () async {
       // Arrange
-      final station1 = Station(id: '1', name: 'Station 1');
-      final station2 = Station(id: '2', name: 'Station 2');
+      const station1 = Station(id: '1', name: 'Station 1');
+      const station2 = Station(id: '2', name: 'Station 2');
       final mondayTrip = Trip(
         id: 'trip_1',
         departureStation: station1,
         arrivalStation: station2,
         days: [DayOfWeek.monday],
-        time: TimeOfDay(hour: 8, minute: 30),
+        time: const TimeOfDay(hour: 8, minute: 30),
         createdAt: DateTime.now(),
       );
       final fridayTrip = Trip(
@@ -129,7 +129,7 @@ void main() {
         departureStation: station2,
         arrivalStation: station1,
         days: [DayOfWeek.friday],
-        time: TimeOfDay(hour: 17, minute: 0),
+        time: const TimeOfDay(hour: 17, minute: 0),
         createdAt: DateTime.now(),
       );
 
@@ -147,14 +147,14 @@ void main() {
 
     test('should get active trips', () async {
       // Arrange
-      final station1 = Station(id: '1', name: 'Station 1');
-      final station2 = Station(id: '2', name: 'Station 2');
+      const station1 = Station(id: '1', name: 'Station 1');
+      const station2 = Station(id: '2', name: 'Station 2');
       final activeTrip = Trip(
         id: 'trip_1',
         departureStation: station1,
         arrivalStation: station2,
         days: [DayOfWeek.monday],
-        time: TimeOfDay(hour: 8, minute: 30),
+        time: const TimeOfDay(hour: 8, minute: 30),
         isActive: true,
         createdAt: DateTime.now(),
       );
@@ -163,7 +163,7 @@ void main() {
         departureStation: station2,
         arrivalStation: station1,
         days: [DayOfWeek.friday],
-        time: TimeOfDay(hour: 17, minute: 0),
+        time: const TimeOfDay(hour: 17, minute: 0),
         isActive: false,
         createdAt: DateTime.now(),
       );

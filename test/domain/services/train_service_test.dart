@@ -293,8 +293,8 @@ void main() {
     group('As a user, I want to find journeys between stations', () {
       test('should find direct journeys between two stations', () async {
         // Given: I want to go from Station A to Station B
-        final stationA = const Station(id: 'STATION_A', name: 'Station A');
-        final stationB = const Station(id: 'STATION_B', name: 'Station B');
+        const stationA = Station(id: 'STATION_A', name: 'Station A');
+        const stationB = Station(id: 'STATION_B', name: 'Station B');
         final expectedTrains = [
           Train.fromTimes(
             id: '1',
@@ -316,8 +316,8 @@ void main() {
 
       test('should find journeys with specific departure time', () async {
         // Given: I want to leave at a specific time
-        final stationA = const Station(id: 'STATION_A', name: 'Station A');
-        final stationB = const Station(id: 'STATION_B', name: 'Station B');
+        const stationA = Station(id: 'STATION_A', name: 'Station A');
+        const stationB = Station(id: 'STATION_B', name: 'Station B');
         final departureTime = DateTime(2025, 1, 1, 14, 30);
         final expectedTrains = [
           Train.fromTimes(
@@ -340,8 +340,8 @@ void main() {
 
       test('should find journeys with specific arrival time', () async {
         // Given: I want to arrive at a specific time
-        final stationA = const Station(id: 'STATION_A', name: 'Station A');
-        final stationB = const Station(id: 'STATION_B', name: 'Station B');
+        const stationA = Station(id: 'STATION_A', name: 'Station A');
+        const stationB = Station(id: 'STATION_B', name: 'Station B');
         final arrivalTime = DateTime(2025, 1, 1, 16, 0);
         final expectedTrains = [
           Train.fromTimes(

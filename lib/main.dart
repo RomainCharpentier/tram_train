@@ -1,13 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:train_qil/env_config.dart';
-import 'package:train_qil/dependency_injection.dart';
+import 'package:train_qil/infrastructure/dependency_injection.dart';
 import 'package:train_qil/view/pages/home_page.dart';
 
 void main() async {
-  await EnvConfig.load();
-  await DependencyInjection.initialize();
-
-  runApp(const MyApp());
+  try {
+    await EnvConfig.load();
+    await DependencyInjection.initialize();
+    runApp(const MyApp());
+  } catch (e) {
+    print('Erreur lors de l\'initialisation: $e');
+    runApp(MaterialApp(
+      home: Scaffold(
+        body: Center(
+          child: Text('Erreur: $e'),
+        ),
+      ),
+    ));
+  }
 }
 
 class EnvInheritedWidget extends InheritedWidget {
@@ -34,12 +44,19 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Train\'Qil',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: const HomePage(),
+    final themeService = DependencyInjection.instance.themeService;
+    
+    return AnimatedBuilder(
+      animation: themeService,
+      builder: (context, child) {
+        return MaterialApp(
+          title: 'Train\'Qil',
+          theme: themeService.lightTheme,
+          darkTheme: themeService.darkTheme,
+          themeMode: themeService.themeMode,
+          home: const HomePage(),
+        );
+      },
     );
   }
 }

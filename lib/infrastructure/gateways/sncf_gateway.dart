@@ -20,19 +20,28 @@ class SncfGateway implements TrainGateway {
 
   /// Récupère les départs depuis l'API SNCF
   /// Endpoint: GET /v1/coverage/sncf/stop_areas/stop_area:{id}/departures
+  @override
   Future<List<Train>> getDepartures(Station station) async {
     final apiUrl = 'https://api.sncf.com/v1/coverage/sncf/stop_areas/stop_area:${station.id}/departures';
     
+    print('🌐 Appel API: $apiUrl');
+    print('🔑 API Key: ${_apiKey.substring(0, 8)}...');
+    
     try {
       final response = await _makeApiCall(apiUrl);
-      return _mapper.mapDeparturesToTrains(response, station);
+      print('📡 Réponse API reçue: ${response.keys.join(', ')}');
+      final trains = _mapper.mapDeparturesToTrains(response, station);
+      print('🚂 Trains mappés: ${trains.length}');
+      return trains;
     } catch (e) {
+      print('❌ Erreur API: $e');
       throw SncfGatewayException('Erreur lors de la récupération des départs: $e');
     }
   }
 
   /// Récupère les départs à une date/heure spécifique
   /// Endpoint: GET /v1/coverage/sncf/stop_areas/stop_area:{id}/departures?datetime={datetime}
+  @override
   Future<List<Train>> getDeparturesAt(Station station, DateTime dateTime) async {
     final formattedDateTime = dateTime.toIso8601String();
     final apiUrl = 'https://api.sncf.com/v1/coverage/sncf/stop_areas/stop_area:${station.id}/departures?datetime=$formattedDateTime';
@@ -129,7 +138,7 @@ class SncfGateway implements TrainGateway {
   /// Récupère les perturbations sur une ligne
   /// Endpoint: GET /v1/coverage/sncf/disruptions
   Future<List<Map<String, dynamic>>> getDisruptions() async {
-    final apiUrl = 'https://api.sncf.com/v1/coverage/sncf/disruptions';
+    const apiUrl = 'https://api.sncf.com/v1/coverage/sncf/disruptions';
     
     try {
       final response = await _makeApiCall(apiUrl);
@@ -221,7 +230,7 @@ class SncfGateway implements TrainGateway {
   /// Récupère les informations de trafic en temps réel
   /// Endpoint: GET /v1/coverage/sncf/traffic_reports
   Future<List<Map<String, dynamic>>> getTrafficReports() async {
-    final apiUrl = 'https://api.sncf.com/v1/coverage/sncf/traffic_reports';
+    const apiUrl = 'https://api.sncf.com/v1/coverage/sncf/traffic_reports';
     
     try {
       final response = await _makeApiCall(apiUrl);

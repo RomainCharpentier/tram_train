@@ -4,11 +4,11 @@ import '../models/search_result.dart';
 /// Service pour la recherche intelligente de gares
 class StationSearchService {
   final StationSearchGateway _searchGateway;
-  final StationHistoryGateway _historyGateway;
+  final StationHistoryGateway? _historyGateway;
 
   const StationSearchService({
     required StationSearchGateway searchGateway,
-    required StationHistoryGateway historyGateway,
+    StationHistoryGateway? historyGateway,
   }) : _searchGateway = searchGateway, _historyGateway = historyGateway;
 
   /// Recherche des gares par nom avec suggestions intelligentes
@@ -20,7 +20,9 @@ class StationSearchService {
     final results = await _searchGateway.searchStations(query);
     
     // Enregistrer la recherche dans l'historique
-    await _historyGateway.addSearchQuery(query);
+    if (_historyGateway != null) {
+      await _historyGateway!.addSearchQuery(query);
+    }
     
     return results;
   }
@@ -54,7 +56,11 @@ class StationSearchService {
 
   /// Récupère les gares récemment consultées
   Future<List<SearchResult<Station>>> getRecentStations() async {
-    final recentQueries = await _historyGateway.getRecentQueries();
+    if (_historyGateway == null) {
+      return [];
+    }
+    
+    final recentQueries = await _historyGateway!.getRecentQueries();
     final results = <SearchResult<Station>>[];
 
     for (final query in recentQueries) {
@@ -74,7 +80,11 @@ class StationSearchService {
   Future<List<String>> getSearchSuggestions(String partialQuery) async {
     if (partialQuery.length < 2) return [];
 
-    final recentQueries = await _historyGateway.getRecentQueries();
+    if (_historyGateway == null) {
+      return [];
+    }
+    
+    final recentQueries = await _historyGateway!.getRecentQueries();
     final suggestions = recentQueries
         .where((query) => query.toLowerCase().contains(partialQuery.toLowerCase()))
         .take(5)

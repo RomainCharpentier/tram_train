@@ -8,6 +8,7 @@ class Trip {
   final List<DayOfWeek> days; // Changé pour supporter plusieurs jours
   final TimeOfDay time;
   final bool isActive;
+  final bool notificationsEnabled;
   final DateTime createdAt;
 
   const Trip({
@@ -17,6 +18,7 @@ class Trip {
     required this.days,
     required this.time,
     this.isActive = true,
+    this.notificationsEnabled = true,
     required this.createdAt,
   });
 
@@ -62,6 +64,7 @@ class Trip {
     List<DayOfWeek>? days,
     TimeOfDay? time,
     bool? isActive,
+    bool? notificationsEnabled,
     DateTime? createdAt,
   }) {
     return Trip(
@@ -71,6 +74,7 @@ class Trip {
       days: days ?? this.days,
       time: time ?? this.time,
       isActive: isActive ?? this.isActive,
+      notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
       createdAt: createdAt ?? this.createdAt,
     );
   }

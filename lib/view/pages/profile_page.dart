@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../domain/models/trip.dart' as domain;
-import '../../dependency_injection.dart';
+import '../../infrastructure/dependency_injection.dart';
 import 'add_trip_page.dart';
 import 'edit_trip_page.dart';
 import 'notification_pause_page.dart';
@@ -54,17 +54,41 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
 
   @override
   Widget build(BuildContext context) {
+    final themeService = DependencyInjection.instance.themeService;
+    
     return Scaffold(
       appBar: AppBar(
         title: const Text('Profil'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-            bottom: TabBar(
-              controller: _tabController,
-              tabs: const [
-                Tab(icon: Icon(Icons.route), text: 'Mes Trajets'),
-                Tab(icon: Icon(Icons.pause_circle), text: 'Pauses'),
-              ],
-            ),
+        backgroundColor: const Color(0xFF4A90E2),
+        actions: [
+          // Toggle de thème
+          AnimatedBuilder(
+            animation: themeService,
+            builder: (context, child) {
+              return IconButton(
+                icon: Icon(
+                  themeService.isDarkMode ? Icons.light_mode : Icons.dark_mode,
+                  color: Colors.white,
+                ),
+                onPressed: () => themeService.toggleTheme(),
+                tooltip: themeService.isDarkMode ? 'Mode clair' : 'Mode sombre',
+              );
+            },
+          ),
+          // Bouton de fermeture
+          IconButton(
+            icon: const Icon(Icons.close, color: Colors.white),
+            onPressed: () => Navigator.pop(context),
+            tooltip: 'Fermer',
+          ),
+        ],
+        bottom: TabBar(
+          controller: _tabController,
+          tabs: const [
+            Tab(icon: Icon(Icons.route), text: 'Mes Trajets'),
+            Tab(icon: Icon(Icons.pause_circle), text: 'Pauses'),
+          ],
+        ),
       ),
       body: TabBarView(
         controller: _tabController,
@@ -184,6 +208,20 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
                   trip.isActive ? 'Actif' : 'Inactif',
                   style: TextStyle(
                     color: trip.isActive ? Colors.green : Colors.grey,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Icon(
+                  trip.notificationsEnabled ? Icons.notifications : Icons.notifications_off,
+                  size: 16,
+                  color: trip.notificationsEnabled ? Colors.orange : Colors.grey,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  trip.notificationsEnabled ? 'Notifications' : 'Pas de notifications',
+                  style: TextStyle(
+                    color: trip.notificationsEnabled ? Colors.orange : Colors.grey,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -390,7 +428,7 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
     final result = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
-        builder: (context) => AddTripPage(),
+        builder: (context) => const AddTripPage(),
       ),
     );
     

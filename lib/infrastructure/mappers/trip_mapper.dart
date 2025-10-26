@@ -15,6 +15,7 @@ class TripMapper {
       'timeHour': trip.time.hour,
       'timeMinute': trip.time.minute,
       'isActive': trip.isActive,
+      'notificationsEnabled': trip.notificationsEnabled,
       'createdAt': trip.createdAt.toIso8601String(),
     };
   }
@@ -43,6 +44,7 @@ class TripMapper {
         minute: json['timeMinute'] as int,
       ),
       isActive: json['isActive'] as bool? ?? true,
+      notificationsEnabled: json['notificationsEnabled'] as bool? ?? true,
       createdAt: DateTime.parse(json['createdAt'] as String),
     );
   }

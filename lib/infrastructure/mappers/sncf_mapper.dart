@@ -20,15 +20,25 @@ class SncfMapper {
     final departureTime = DateTime.parse(stopDateTime['departure_date_time'] as String);
     final baseDepartureTime = DateTime.parse(stopDateTime['base_departure_date_time'] as String);
     
+    // Générer un ID unique basé sur les données disponibles
+    final links = departure['links'] as List<dynamic>? ?? [];
+    final vehicleJourneyLink = links.firstWhere(
+      (link) => link['type'] == 'vehicle_journey',
+      orElse: () => {'id': 'unknown'},
+    );
+    final id = vehicleJourneyLink['id'] as String? ?? 'unknown';
+    
     return Train.fromTimes(
-      id: departure['id'] as String? ?? '',
+      id: id,
       direction: displayInfo['direction'] as String? ?? '',
       departureTime: departureTime,
       baseDepartureTime: baseDepartureTime,
       station: station,
-      additionalInfo: (stopDateTime['additional_informations'] as List<dynamic>?)
-          ?.map((e) => e.toString())
-          .toList() ?? [],
+      additionalInfo: [
+        'Ligne: ${displayInfo['label'] ?? ''}',
+        'Mode: ${displayInfo['physical_mode'] ?? ''}',
+        'Réseau: ${displayInfo['network'] ?? ''}',
+      ],
     );
   }
 
@@ -43,8 +53,12 @@ class SncfMapper {
 
   /// Convertit un lieu SNCF vers une gare
   Station mapPlaceToStation(Map<String, dynamic> place) {
+    // Extraire l'ID SNCF depuis l'ID complet (ex: "stop_area:SNCF:87590349" -> "SNCF:87590349")
+    final fullId = place['id'] as String? ?? '';
+    final sncfId = fullId.replaceFirst('stop_area:', '');
+    
     return Station(
-      id: place['id'] as String? ?? '',
+      id: sncfId,
       name: place['name'] as String? ?? '',
       description: place['label'] as String? ?? '',
     );

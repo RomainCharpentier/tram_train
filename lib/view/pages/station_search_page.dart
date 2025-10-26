@@ -3,9 +3,7 @@ import '../../domain/models/station.dart';
 import '../../domain/models/search_result.dart';
 import '../../domain/services/station_search_service.dart';
 import '../../domain/services/connected_stations_service.dart';
-import '../../dependency_injection.dart';
-import '../widgets/loading_widget.dart';
-import '../widgets/error_widget.dart' as custom;
+import '../../infrastructure/dependency_injection.dart';
 
 /// Page de recherche intelligente de gares
 class StationSearchPage extends StatefulWidget {
@@ -44,10 +42,14 @@ class _StationSearchPageState extends State<StationSearchPage> {
     super.dispose();
   }
 
-
-  /// Charge les gares connectées
+  /// Charge les gares connectées à la gare de départ
   Future<void> _loadConnectedStations() async {
-    if (widget.departureStation == null) return;
+    if (widget.departureStation == null) {
+      print('❌ Aucune gare de départ fournie');
+      return;
+    }
+    
+    print('🔗 Chargement des gares connectées à: ${widget.departureStation!.name}');
     
     setState(() {
       _isLoading = true;
@@ -55,7 +57,12 @@ class _StationSearchPageState extends State<StationSearchPage> {
     });
 
     try {
-      final connectedStations = ConnectedStationsService.getConnectedStations(widget.departureStation!);
+      final connectedStations = await ConnectedStationsService.getConnectedStations(widget.departureStation!);
+      print('📍 Gares connectées trouvées: ${connectedStations.length}');
+      for (final station in connectedStations) {
+        print('  - ${station.name} (${station.id})');
+      }
+      
       final results = connectedStations.map((station) => 
         SearchResult.exact(station, metadata: {'connected': true})
       ).toList();
@@ -65,6 +72,7 @@ class _StationSearchPageState extends State<StationSearchPage> {
         _isLoading = false;
       });
     } catch (e) {
+      print('❌ Erreur lors du chargement des gares connectées: $e');
       setState(() {
         _error = 'Erreur lors du chargement des gares connectées: $e';
         _isLoading = false;
@@ -76,11 +84,17 @@ class _StationSearchPageState extends State<StationSearchPage> {
   Future<void> _searchStations([String? query]) async {
     final searchQuery = query ?? _searchController.text.trim();
     
+    // Recherche globale dans toute la base SNCF (même avec gare de départ)
     if (searchQuery.isEmpty) {
-      setState(() {
-        _searchResults = [];
-        _error = null;
-      });
+      // Si pas de recherche, afficher les gares connectées si gare de départ
+      if (widget.departureStation != null) {
+        await _loadConnectedStations();
+      } else {
+        setState(() {
+          _searchResults = [];
+          _error = null;
+        });
+      }
       return;
     }
 
@@ -90,6 +104,7 @@ class _StationSearchPageState extends State<StationSearchPage> {
     });
 
     try {
+      // Recherche globale dans toute la base SNCF
       final results = await DependencyInjection.instance.stationSearchService.searchStations(searchQuery);
       setState(() {
         _searchResults = results;
@@ -173,10 +188,17 @@ class _StationSearchPageState extends State<StationSearchPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Recherche de Gares'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        backgroundColor: const Color(0xFF4A90E2),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
         actions: [
           IconButton(
-            icon: Icon(_showAdvancedFilters ? Icons.filter_list_off : Icons.filter_list),
+            icon: Icon(
+              _showAdvancedFilters ? Icons.filter_list_off : Icons.filter_list,
+              color: Colors.white,
+            ),
             onPressed: () {
               setState(() {
                 _showAdvancedFilters = !_showAdvancedFilters;
@@ -319,13 +341,34 @@ class _StationSearchPageState extends State<StationSearchPage> {
 
   Widget _buildBody() {
     if (_isLoading) {
-      return const LoadingWidget();
+      return const Center(
+        child: CircularProgressIndicator(),
+      );
     }
 
     if (_error != null) {
-      return custom.CustomErrorWidget(
-        message: _error!,
-        onRetry: () => _searchStations(),
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 64,
+              color: Colors.red[300],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Erreur: $_error',
+              style: const TextStyle(fontSize: 16),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () => _searchStations(),
+              child: const Text('Réessayer'),
+            ),
+          ],
+        ),
       );
     }
 
@@ -334,7 +377,7 @@ class _StationSearchPageState extends State<StationSearchPage> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.search, size: 64, color: Colors.grey),
+                const Icon(Icons.search, size: 64, color: Colors.grey),
                 const SizedBox(height: 16),
                 Text(
                   widget.departureStation != null 
@@ -354,12 +397,49 @@ class _StationSearchPageState extends State<StationSearchPage> {
           );
         }
 
-    return ListView.builder(
-      itemCount: _searchResults.length,
-      itemBuilder: (context, index) {
-        final result = _searchResults[index];
-        return _buildStationCard(result);
-      },
+    return Column(
+      children: [
+        // Message informatif pour les gares connectées
+        if (widget.departureStation != null && _searchResults.isNotEmpty && _searchController.text.isEmpty)
+          Container(
+            width: double.infinity,
+            margin: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFF4A90E2).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: const Color(0xFF4A90E2).withOpacity(0.3)),
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.info_outline,
+                  color: Color(0xFF4A90E2),
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Gares connectées à ${widget.departureStation!.name}',
+                    style: const TextStyle(
+                      color: Color(0xFF4A90E2),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        Expanded(
+          child: ListView.builder(
+            itemCount: _searchResults.length,
+            itemBuilder: (context, index) {
+              final result = _searchResults[index];
+              return _buildStationCard(result);
+            },
+          ),
+        ),
+      ],
     );
   }
 

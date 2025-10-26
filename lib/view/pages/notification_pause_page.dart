@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../domain/models/notification_pause.dart';
-import '../../dependency_injection.dart';
+import '../../infrastructure/dependency_injection.dart';
 
 class NotificationPausePage extends StatefulWidget {
   const NotificationPausePage({super.key});
@@ -43,6 +43,15 @@ class _NotificationPausePageState extends State<NotificationPausePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Pauses de notification'),
+        backgroundColor: const Color(0xFF4A90E2),
+        foregroundColor: Colors.white,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+      ),
       body: _buildBody(),
       floatingActionButton: FloatingActionButton(
         onPressed: _showCreatePauseDialog,

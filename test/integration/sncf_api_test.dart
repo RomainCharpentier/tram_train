@@ -83,7 +83,7 @@ void main() {
         
         final trains = await sncfGateway.getDeparturesAt(testStation, specificTime);
         
-        print('Found ${trains.length} departures at ${specificTime}:');
+        print('Found ${trains.length} departures at $specificTime:');
         for (final train in trains.take(3)) {
           print('  - ${train.direction} at ${train.departureTime}');
         }
@@ -112,7 +112,7 @@ void main() {
         // curl -H "Authorization: Basic $(echo -n 'API_KEY:' | base64)"
         //      "https://api.sncf.com/v1/coverage/sncf/journeys?from=stop_area:SNCF:87590349&to=stop_area:SNCF:87384008"
         
-        final parisStation = const Station(
+        const parisStation = Station(
           id: 'SNCF:87384008',
           name: 'Paris',
           description: 'Gare de Paris',
@@ -131,7 +131,7 @@ void main() {
       });
 
       test('should find journeys with departure time', () async {
-        final parisStation = const Station(
+        const parisStation = Station(
           id: 'SNCF:87384008',
           name: 'Paris',
           description: 'Gare de Paris',
@@ -146,7 +146,7 @@ void main() {
           departureTime
         );
         
-        print('Found ${trains.length} journeys departing at ${departureTime}:');
+        print('Found ${trains.length} journeys departing at $departureTime:');
         for (final train in trains.take(3)) {
           print('  - ${train.direction} at ${train.departureTime}');
         }
@@ -186,7 +186,7 @@ void main() {
 
     group('API Error Handling', () {
       test('should handle invalid station ID gracefully', () async {
-        final invalidStation = const Station(
+        const invalidStation = Station(
           id: 'INVALID:123456',
           name: 'Invalid Station',
           description: 'This station does not exist',
@@ -207,7 +207,7 @@ void main() {
         
         // Au moins un appel devrait réussir
         final results = await Future.wait(futures, eagerError: false);
-        final successfulResults = results.where((result) => result is List).length;
+        final successfulResults = results.whereType<List>().length;
         
         expect(successfulResults, greaterThan(0));
         print('Rate limiting test: $successfulResults/5 calls succeeded');

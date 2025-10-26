@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import '../../domain/models/trip.dart' as domain;
 import '../../domain/models/train.dart';
-import '../../dependency_injection.dart';
+import '../../domain/models/station.dart';
+import '../../infrastructure/dependency_injection.dart';
 import 'profile_page.dart';
 import 'add_trip_page.dart';
+import 'edit_trip_page.dart';
+import 'trip_schedule_page.dart';
 import '../widgets/logo_widget.dart';
 
 class HomePage extends StatefulWidget {
@@ -43,6 +46,39 @@ class _HomePageState extends State<HomePage> {
       final trips = await DependencyInjection.instance.tripService.getAllTrips();
       final activeTrips = trips.where((trip) => trip.isActiveToday).toList();
       
+      // Si aucun trajet, créer un trajet de test
+      if (activeTrips.isEmpty) {
+        // Supprimer l'ancien trajet de test s'il existe
+        try {
+          await DependencyInjection.instance.tripService.deleteTrip('test-trip');
+        } catch (e) {
+          // Ignorer si le trajet n'existe pas
+        }
+        
+        final testTrip = domain.Trip(
+          id: 'test-trip',
+          departureStation: const Station(
+            id: 'SNCF:87590349',
+            name: 'Babinière',
+            description: 'Gare de Babinière',
+          ),
+          arrivalStation: const Station(
+            id: 'SNCF:87481002',
+            name: 'Nantes',
+            description: 'Gare de Nantes',
+          ),
+          days: [domain.DayOfWeek.monday, domain.DayOfWeek.tuesday, domain.DayOfWeek.wednesday, domain.DayOfWeek.thursday, domain.DayOfWeek.friday, domain.DayOfWeek.saturday, domain.DayOfWeek.sunday],
+          time: const domain.TimeOfDay(hour: 8, minute: 30),
+          isActive: true,
+          notificationsEnabled: true,
+          createdAt: DateTime.now(),
+        );
+        
+        await DependencyInjection.instance.tripService.saveTrip(testTrip);
+        activeTrips.add(testTrip);
+        print('✅ Trajet de test créé: ${testTrip.departureStation.name} → ${testTrip.arrivalStation.name}');
+      }
+      
       setState(() {
         _activeTrips = activeTrips;
         _isLoading = false;
@@ -58,20 +94,28 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+
   /// Charge les prochains trains pour les trajets actifs
   Future<void> _loadNextTrains() async {
     final nextTrains = <Train>[];
     
+    print('🔄 Chargement des horaires pour ${_activeTrips.length} trajets actifs');
+    
     for (final trip in _activeTrips) {
       try {
+        print('🚂 Recherche des trains pour ${trip.departureStation.name} (${trip.departureStation.id})');
         final trains = await DependencyInjection.instance.trainService.getNextDepartures(
           trip.departureStation,
         );
+        print('✅ Trouvé ${trains.length} trains pour ${trip.departureStation.name}');
         nextTrains.addAll(trains);
       } catch (e) {
+        print('❌ Erreur pour ${trip.departureStation.name}: $e');
         // Ignorer les erreurs pour un trajet spécifique
       }
     }
+    
+    print('📊 Total: ${nextTrains.length} trains chargés');
     
     setState(() {
       _nextTrains = nextTrains;
@@ -89,10 +133,24 @@ class _HomePageState extends State<HomePage> {
             Text('Train\'Qil'),
           ],
         ),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        backgroundColor: const Color(0xFF4A90E2),
         actions: [
+          // Toggle de thème
+          AnimatedBuilder(
+            animation: DependencyInjection.instance.themeService,
+            builder: (context, child) {
+              return IconButton(
+                icon: Icon(
+                  DependencyInjection.instance.themeService.isDarkMode ? Icons.light_mode : Icons.dark_mode,
+                  color: Colors.white,
+                ),
+                onPressed: () => DependencyInjection.instance.themeService.toggleTheme(),
+                tooltip: DependencyInjection.instance.themeService.isDarkMode ? 'Mode clair' : 'Mode sombre',
+              );
+            },
+          ),
           IconButton(
-            icon: const Icon(Icons.person),
+            icon: const Icon(Icons.person, color: Colors.white),
             onPressed: () => _navigateToProfile(context),
           ),
         ],
@@ -181,6 +239,21 @@ class _HomePageState extends State<HomePage> {
           _buildHeader(),
           const SizedBox(height: 16),
           ..._buildTripCards(),
+          
+          // Section des prochains trains
+          if (_nextTrains.isNotEmpty) ...[
+            const SizedBox(height: 24),
+            const Text(
+              'Prochains Départs',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF1E3A8A),
+              ),
+            ),
+            const SizedBox(height: 12),
+            ..._buildTrainCards(),
+          ],
         ],
       ),
     );
@@ -217,7 +290,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   List<Widget> _buildTripCards() {
-    if (_nextTrains.isEmpty) {
+    if (_activeTrips.isEmpty) {
       return [
         Card(
           child: Padding(
@@ -227,18 +300,18 @@ class _HomePageState extends State<HomePage> {
                 const Icon(Icons.info, color: Colors.orange),
                 const SizedBox(height: 8),
                 const Text(
-                  'Aucun train trouvé',
+                  'Aucun trajet configuré',
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 4),
                 const Text(
-                  'Vérifiez les horaires ou réessayez plus tard',
+                  'Ajoutez vos trajets quotidiens pour voir les horaires',
                   style: TextStyle(color: Colors.grey),
                 ),
                 const SizedBox(height: 16),
                 ElevatedButton(
-                  onPressed: _loadNextTrains,
-                  child: const Text('Actualiser'),
+                  onPressed: () => _navigateToAddTrip(context),
+                  child: const Text('Ajouter un trajet'),
                 ),
               ],
             ),
@@ -247,11 +320,136 @@ class _HomePageState extends State<HomePage> {
       ];
     }
 
-    return _nextTrains.map((train) => _buildTrainCard(train)).toList();
+    return _activeTrips.map((trip) => _buildTripCard(trip)).toList();
   }
 
-  Widget _buildTrainCard(Train train) {
+  Widget _buildTripCard(domain.Trip trip) {
     return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.train, color: Color(0xFF4A90E2)),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '${trip.departureStation.name} → ${trip.arrivalStation.name}',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+                PopupMenuButton<String>(
+                  onSelected: (value) => _handleTripAction(value, trip),
+                  itemBuilder: (context) => [
+                    const PopupMenuItem(
+                      value: 'edit',
+                      child: Row(
+                        children: [
+                          Icon(Icons.edit),
+                          SizedBox(width: 8),
+                          Text('Modifier'),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem(
+                      value: 'duplicate',
+                      child: Row(
+                        children: [
+                          Icon(Icons.copy),
+                          SizedBox(width: 8),
+                          Text('Dupliquer'),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem(
+                      value: 'toggle',
+                      child: Row(
+                        children: [
+                          Icon(Icons.power_settings_new),
+                          SizedBox(width: 8),
+                          Text('Activer/Désactiver'),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem(
+                      value: 'delete',
+                      child: Row(
+                        children: [
+                          Icon(Icons.delete, color: Colors.red),
+                          SizedBox(width: 8),
+                          Text('Supprimer', style: TextStyle(color: Colors.red)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Icon(
+                  trip.isActive ? Icons.check_circle : Icons.cancel,
+                  color: trip.isActive ? Colors.green : Colors.red,
+                  size: 16,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  trip.isActive ? 'Actif' : 'Inactif',
+                  style: TextStyle(
+                    color: trip.isActive ? Colors.green : Colors.red,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Icon(
+                  trip.notificationsEnabled ? Icons.notifications : Icons.notifications_off,
+                  size: 16,
+                  color: trip.notificationsEnabled ? Colors.orange : Colors.grey,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  trip.notificationsEnabled ? 'Notifications' : 'Pas de notifications',
+                  style: TextStyle(
+                    color: trip.notificationsEnabled ? Colors.orange : Colors.grey,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Jours: ${trip.daysName}',
+              style: const TextStyle(color: Colors.grey),
+            ),
+            Text(
+              'Heure: ${trip.timeFormatted}',
+              style: const TextStyle(color: Colors.grey),
+            ),
+            const SizedBox(height: 12),
+            ElevatedButton(
+              onPressed: () => _showTripDetails(trip),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF4A90E2),
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Voir les horaires'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Construit les cartes des trains
+  List<Widget> _buildTrainCards() {
+    return _nextTrains.map((train) => Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
         leading: CircleAvatar(
@@ -259,60 +457,33 @@ class _HomePageState extends State<HomePage> {
           child: Icon(
             _getStatusIcon(train.status),
             color: Colors.white,
+            size: 16,
           ),
         ),
         title: Text(
-          train.direction,
+          '${train.departureTimeFormatted} - ${train.direction}',
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('${train.station.name} → ${train.direction}'),
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                Icon(
-                  Icons.schedule,
-                  size: 16,
-                  color: Colors.grey[600],
+        subtitle: Text(train.statusText),
+        trailing: train.isDelayed
+            ? Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.orange,
+                  borderRadius: BorderRadius.circular(4),
                 ),
-                const SizedBox(width: 4),
-                Text(
-                  train.departureTimeFormatted,
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontWeight: FontWeight.w500,
+                child: Text(
+                  '+${train.delayMinutes}min',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-                if (train.isDelayed) ...[
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.orange,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      'Retard ${train.delayMinutes}min',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ],
-        ),
-        trailing: IconButton(
-          icon: const Icon(Icons.info_outline),
-          onPressed: () => _showTrainDetails(train),
-        ),
+              )
+            : null,
       ),
-    );
+    )).toList();
   }
 
   Color _getStatusColor(TrainStatus status) {
@@ -345,36 +516,6 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  void _showTrainDetails(Train train) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(train.direction),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Gare: ${train.station.name}'),
-            Text('Départ: ${train.departureTimeFormatted}'),
-            if (train.isDelayed)
-              Text('Retard: ${train.delayMinutes} minutes'),
-            if (train.additionalInfo.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              const Text('Informations:', style: TextStyle(fontWeight: FontWeight.bold)),
-              ...train.additionalInfo.map((info) => Text('• $info')),
-            ],
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Fermer'),
-          ),
-        ],
-      ),
-    );
-  }
-
   void _navigateToProfile(BuildContext context) {
     Navigator.push(
       context,
@@ -388,7 +529,74 @@ class _HomePageState extends State<HomePage> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => AddTripPage(),
+        builder: (context) => const AddTripPage(),
+      ),
+    );
+  }
+
+  void _handleTripAction(String action, domain.Trip trip) async {
+    switch (action) {
+      case 'edit':
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => EditTripPage(trip: trip),
+          ),
+        );
+        break;
+      case 'duplicate':
+        final duplicatedTrip = trip.copyWith(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          createdAt: DateTime.now(),
+        );
+        await DependencyInjection.instance.tripService.saveTrip(duplicatedTrip);
+        _loadActiveTrips();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Trajet dupliqué')),
+        );
+        break;
+      case 'toggle':
+        final updatedTrip = trip.copyWith(isActive: !trip.isActive);
+        await DependencyInjection.instance.tripService.saveTrip(updatedTrip);
+        _loadActiveTrips();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Trajet ${updatedTrip.isActive ? 'activé' : 'désactivé'}')),
+        );
+        break;
+      case 'delete':
+        final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Supprimer le trajet'),
+            content: const Text('Êtes-vous sûr de vouloir supprimer ce trajet ?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Annuler'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Supprimer', style: TextStyle(color: Colors.red)),
+              ),
+            ],
+          ),
+        );
+        if (confirmed == true) {
+          await DependencyInjection.instance.tripService.deleteTrip(trip.id);
+          _loadActiveTrips();
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Trajet supprimé')),
+          );
+        }
+        break;
+    }
+  }
+
+  void _showTripDetails(domain.Trip trip) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => TripSchedulePage(trip: trip),
       ),
     );
   }
