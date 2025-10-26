@@ -20,6 +20,7 @@ class _AddTripPageState extends State<AddTripPage> {
   flutter.TimeOfDay? _selectedTime;
   bool _isActive = true;
   bool _notificationsEnabled = true;
+  bool _directTrainsOnly = true; // Nouvelle option pour trajets directs uniquement
   String? _connectionError;
 
   @override
@@ -41,28 +42,46 @@ class _AddTripPageState extends State<AddTripPage> {
           children: [
             // Station de départ
             Card(
-              color: _connectionError != null ? Colors.red.shade50 : null,
+              color: _connectionError != null 
+                  ? (_connectionError!.startsWith('✅') ? Colors.green.shade50 : Colors.red.shade50)
+                  : null,
               child: ListTile(
                 leading: Icon(
                   Icons.train, 
-                  color: _connectionError != null ? Colors.red : const Color(0xFF4A90E2),
+                  color: _connectionError != null 
+                      ? (_connectionError!.startsWith('✅') ? Colors.green : Colors.red)
+                      : const Color(0xFF4A90E2),
                 ),
                 title: Text(
                   _departureStation?.name ?? 'Sélectionner la station de départ',
-                  style: TextStyle(color: _connectionError != null ? Colors.red : null),
+                  style: TextStyle(
+                    color: _connectionError != null 
+                        ? (_connectionError!.startsWith('✅') ? Colors.green : Colors.red)
+                        : null
+                  ),
                 ),
                 subtitle: _departureStation != null 
                     ? Text(
                         _departureStation!.description ?? '',
-                        style: TextStyle(color: _connectionError != null ? Colors.red.shade700 : null),
+                        style: TextStyle(
+                          color: _connectionError != null 
+                              ? (_connectionError!.startsWith('✅') ? Colors.green.shade700 : Colors.red.shade700)
+                              : null
+                        ),
                       )
                     : Text(
                         'Choisissez votre station de départ',
-                        style: TextStyle(color: _connectionError != null ? Colors.red.shade700 : null),
+                        style: TextStyle(
+                          color: _connectionError != null 
+                              ? (_connectionError!.startsWith('✅') ? Colors.green.shade700 : Colors.red.shade700)
+                              : null
+                        ),
                       ),
                 trailing: Icon(
                   Icons.arrow_forward_ios,
-                  color: _connectionError != null ? Colors.red : null,
+                  color: _connectionError != null 
+                      ? (_connectionError!.startsWith('✅') ? Colors.green : Colors.red)
+                      : null,
                 ),
                 onTap: () => _selectStation(true),
               ),
@@ -94,12 +113,14 @@ class _AddTripPageState extends State<AddTripPage> {
             
             // Station d'arrivée
             Card(
-              color: _connectionError != null ? Colors.red.shade50 : null,
+              color: _connectionError != null 
+                  ? (_connectionError!.startsWith('✅') ? Colors.green.shade50 : Colors.red.shade50)
+                  : null,
               child: ListTile(
                 leading: Icon(
                   Icons.location_on, 
                   color: _connectionError != null 
-                      ? Colors.red
+                      ? (_connectionError!.startsWith('✅') ? Colors.green : Colors.red)
                       : (_departureStation != null 
                           ? const Color(0xFF2E5BBA) 
                           : Colors.grey),
@@ -108,14 +129,18 @@ class _AddTripPageState extends State<AddTripPage> {
                   _arrivalStation?.name ?? 'Sélectionner la station d\'arrivée',
                   style: TextStyle(
                     color: _connectionError != null 
-                        ? Colors.red 
+                        ? (_connectionError!.startsWith('✅') ? Colors.green : Colors.red)
                         : (_departureStation != null ? null : Colors.grey),
                   ),
                 ),
                 subtitle: _arrivalStation != null 
                     ? Text(
                         _arrivalStation!.description ?? '',
-                        style: TextStyle(color: _connectionError != null ? Colors.red.shade700 : null),
+                        style: TextStyle(
+                          color: _connectionError != null 
+                              ? (_connectionError!.startsWith('✅') ? Colors.green.shade700 : Colors.red.shade700)
+                              : null
+                        ),
                       )
                     : Text(
                         _departureStation != null 
@@ -123,14 +148,14 @@ class _AddTripPageState extends State<AddTripPage> {
                             : 'Sélectionnez d\'abord la station de départ',
                         style: TextStyle(
                           color: _connectionError != null 
-                              ? Colors.red.shade700 
+                              ? (_connectionError!.startsWith('✅') ? Colors.green.shade700 : Colors.red.shade700)
                               : (_departureStation != null ? null : Colors.grey),
                         ),
                       ),
                 trailing: Icon(
                   Icons.arrow_forward_ios,
                   color: _connectionError != null 
-                      ? Colors.red 
+                      ? (_connectionError!.startsWith('✅') ? Colors.green : Colors.red)
                       : (_departureStation != null ? null : Colors.grey),
                 ),
                 onTap: _departureStation != null 
@@ -146,25 +171,38 @@ class _AddTripPageState extends State<AddTripPage> {
               ),
             ),
             
-            // Message d'erreur de connexion
+            // Message d'erreur/succès de connexion
             if (_connectionError != null) ...[
               const SizedBox(height: 16),
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.red.shade50,
-                  border: Border.all(color: Colors.red.shade200),
+                  color: _connectionError!.startsWith('✅') 
+                      ? Colors.green.shade50 
+                      : Colors.red.shade50,
+                  border: Border.all(
+                    color: _connectionError!.startsWith('✅') 
+                        ? Colors.green.shade200 
+                        : Colors.red.shade200
+                  ),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.warning, color: Colors.red.shade600),
+                    Icon(
+                      _connectionError!.startsWith('✅') ? Icons.check_circle : Icons.warning,
+                      color: _connectionError!.startsWith('✅') 
+                          ? Colors.green.shade600 
+                          : Colors.red.shade600
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         _connectionError!,
                         style: TextStyle(
-                          color: Colors.red.shade700,
+                          color: _connectionError!.startsWith('✅') 
+                              ? Colors.green.shade700 
+                              : Colors.red.shade700,
                           fontSize: 14,
                         ),
                       ),
@@ -249,6 +287,27 @@ class _AddTripPageState extends State<AddTripPage> {
               ),
             ),
             
+            const SizedBox(height: 16),
+            
+            // Option pour trajets directs uniquement
+            Card(
+              child: SwitchListTile(
+                title: const Text('Trajets directs uniquement'),
+                subtitle: const Text('Exclure les trajets avec correspondances'),
+                value: _directTrainsOnly,
+                onChanged: (value) {
+                  setState(() {
+                    _directTrainsOnly = value;
+                    // Re-valider la connexion si les gares sont déjà sélectionnées
+                    if (_departureStation != null && _arrivalStation != null) {
+                      _validateConnection();
+                    }
+                  });
+                },
+                activeThumbColor: const Color(0xFF4A90E2),
+              ),
+            ),
+            
             const Spacer(),
             
             // Bouton de sauvegarde
@@ -321,16 +380,23 @@ class _AddTripPageState extends State<AddTripPage> {
     try {
       print('🔍 Validation immédiate: ${_departureStation!.name} → ${_arrivalStation!.name}');
       
+      // Utiliser le service avec l'option directOnly
       final areConnected = await ConnectedStationsService.areStationsConnected(
         _departureStation!,
         _arrivalStation!,
+        directOnly: _directTrainsOnly,
       );
+      
+      // Récupérer le nombre de trajets pour l'affichage
+      final trainService = DependencyInjection.instance.trainService;
+      final journeys = await trainService.findJourneysBetween(_departureStation!, _arrivalStation!);
 
       setState(() {
         if (!areConnected) {
-          _connectionError = '⚠️ Les gares ${_departureStation!.name} et ${_arrivalStation!.name} ne sont pas directement connectées.\nVeuillez choisir des gares reliées par un trajet direct.';
+          _connectionError = '⚠️ Les gares ${_departureStation!.name} et ${_arrivalStation!.name} ne sont pas connectées.\n${_directTrainsOnly ? "Aucun trajet direct trouvé." : "Aucun trajet trouvé."}';
         } else {
-          _connectionError = null; // Pas d'erreur si connectées
+          final trainType = _directTrainsOnly ? "direct(s)" : "disponible(s)";
+          _connectionError = '✅ Connexion trouvée ! ${journeys.length} trajet(s) $trainType entre ${_departureStation!.name} et ${_arrivalStation!.name}';
         }
       });
     } catch (e) {

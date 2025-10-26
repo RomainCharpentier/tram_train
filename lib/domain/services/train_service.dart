@@ -1,5 +1,6 @@
 import '../models/train.dart';
 import '../models/station.dart';
+import '../../infrastructure/gateways/sncf_gateway.dart';
 
 abstract class TrainGateway {
   Future<List<Train>> getDepartures(Station station);
@@ -32,5 +33,17 @@ class TrainService {
 
   List<Train> filterByStatus(List<Train> trains, TrainStatus status) {
     return trains.where((train) => train.status == status).toList();
+  }
+
+  /// Recherche des trajets entre deux gares
+  Future<List<Train>> findJourneysBetween(Station fromStation, Station toStation) async {
+    // Cast vers SncfGateway pour accéder aux méthodes spécifiques
+    if (_gateway is SncfGateway) {
+      final sncfGateway = _gateway as SncfGateway;
+      return await sncfGateway.findJourneysBetween(fromStation, toStation);
+    }
+    
+    // Fallback si ce n'est pas un SncfGateway
+    throw UnsupportedError('findJourneysBetween n\'est supporté que par SncfGateway');
   }
 }

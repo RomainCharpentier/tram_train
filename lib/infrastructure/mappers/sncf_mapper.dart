@@ -111,8 +111,10 @@ class SncfMapper {
   Train _mapJourneyToTrain(Map<String, dynamic> journey, Station fromStation, Station toStation) {
     final sections = journey['sections'] as List<dynamic>? ?? [];
     final firstSection = sections.isNotEmpty ? sections.first as Map<String, dynamic> : {};
+    final lastSection = sections.isNotEmpty ? sections.last as Map<String, dynamic> : {};
+    
     final from = firstSection['from'] as Map<String, dynamic>? ?? {};
-    final to = firstSection['to'] as Map<String, dynamic>? ?? {};
+    final to = lastSection['to'] as Map<String, dynamic>? ?? {};
     
     final departureTime = from['departure_date_time'] != null
         ? DateTime.parse(from['departure_date_time'] as String)
@@ -121,6 +123,10 @@ class SncfMapper {
     final arrivalTime = to['arrival_date_time'] != null
         ? DateTime.parse(to['arrival_date_time'] as String)
         : DateTime.now();
+    
+    // Détecter les correspondances : plus d'une section = correspondance
+    final hasConnections = sections.length > 1;
+    final connectionCount = sections.length - 1;
     
     return Train.fromTimes(
       id: journey['id'] as String? ?? '',
@@ -131,6 +137,8 @@ class SncfMapper {
       additionalInfo: [
         'Arrivée: ${arrivalTime.toString()}',
         'Durée: ${_calculateDuration(departureTime, arrivalTime)}',
+        if (hasConnections) 'Correspondances: $connectionCount',
+        if (hasConnections) 'Type: Avec correspondances' else 'Type: Direct',
       ],
     );
   }

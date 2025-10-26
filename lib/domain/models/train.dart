@@ -89,6 +89,21 @@ class Train {
   /// Vérifie si le train est en retard
   bool get isDelayed => status == TrainStatus.delayed;
 
+  /// Vérifie si le trajet est direct (sans correspondances)
+  bool get isDirect {
+    // Chercher dans additionalInfo s'il y a une indication de correspondances
+    final connectionInfo = additionalInfo.firstWhere(
+      (info) => info.startsWith('Type:'),
+      orElse: () => '',
+    );
+    
+    // Si pas d'info, considérer comme direct par défaut
+    if (connectionInfo.isEmpty) return true;
+    
+    // Si "Type: Direct" alors c'est direct, sinon c'est avec correspondances
+    return connectionInfo == 'Type: Direct';
+  }
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
