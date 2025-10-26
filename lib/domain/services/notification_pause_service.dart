@@ -21,6 +21,7 @@ class NotificationPauseService {
       startDate: startDate,
       endDate: endDate,
       description: description,
+      isActive: true,
       createdAt: DateTime.now(),
     );
 
@@ -31,6 +32,11 @@ class NotificationPauseService {
   /// Récupère toutes les pauses de notifications
   Future<List<NotificationPause>> getAllNotificationPauses() async {
     return await _storage.getAllNotificationPauses();
+  }
+
+  /// Alias pour getAllNotificationPauses
+  Future<List<NotificationPause>> getAllPauses() async {
+    return await getAllNotificationPauses();
   }
 
   /// Récupère les pauses de notifications actives
@@ -54,9 +60,24 @@ class NotificationPauseService {
     await _storage.saveNotificationPause(pause);
   }
 
+  /// Alias pour updateNotificationPause
+  Future<void> updatePause(NotificationPause pause) async {
+    await updateNotificationPause(pause);
+  }
+
   /// Supprime une pause de notifications
   Future<void> deleteNotificationPause(String pauseId) async {
     await _storage.deleteNotificationPause(pauseId);
+  }
+
+  /// Alias pour deleteNotificationPause
+  Future<void> deletePause(String pauseId) async {
+    await deleteNotificationPause(pauseId);
+  }
+
+  /// Crée une pause de notifications
+  Future<void> createPause(NotificationPause pause) async {
+    await _storage.saveNotificationPause(pause);
   }
 
   /// Récupère les pauses de notifications futures

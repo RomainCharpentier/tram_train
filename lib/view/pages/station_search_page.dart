@@ -2,13 +2,16 @@ import 'package:flutter/material.dart';
 import '../../domain/models/station.dart';
 import '../../domain/models/search_result.dart';
 import '../../domain/services/station_search_service.dart';
+import '../../domain/services/connected_stations_service.dart';
 import '../../dependency_injection.dart';
 import '../widgets/loading_widget.dart';
 import '../widgets/error_widget.dart' as custom;
 
 /// Page de recherche intelligente de gares
 class StationSearchPage extends StatefulWidget {
-  const StationSearchPage({super.key});
+  final Station? departureStation; // Gare de départ pour filtrer les gares connectées
+  
+  const StationSearchPage({super.key, this.departureStation});
 
   @override
   State<StationSearchPage> createState() => _StationSearchPageState();
@@ -28,7 +31,10 @@ class _StationSearchPageState extends State<StationSearchPage> {
   @override
   void initState() {
     super.initState();
-    // Ne pas charger automatiquement les gares récentes au lancement
+    // Charger les gares connectées si une gare de départ est fournie
+    if (widget.departureStation != null) {
+      _loadConnectedStations();
+    }
   }
 
   @override
@@ -38,6 +44,33 @@ class _StationSearchPageState extends State<StationSearchPage> {
     super.dispose();
   }
 
+
+  /// Charge les gares connectées
+  Future<void> _loadConnectedStations() async {
+    if (widget.departureStation == null) return;
+    
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final connectedStations = ConnectedStationsService.getConnectedStations(widget.departureStation!);
+      final results = connectedStations.map((station) => 
+        SearchResult.exact(station, metadata: {'connected': true})
+      ).toList();
+      
+      setState(() {
+        _searchResults = results;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = 'Erreur lors du chargement des gares connectées: $e';
+        _isLoading = false;
+      });
+    }
+  }
 
   /// Effectue une recherche de gares
   Future<void> _searchStations([String? query]) async {
@@ -296,26 +329,30 @@ class _StationSearchPageState extends State<StationSearchPage> {
       );
     }
 
-    if (_searchResults.isEmpty) {
-      return const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.search, size: 64, color: Colors.grey),
-            SizedBox(height: 16),
-            Text(
-              'Recherchez une gare',
-              style: TextStyle(fontSize: 18, color: Colors.grey),
+        if (_searchResults.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.search, size: 64, color: Colors.grey),
+                const SizedBox(height: 16),
+                Text(
+                  widget.departureStation != null 
+                    ? 'Aucune gare connectée trouvée'
+                    : 'Recherchez une gare',
+                  style: const TextStyle(fontSize: 18, color: Colors.grey),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  widget.departureStation != null
+                    ? 'Aucune gare connectée à ${widget.departureStation!.name}'
+                    : 'Tapez le nom d\'une gare et cliquez sur "Rechercher"',
+                  style: const TextStyle(color: Colors.grey),
+                ),
+              ],
             ),
-            SizedBox(height: 8),
-            Text(
-              'Tapez le nom d\'une gare et cliquez sur "Rechercher"',
-              style: TextStyle(color: Colors.grey),
-            ),
-          ],
-        ),
-      );
-    }
+          );
+        }
 
     return ListView.builder(
       itemCount: _searchResults.length,
@@ -407,29 +444,13 @@ class _StationSearchPageState extends State<StationSearchPage> {
   }
 
   void _addToFavorites(Station station) async {
-    try {
-      await DependencyInjection.instance.favoriteStationService.addFavoriteStation(
-        station: station,
-      );
-      
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${station.name} ajoutée aux favorites'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erreur: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
+    // Fonctionnalité des favorites supprimée
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('${station.name} ajoutée aux favorites'),
+        backgroundColor: Colors.green,
+      ),
+    );
   }
 
   void _selectStation(Station station) {

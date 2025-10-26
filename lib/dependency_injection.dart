@@ -2,16 +2,11 @@ import 'package:http/http.dart' as http;
 import 'domain/models/station.dart';
 import 'domain/services/train_service.dart';
 import 'domain/services/trip_service.dart';
-import 'domain/services/alert_service.dart';
 import 'domain/services/notification_pause_service.dart';
-import 'domain/services/favorite_station_service.dart';
 import 'domain/services/station_search_service.dart';
 import 'infrastructure/gateways/sncf_gateway.dart';
 import 'infrastructure/gateways/local_storage_gateway.dart';
-import 'infrastructure/gateways/alert_storage_gateway.dart';
 import 'infrastructure/gateways/notification_pause_storage_gateway.dart';
-import 'infrastructure/gateways/favorite_station_storage_gateway.dart';
-import 'infrastructure/gateways/notification_gateway.dart';
 import 'infrastructure/gateways/sncf_search_gateway.dart';
 import 'infrastructure/gateways/station_history_gateway.dart';
 import 'infrastructure/mappers/sncf_mapper.dart';
@@ -24,9 +19,7 @@ class DependencyInjection {
 
   late final TrainService _trainService;
   late final TripService _tripService;
-  late final AlertService _alertService;
   late final NotificationPauseService _notificationPauseService;
-  late final FavoriteStationService _favoriteStationService;
   late final StationSearchService _stationSearchService;
 
   static const Station babiniereStation = Station(
@@ -65,11 +58,8 @@ class DependencyInjection {
     _trainService = TrainService(sncfGateway);
     _tripService = TripService(storageGateway);
     
-    // Initialiser les nouveaux gateways
-    final alertStorage = AlertStorageGateway();
+    // Initialiser les gateways
     final notificationPauseStorage = NotificationPauseStorageGateway();
-    final favoriteStationStorage = FavoriteStationStorageGateway();
-    final notificationGateway = SimpleNotificationGateway();
     
     // Initialiser les gateways de recherche
     final sncfSearchGateway = SncfSearchGateway(
@@ -79,14 +69,8 @@ class DependencyInjection {
     );
     final stationHistoryGateway = StationHistoryGatewayImpl();
     
-    // Initialiser les nouveaux services
+    // Initialiser les services
     _notificationPauseService = NotificationPauseService(storage: notificationPauseStorage);
-    _favoriteStationService = FavoriteStationService(storage: favoriteStationStorage);
-    _alertService = AlertService(
-      storage: alertStorage,
-      notificationGateway: notificationGateway,
-      pauseService: _notificationPauseService,
-    );
     _stationSearchService = StationSearchService(
       searchGateway: sncfSearchGateway,
       historyGateway: stationHistoryGateway,
@@ -95,8 +79,6 @@ class DependencyInjection {
 
   TrainService get trainService => _trainService;
   TripService get tripService => _tripService;
-  AlertService get alertService => _alertService;
   NotificationPauseService get notificationPauseService => _notificationPauseService;
-  FavoriteStationService get favoriteStationService => _favoriteStationService;
   StationSearchService get stationSearchService => _stationSearchService;
 }

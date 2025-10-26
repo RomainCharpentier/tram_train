@@ -79,6 +79,16 @@ class Train {
     }
   }
 
+  /// Retourne l'heure de départ formatée
+  String get departureTimeFormatted {
+    final hour = departureTime.hour.toString().padLeft(2, '0');
+    final minute = departureTime.minute.toString().padLeft(2, '0');
+    return '$hour:$minute';
+  }
+
+  /// Vérifie si le train est en retard
+  bool get isDelayed => status == TrainStatus.delayed;
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||

@@ -12,40 +12,48 @@ class TripService {
 
   const TripService(this._storage);
 
-  Future<Trip> createTrip({
-    required Station station,
-    required String dayOfWeek,
-    required String time,
-  }) async {
-    final trip = Trip(
-      id: Trip.generateId(),
-      station: station,
-      dayOfWeek: dayOfWeek,
-      time: time,
-      createdAt: DateTime.now(),
-    );
-    
+  /// Sauvegarde un trajet (création ou mise à jour)
+  Future<void> saveTrip(Trip trip) async {
     await _storage.saveTrip(trip);
-    return trip;
   }
 
+  /// Récupère tous les trajets
   Future<List<Trip>> getAllTrips() async {
     return await _storage.getAllTrips();
   }
 
+  /// Supprime un trajet
   Future<void> deleteTrip(String tripId) async {
     await _storage.deleteTrip(tripId);
   }
 
-  Future<void> updateTrip(Trip trip) async {
-    await _storage.saveTrip(trip);
+  /// Récupère les trajets pour un jour spécifique
+  List<Trip> getTripsByDay(List<Trip> trips, DayOfWeek day) {
+    return trips.where((trip) => trip.days.contains(day)).toList();
   }
 
-  List<Trip> getTripsByDay(List<Trip> trips, String dayOfWeek) {
-    return trips.where((trip) => trip.dayOfWeek == dayOfWeek).toList();
+  /// Récupère les trajets pour une gare de départ
+  List<Trip> getTripsByDepartureStation(List<Trip> trips, Station station) {
+    return trips.where((trip) => trip.departureStation.id == station.id).toList();
   }
 
-  List<Trip> getTripsByStation(List<Trip> trips, Station station) {
-    return trips.where((trip) => trip.station.id == station.id).toList();
+  /// Récupère les trajets pour une gare d'arrivée
+  List<Trip> getTripsByArrivalStation(List<Trip> trips, Station station) {
+    return trips.where((trip) => trip.arrivalStation.id == station.id).toList();
+  }
+
+  /// Récupère les trajets actifs
+  List<Trip> getActiveTrips(List<Trip> trips) {
+    return trips.where((trip) => trip.isActive).toList();
+  }
+
+  /// Récupère les trajets pour aujourd'hui
+  List<Trip> getTodayTrips(List<Trip> trips) {
+    return trips.where((trip) => trip.isForToday).toList();
+  }
+
+  /// Récupère les trajets actifs pour aujourd'hui
+  List<Trip> getActiveTodayTrips(List<Trip> trips) {
+    return trips.where((trip) => trip.isActiveToday).toList();
   }
 }

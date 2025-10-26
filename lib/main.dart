@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:tram_train/env_config.dart';
-import 'package:tram_train/dependency_injection.dart';
-import 'package:tram_train/view/pages/home_page.dart';
+import 'package:train_qil/env_config.dart';
+import 'package:train_qil/dependency_injection.dart';
+import 'package:train_qil/view/pages/home_page.dart';
 
 void main() async {
   await EnvConfig.load();
@@ -35,7 +35,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Tram Train',
+      title: 'Train\'Qil',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),

@@ -54,6 +54,7 @@ class NotificationPauseStorageGateway implements NotificationPauseStorage {
       'startDate': pause.startDate.toIso8601String(),
       'endDate': pause.endDate.toIso8601String(),
       'description': pause.description,
+      'isActive': pause.isActive,
       'createdAt': pause.createdAt.toIso8601String(),
     };
   }
@@ -66,6 +67,7 @@ class NotificationPauseStorageGateway implements NotificationPauseStorage {
       startDate: DateTime.parse(json['startDate'] as String),
       endDate: DateTime.parse(json['endDate'] as String),
       description: json['description'] as String?,
+      isActive: json['isActive'] as bool? ?? true,
       createdAt: DateTime.parse(json['createdAt'] as String),
     );
   }

@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:tram_train/domain/models/station.dart';
-import 'package:tram_train/domain/models/train.dart';
-import 'package:tram_train/domain/services/train_service.dart';
+import 'package:train_qil/domain/models/station.dart';
+import 'package:train_qil/domain/models/train.dart';
+import 'package:train_qil/domain/services/train_service.dart';
 
 // Mock implementation for testing
 class MockSncfGateway implements TrainGateway {

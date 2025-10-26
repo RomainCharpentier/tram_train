@@ -19,6 +19,11 @@ class TrainService {
     return await _gateway.getDeparturesAt(station, dateTime);
   }
 
+  /// Récupère les prochains départs pour une gare
+  Future<List<Train>> getNextDepartures(Station station) async {
+    return await _gateway.getDepartures(station);
+  }
+
   List<Train> filterByDirection(List<Train> trains, String direction) {
     return trains.where((train) => 
       train.direction.toLowerCase().contains(direction.toLowerCase())

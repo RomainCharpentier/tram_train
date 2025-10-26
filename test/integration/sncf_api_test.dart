@@ -1,9 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
-import 'package:tram_train/domain/models/station.dart';
-import 'package:tram_train/infrastructure/gateways/sncf_gateway.dart';
-import 'package:tram_train/infrastructure/mappers/sncf_mapper.dart';
-import 'package:tram_train/env_config.dart';
+import 'package:train_qil/domain/models/station.dart';
+import 'package:train_qil/infrastructure/gateways/sncf_gateway.dart';
+import 'package:train_qil/infrastructure/mappers/sncf_mapper.dart';
+import 'package:train_qil/env_config.dart';
 
 /// Tests d'intégration avec l'API SNCF réelle
 /// Ces tests nécessitent une clé API valide dans .env.local

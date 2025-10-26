@@ -5,6 +5,7 @@ class NotificationPause {
   final DateTime startDate;
   final DateTime endDate;
   final String? description;
+  final bool isActive;
   final DateTime createdAt;
 
   const NotificationPause({
@@ -13,6 +14,7 @@ class NotificationPause {
     required this.startDate,
     required this.endDate,
     this.description,
+    required this.isActive,
     required this.createdAt,
   });
 
@@ -22,7 +24,7 @@ class NotificationPause {
   }
 
   /// Vérifie si la pause de notifications est actuellement active
-  bool get isActive {
+  bool get isCurrentlyActive {
     final now = DateTime.now();
     return now.isAfter(startDate) && now.isBefore(endDate);
   }
@@ -49,6 +51,7 @@ class NotificationPause {
     DateTime? startDate,
     DateTime? endDate,
     String? description,
+    bool? isActive,
     DateTime? createdAt,
   }) {
     return NotificationPause(
@@ -57,6 +60,7 @@ class NotificationPause {
       startDate: startDate ?? this.startDate,
       endDate: endDate ?? this.endDate,
       description: description ?? this.description,
+      isActive: isActive ?? this.isActive,
       createdAt: createdAt ?? this.createdAt,
     );
   }
