@@ -40,7 +40,8 @@ class MockSncfGateway implements TrainGateway {
   }
 
   @override
-  Future<List<Train>> getDeparturesAt(Station station, DateTime dateTime) async {
+  Future<List<Train>> getDeparturesAt(
+      Station station, DateTime dateTime) async {
     if (_mockException != null) {
       throw _mockException!;
     }
@@ -62,21 +63,24 @@ class MockSncfGateway implements TrainGateway {
     return _mockTrains ?? [];
   }
 
-  Future<List<Train>> findJourneysBetween(Station fromStation, Station toStation) async {
+  Future<List<Train>> findJourneysBetween(
+      Station fromStation, Station toStation) async {
     if (_mockException != null) {
       throw _mockException!;
     }
     return _mockTrains ?? [];
   }
 
-  Future<List<Train>> findJourneysWithDepartureTime(Station fromStation, Station toStation, DateTime departureTime) async {
+  Future<List<Train>> findJourneysWithDepartureTime(
+      Station fromStation, Station toStation, DateTime departureTime) async {
     if (_mockException != null) {
       throw _mockException!;
     }
     return _mockTrains ?? [];
   }
 
-  Future<List<Train>> findJourneysWithArrivalTime(Station fromStation, Station toStation, DateTime arrivalTime) async {
+  Future<List<Train>> findJourneysWithArrivalTime(
+      Station fromStation, Station toStation, DateTime arrivalTime) async {
     if (_mockException != null) {
       throw _mockException!;
     }
@@ -308,7 +312,8 @@ void main() {
         mockGateway.setMockTrains(expectedTrains);
 
         // When: I search for journeys between stations
-        final result = await mockGateway.findJourneysBetween(stationA, stationB);
+        final result =
+            await mockGateway.findJourneysBetween(stationA, stationB);
 
         // Then: I should find available journeys
         expect(result, expectedTrains);
@@ -332,7 +337,8 @@ void main() {
         mockGateway.setMockTrains(expectedTrains);
 
         // When: I search for journeys with departure time
-        final result = await mockGateway.findJourneysWithDepartureTime(stationA, stationB, departureTime);
+        final result = await mockGateway.findJourneysWithDepartureTime(
+            stationA, stationB, departureTime);
 
         // Then: I should find journeys at that time
         expect(result, expectedTrains);
@@ -356,7 +362,8 @@ void main() {
         mockGateway.setMockTrains(expectedTrains);
 
         // When: I search for journeys with arrival time
-        final result = await mockGateway.findJourneysWithArrivalTime(stationA, stationB, arrivalTime);
+        final result = await mockGateway.findJourneysWithArrivalTime(
+            stationA, stationB, arrivalTime);
 
         // Then: I should find journeys arriving at that time
         expect(result, expectedTrains);

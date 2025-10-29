@@ -45,7 +45,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final themeService = DependencyInjection.instance.themeService;
-    
+
     return AnimatedBuilder(
       animation: themeService,
       builder: (context, child) {

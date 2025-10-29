@@ -34,7 +34,9 @@ class TripService {
 
   /// Récupère les trajets pour une gare de départ
   List<Trip> getTripsByDepartureStation(List<Trip> trips, Station station) {
-    return trips.where((trip) => trip.departureStation.id == station.id).toList();
+    return trips
+        .where((trip) => trip.departureStation.id == station.id)
+        .toList();
   }
 
   /// Récupère les trajets pour une gare d'arrivée

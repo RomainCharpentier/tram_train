@@ -6,7 +6,7 @@ import '../../infrastructure/dependency_injection.dart';
 /// Page pour afficher les horaires d'un trajet avec recherche
 class TripSchedulePage extends StatefulWidget {
   final domain.Trip trip;
-  
+
   const TripSchedulePage({super.key, required this.trip});
 
   @override
@@ -41,17 +41,22 @@ class _TripSchedulePageState extends State<TripSchedulePage> {
     });
 
     try {
-      final trains = await DependencyInjection.instance.trainService.getNextDepartures(
+      final trains =
+          await DependencyInjection.instance.trainService.getNextDepartures(
         widget.trip.departureStation,
       );
-      
+
       // Filtrer les trains qui vont vers la destination
-      final filteredTrains = trains.where((train) => 
-        train.direction.toLowerCase().contains(widget.trip.arrivalStation.name.toLowerCase()) ||
-        widget.trip.arrivalStation.name.toLowerCase().contains(train.direction.toLowerCase())
-      ).toList();
-      
-      
+      final filteredTrains = trains
+          .where((train) =>
+              train.direction
+                  .toLowerCase()
+                  .contains(widget.trip.arrivalStation.name.toLowerCase()) ||
+              widget.trip.arrivalStation.name
+                  .toLowerCase()
+                  .contains(train.direction.toLowerCase()))
+          .toList();
+
       setState(() {
         _allTrains = filteredTrains;
         _filteredTrains = filteredTrains;
@@ -68,7 +73,7 @@ class _TripSchedulePageState extends State<TripSchedulePage> {
   /// Filtre les trains selon la recherche
   void _filterTrains() {
     final query = _searchController.text.toLowerCase();
-    
+
     if (query.isEmpty) {
       setState(() {
         _filteredTrains = _allTrains;
@@ -77,11 +82,12 @@ class _TripSchedulePageState extends State<TripSchedulePage> {
     }
 
     setState(() {
-      _filteredTrains = _allTrains.where((train) =>
-        train.direction.toLowerCase().contains(query) ||
-        train.departureTimeFormatted.contains(query) ||
-        train.statusText.toLowerCase().contains(query)
-      ).toList();
+      _filteredTrains = _allTrains
+          .where((train) =>
+              train.direction.toLowerCase().contains(query) ||
+              train.departureTimeFormatted.contains(query) ||
+              train.statusText.toLowerCase().contains(query))
+          .toList();
     });
   }
 
@@ -89,7 +95,8 @@ class _TripSchedulePageState extends State<TripSchedulePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('${widget.trip.departureStation.name} → ${widget.trip.arrivalStation.name}'),
+        title: Text(
+            '${widget.trip.departureStation.name} → ${widget.trip.arrivalStation.name}'),
         backgroundColor: const Color(0xFF4A90E2),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
@@ -179,15 +186,23 @@ class _TripSchedulePageState extends State<TripSchedulePage> {
                 ),
                 const SizedBox(width: 16),
                 Icon(
-                  widget.trip.notificationsEnabled ? Icons.notifications : Icons.notifications_off,
+                  widget.trip.notificationsEnabled
+                      ? Icons.notifications
+                      : Icons.notifications_off,
                   size: 16,
-                  color: widget.trip.notificationsEnabled ? Colors.orange : Colors.grey,
+                  color: widget.trip.notificationsEnabled
+                      ? Colors.orange
+                      : Colors.grey,
                 ),
                 const SizedBox(width: 4),
                 Text(
-                  widget.trip.notificationsEnabled ? 'Notifications' : 'Pas de notifications',
+                  widget.trip.notificationsEnabled
+                      ? 'Notifications'
+                      : 'Pas de notifications',
                   style: TextStyle(
-                    color: widget.trip.notificationsEnabled ? Colors.orange : Colors.grey,
+                    color: widget.trip.notificationsEnabled
+                        ? Colors.orange
+                        : Colors.grey,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -250,16 +265,16 @@ class _TripSchedulePageState extends State<TripSchedulePage> {
             const Icon(Icons.train, size: 64, color: Colors.grey),
             const SizedBox(height: 16),
             Text(
-              _searchController.text.isNotEmpty 
-                ? 'Aucun train trouvé pour "${_searchController.text}"'
-                : 'Aucun train trouvé pour cette destination',
+              _searchController.text.isNotEmpty
+                  ? 'Aucun train trouvé pour "${_searchController.text}"'
+                  : 'Aucun train trouvé pour cette destination',
               style: const TextStyle(fontSize: 18, color: Colors.grey),
             ),
             const SizedBox(height: 8),
             Text(
               _searchController.text.isNotEmpty
-                ? 'Essayez avec d\'autres mots-clés'
-                : 'Vérifiez que la gare de destination est correcte',
+                  ? 'Essayez avec d\'autres mots-clés'
+                  : 'Vérifiez que la gare de destination est correcte',
               style: const TextStyle(color: Colors.grey),
             ),
           ],
@@ -300,7 +315,8 @@ class _TripSchedulePageState extends State<TripSchedulePage> {
             if (train.isDelayed)
               Text(
                 'Retard: +${train.delayMinutes} minutes',
-                style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.w500),
+                style: const TextStyle(
+                    color: Colors.orange, fontWeight: FontWeight.w500),
               ),
           ],
         ),
@@ -369,10 +385,12 @@ class _TripSchedulePageState extends State<TripSchedulePage> {
             Text('Départ: ${train.departureTimeFormatted}'),
             Text('Statut: ${train.statusText}'),
             if (train.baseDepartureTime != null)
-              Text('Heure prévue: ${train.baseDepartureTime!.hour.toString().padLeft(2, '0')}:${train.baseDepartureTime!.minute.toString().padLeft(2, '0')}'),
+              Text(
+                  'Heure prévue: ${train.baseDepartureTime!.hour.toString().padLeft(2, '0')}:${train.baseDepartureTime!.minute.toString().padLeft(2, '0')}'),
             if (train.additionalInfo.isNotEmpty) ...[
               const SizedBox(height: 8),
-              const Text('Informations:', style: TextStyle(fontWeight: FontWeight.bold)),
+              const Text('Informations:',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
               ...train.additionalInfo.map((info) => Text('• $info')),
             ],
           ],

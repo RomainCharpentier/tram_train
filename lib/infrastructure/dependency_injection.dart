@@ -45,7 +45,7 @@ class DependencyInjection {
   /// Initialise toutes les dépendances
   static Future<void> initialize() async {
     final instance = DependencyInjection.instance;
-    
+
     // Initialisation des mappers
     instance.tripMapper = TripMapper();
     instance.sncfMapper = SncfMapper();
@@ -54,7 +54,8 @@ class DependencyInjection {
     instance.httpClient = http.Client();
 
     // Initialisation des gateways
-    instance.localStorageGateway = LocalStorageGateway(mapper: instance.tripMapper);
+    instance.localStorageGateway =
+        LocalStorageGateway(mapper: instance.tripMapper);
     instance.sncfGateway = SncfGateway(
       httpClient: instance.httpClient,
       apiKey: EnvConfig.apiKey ?? 'default-key',
@@ -65,7 +66,8 @@ class DependencyInjection {
       apiKey: EnvConfig.apiKey ?? 'default-key',
       mapper: instance.sncfMapper,
     );
-    instance.notificationPauseStorageGateway = NotificationPauseStorageGateway();
+    instance.notificationPauseStorageGateway =
+        NotificationPauseStorageGateway();
 
     // Initialisation des services
     instance.tripService = TripService(instance.localStorageGateway);
@@ -73,7 +75,8 @@ class DependencyInjection {
     instance.stationSearchService = StationSearchService(
       searchGateway: instance.sncfSearchGateway,
     );
-    instance.notificationPauseService = NotificationPauseService(storage: instance.notificationPauseStorageGateway);
+    instance.notificationPauseService = NotificationPauseService(
+        storage: instance.notificationPauseStorageGateway);
     instance.themeService = ThemeService();
     instance.notificationService = NotificationService();
 

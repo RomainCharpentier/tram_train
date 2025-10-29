@@ -38,10 +38,10 @@ class Train {
     List<String> additionalInfo = const [],
   }) {
     final difference = departureTime.difference(baseDepartureTime).inMinutes;
-    
+
     TrainStatus status;
     int? delayMinutes;
-    
+
     if (difference > 0) {
       status = TrainStatus.delayed;
       delayMinutes = difference;
@@ -96,10 +96,10 @@ class Train {
       (info) => info.startsWith('Type:'),
       orElse: () => '',
     );
-    
+
     // Si pas d'info, considérer comme direct par défaut
     if (connectionInfo.isEmpty) return true;
-    
+
     // Si "Type: Direct" alors c'est direct, sinon c'est avec correspondances
     return connectionInfo == 'Type: Direct';
   }
@@ -107,9 +107,7 @@ class Train {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is Train &&
-          runtimeType == other.runtimeType &&
-          id == other.id;
+      other is Train && runtimeType == other.runtimeType && id == other.id;
 
   @override
   int get hashCode => id.hashCode;

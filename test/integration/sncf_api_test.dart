@@ -15,7 +15,8 @@ void main() {
     setUpAll(() async {
       // Vérifier que la clé API est configurée
       if (EnvConfig.apiKey == null || EnvConfig.apiKey!.isEmpty) {
-        fail('API_KEY manquante dans .env.local. Ces tests nécessitent une clé API SNCF valide.');
+        fail(
+            'API_KEY manquante dans .env.local. Ces tests nécessitent une clé API SNCF valide.');
       }
 
       sncfGateway = SncfGateway(
@@ -34,15 +35,18 @@ void main() {
 
     group('Station Search API', () {
       test('should find stations by name', () async {
-        // Test curl équivalent: 
-        // curl -H "Authorization: Basic $(echo -n 'API_KEY:' | base64)" 
+        // Test curl équivalent:
+        // curl -H "Authorization: Basic $(echo -n 'API_KEY:' | base64)"
         //      "https://api.sncf.com/v1/coverage/sncf/places?q=Nantes&type[]=stop_area"
-        
+
         final stations = await sncfGateway.searchStations('Nantes');
-        
+
         expect(stations, isNotEmpty);
-        expect(stations.any((station) => station.name.toLowerCase().contains('nantes')), isTrue);
-        
+        expect(
+            stations.any(
+                (station) => station.name.toLowerCase().contains('nantes')),
+            isTrue);
+
         print('Found ${stations.length} stations for "Nantes":');
         for (final station in stations.take(3)) {
           print('  - ${station.name} (${station.id})');
@@ -51,10 +55,13 @@ void main() {
 
       test('should find stations by partial name', () async {
         final stations = await sncfGateway.searchStations('Paris');
-        
+
         expect(stations, isNotEmpty);
-        expect(stations.any((station) => station.name.toLowerCase().contains('paris')), isTrue);
-        
+        expect(
+            stations
+                .any((station) => station.name.toLowerCase().contains('paris')),
+            isTrue);
+
         print('Found ${stations.length} stations for "Paris":');
         for (final station in stations.take(3)) {
           print('  - ${station.name} (${station.id})');
@@ -67,22 +74,25 @@ void main() {
         // Test curl équivalent:
         // curl -H "Authorization: Basic $(echo -n 'API_KEY:' | base64)"
         //      "https://api.sncf.com/v1/coverage/sncf/stop_areas/stop_area:SNCF:87590349/departures"
-        
+
         final trains = await sncfGateway.getDepartures(testStation);
-        
+
         expect(trains, isNotEmpty);
         print('Found ${trains.length} departures from ${testStation.name}:');
         for (final train in trains.take(5)) {
-          print('  - ${train.direction} at ${train.departureTime} (${train.status})');
+          print(
+              '  - ${train.direction} at ${train.departureTime} (${train.status})');
         }
       });
 
       test('should get departures at specific time', () async {
         final tomorrow = DateTime.now().add(const Duration(days: 1));
-        final specificTime = DateTime(tomorrow.year, tomorrow.month, tomorrow.day, 8, 0);
-        
-        final trains = await sncfGateway.getDeparturesAt(testStation, specificTime);
-        
+        final specificTime =
+            DateTime(tomorrow.year, tomorrow.month, tomorrow.day, 8, 0);
+
+        final trains =
+            await sncfGateway.getDeparturesAt(testStation, specificTime);
+
         print('Found ${trains.length} departures at $specificTime:');
         for (final train in trains.take(3)) {
           print('  - ${train.direction} at ${train.departureTime}');
@@ -95,11 +105,12 @@ void main() {
         // Test curl équivalent:
         // curl -H "Authorization: Basic $(echo -n 'API_KEY:' | base64)"
         //      "https://api.sncf.com/v1/coverage/sncf/stop_areas/stop_area:SNCF:87590349/route_schedules"
-        
+
         final trains = await sncfGateway.getTrainsPassingThrough(testStation);
-        
+
         expect(trains, isNotEmpty);
-        print('Found ${trains.length} trains passing through ${testStation.name}:');
+        print(
+            'Found ${trains.length} trains passing through ${testStation.name}:');
         for (final train in trains.take(5)) {
           print('  - ${train.direction} at ${train.departureTime}');
         }
@@ -111,17 +122,19 @@ void main() {
         // Test curl équivalent:
         // curl -H "Authorization: Basic $(echo -n 'API_KEY:' | base64)"
         //      "https://api.sncf.com/v1/coverage/sncf/journeys?from=stop_area:SNCF:87590349&to=stop_area:SNCF:87384008"
-        
+
         const parisStation = Station(
           id: 'SNCF:87384008',
           name: 'Paris',
           description: 'Gare de Paris',
         );
-        
-        final trains = await sncfGateway.findJourneysBetween(testStation, parisStation);
-        
+
+        final trains =
+            await sncfGateway.findJourneysBetween(testStation, parisStation);
+
         expect(trains, isNotEmpty);
-        print('Found ${trains.length} journeys from ${testStation.name} to ${parisStation.name}:');
+        print(
+            'Found ${trains.length} journeys from ${testStation.name} to ${parisStation.name}:');
         for (final train in trains.take(3)) {
           print('  - Departure: ${train.departureTime}');
           if (train.additionalInfo.isNotEmpty) {
@@ -136,16 +149,14 @@ void main() {
           name: 'Paris',
           description: 'Gare de Paris',
         );
-        
+
         final tomorrow = DateTime.now().add(const Duration(days: 1));
-        final departureTime = DateTime(tomorrow.year, tomorrow.month, tomorrow.day, 9, 0);
-        
+        final departureTime =
+            DateTime(tomorrow.year, tomorrow.month, tomorrow.day, 9, 0);
+
         final trains = await sncfGateway.findJourneysWithDepartureTime(
-          testStation, 
-          parisStation, 
-          departureTime
-        );
-        
+            testStation, parisStation, departureTime);
+
         print('Found ${trains.length} journeys departing at $departureTime:');
         for (final train in trains.take(3)) {
           print('  - ${train.direction} at ${train.departureTime}');
@@ -158,9 +169,9 @@ void main() {
         // Test curl équivalent:
         // curl -H "Authorization: Basic $(echo -n 'API_KEY:' | base64)"
         //      "https://api.sncf.com/v1/coverage/sncf/stop_areas/stop_area:SNCF:87590349/stop_schedules"
-        
+
         final stationInfo = await sncfGateway.getStationInfo(testStation);
-        
+
         expect(stationInfo, isNotEmpty);
         print('Station info for ${testStation.name}:');
         stationInfo.forEach((key, value) {
@@ -174,12 +185,13 @@ void main() {
         // Test curl équivalent:
         // curl -H "Authorization: Basic $(echo -n 'API_KEY:' | base64)"
         //      "https://api.sncf.com/v1/coverage/sncf/disruptions"
-        
+
         final disruptions = await sncfGateway.getDisruptions();
-        
+
         print('Found ${disruptions.length} current disruptions:');
         for (final disruption in disruptions.take(3)) {
-          print('  - ${disruption['severity']}: ${disruption['messages']?.join(', ')}');
+          print(
+              '  - ${disruption['severity']}: ${disruption['messages']?.join(', ')}');
         }
       });
     });
@@ -191,7 +203,7 @@ void main() {
           name: 'Invalid Station',
           description: 'This station does not exist',
         );
-        
+
         expect(
           () => sncfGateway.getDepartures(invalidStation),
           throwsA(isA<Exception>()),
@@ -204,11 +216,11 @@ void main() {
         for (int i = 0; i < 5; i++) {
           futures.add(sncfGateway.searchStations('Test'));
         }
-        
+
         // Au moins un appel devrait réussir
         final results = await Future.wait(futures, eagerError: false);
         final successfulResults = results.whereType<List>().length;
-        
+
         expect(successfulResults, greaterThan(0));
         print('Rate limiting test: $successfulResults/5 calls succeeded');
       });

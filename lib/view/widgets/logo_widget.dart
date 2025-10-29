@@ -49,7 +49,7 @@ class LogoWidget extends StatelessWidget {
             },
           ),
         ),
-        
+
         if (showText) ...[
           const SizedBox(height: 8),
           Text(

@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Service pour gérer les thèmes de l'application
 class ThemeService extends ChangeNotifier {
   static const String _themeKey = 'theme_mode';
-  
+
   ThemeMode _themeMode = ThemeMode.light;
   bool _isDarkMode = false;
 
@@ -29,10 +29,10 @@ class ThemeService extends ChangeNotifier {
   Future<void> setThemeMode(ThemeMode mode) async {
     _themeMode = mode;
     _isDarkMode = mode == ThemeMode.dark;
-    
+
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_themeKey, _isDarkMode ? 'dark' : 'light');
-    
+
     notifyListeners();
   }
 

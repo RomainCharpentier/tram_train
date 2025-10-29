@@ -27,7 +27,8 @@ class _NotificationPausePageState extends State<NotificationPausePage> {
     });
 
     try {
-      final pauses = await DependencyInjection.instance.notificationPauseService.getAllPauses();
+      final pauses = await DependencyInjection.instance.notificationPauseService
+          .getAllPauses();
       setState(() {
         _pauses = pauses;
         _isLoading = false;
@@ -141,9 +142,13 @@ class _NotificationPausePageState extends State<NotificationPausePage> {
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: isCurrentPause ? Colors.red : (isActive ? Colors.orange : Colors.grey),
+          backgroundColor: isCurrentPause
+              ? Colors.red
+              : (isActive ? Colors.orange : Colors.grey),
           child: Icon(
-            isCurrentPause ? Icons.pause : (isActive ? Icons.schedule : Icons.pause_circle),
+            isCurrentPause
+                ? Icons.pause
+                : (isActive ? Icons.schedule : Icons.pause_circle),
             color: Colors.white,
           ),
         ),
@@ -220,7 +225,7 @@ class _NotificationPausePageState extends State<NotificationPausePage> {
 
   bool _isCurrentPause(NotificationPause pause) {
     if (!pause.isActive) return false;
-    
+
     final now = DateTime.now();
     return now.isAfter(pause.startDate) && now.isBefore(pause.endDate);
   }
@@ -239,16 +244,14 @@ class _NotificationPausePageState extends State<NotificationPausePage> {
   Future<void> _togglePause(NotificationPause pause) async {
     try {
       final updatedPause = pause.copyWith(isActive: !pause.isActive);
-      await DependencyInjection.instance.notificationPauseService.updatePause(updatedPause);
-      
+      await DependencyInjection.instance.notificationPauseService
+          .updatePause(updatedPause);
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              updatedPause.isActive 
-                ? 'Pause activée' 
-                : 'Pause désactivée'
-            ),
+                updatedPause.isActive ? 'Pause activée' : 'Pause désactivée'),
             backgroundColor: Colors.green,
           ),
         );
@@ -271,7 +274,8 @@ class _NotificationPausePageState extends State<NotificationPausePage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Supprimer la pause'),
-        content: Text('Êtes-vous sûr de vouloir supprimer la pause "${pause.name}" ?'),
+        content: Text(
+            'Êtes-vous sûr de vouloir supprimer la pause "${pause.name}" ?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -288,8 +292,9 @@ class _NotificationPausePageState extends State<NotificationPausePage> {
 
     if (confirmed == true) {
       try {
-        await DependencyInjection.instance.notificationPauseService.deletePause(pause.id);
-        
+        await DependencyInjection.instance.notificationPauseService
+            .deletePause(pause.id);
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -378,13 +383,16 @@ class _CreatePauseDialogState extends State<_CreatePauseDialog> {
             const SizedBox(height: 16),
             ListTile(
               title: const Text('Date de début'),
-              subtitle: Text(_startDate != null ? _formatDate(_startDate!) : 'Sélectionner'),
+              subtitle: Text(_startDate != null
+                  ? _formatDate(_startDate!)
+                  : 'Sélectionner'),
               trailing: const Icon(Icons.calendar_today),
               onTap: _selectStartDate,
             ),
             ListTile(
               title: const Text('Date de fin'),
-              subtitle: Text(_endDate != null ? _formatDate(_endDate!) : 'Sélectionner'),
+              subtitle: Text(
+                  _endDate != null ? _formatDate(_endDate!) : 'Sélectionner'),
               trailing: const Icon(Icons.calendar_today),
               onTap: _selectEndDate,
             ),
@@ -446,7 +454,9 @@ class _CreatePauseDialogState extends State<_CreatePauseDialog> {
   }
 
   Future<void> _createPause() async {
-    if (_nameController.text.trim().isEmpty || _startDate == null || _endDate == null) {
+    if (_nameController.text.trim().isEmpty ||
+        _startDate == null ||
+        _endDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Veuillez remplir tous les champs'),
@@ -477,8 +487,9 @@ class _CreatePauseDialogState extends State<_CreatePauseDialog> {
         createdAt: DateTime.now(),
       );
 
-      await DependencyInjection.instance.notificationPauseService.createPause(pause);
-      
+      await DependencyInjection.instance.notificationPauseService
+          .createPause(pause);
+
       if (mounted) {
         Navigator.pop(context);
         widget.onPauseCreated?.call(pause);

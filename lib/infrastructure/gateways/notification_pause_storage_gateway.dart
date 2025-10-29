@@ -11,7 +11,7 @@ class NotificationPauseStorageGateway implements NotificationPauseStorage {
   Future<void> saveNotificationPause(NotificationPause pause) async {
     final prefs = await SharedPreferences.getInstance();
     final pauses = await getAllNotificationPauses();
-    
+
     // Remplacer la pause existante ou ajouter la nouvelle
     final existingIndex = pauses.indexWhere((p) => p.id == pause.id);
     if (existingIndex != -1) {
@@ -19,7 +19,7 @@ class NotificationPauseStorageGateway implements NotificationPauseStorage {
     } else {
       pauses.add(pause);
     }
-    
+
     final pausesJson = pauses.map((pause) => _pauseToJson(pause)).toList();
     await prefs.setString(_pausesKey, json.encode(pausesJson));
   }
@@ -28,9 +28,9 @@ class NotificationPauseStorageGateway implements NotificationPauseStorage {
   Future<List<NotificationPause>> getAllNotificationPauses() async {
     final prefs = await SharedPreferences.getInstance();
     final pausesJson = prefs.getString(_pausesKey);
-    
+
     if (pausesJson == null) return [];
-    
+
     final List<dynamic> pausesList = json.decode(pausesJson);
     return pausesList.map((json) => _pauseFromJson(json)).toList();
   }
@@ -39,9 +39,9 @@ class NotificationPauseStorageGateway implements NotificationPauseStorage {
   Future<void> deleteNotificationPause(String pauseId) async {
     final prefs = await SharedPreferences.getInstance();
     final pauses = await getAllNotificationPauses();
-    
+
     pauses.removeWhere((pause) => pause.id == pauseId);
-    
+
     final pausesJson = pauses.map((pause) => _pauseToJson(pause)).toList();
     await prefs.setString(_pausesKey, json.encode(pausesJson));
   }

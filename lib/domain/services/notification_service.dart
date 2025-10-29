@@ -9,7 +9,7 @@ class NotificationService {
   factory NotificationService() => _instance;
   NotificationService._internal();
 
-  final FlutterLocalNotificationsPlugin _localNotifications = 
+  final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
 
   bool _isInitialized = false;
@@ -19,13 +19,14 @@ class NotificationService {
     if (_isInitialized) return;
 
     // Configuration des notifications locales
-    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const androidSettings =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
     const iosSettings = DarwinInitializationSettings(
       requestAlertPermission: true,
       requestBadgePermission: true,
       requestSoundPermission: true,
     );
-    
+
     const initSettings = InitializationSettings(
       android: androidSettings,
       iOS: iosSettings,
@@ -93,7 +94,8 @@ class NotificationService {
   Future<void> notifyDelay(Trip trip, int delayMinutes) async {
     await _showLocalNotification(
       title: 'Retard signalé',
-      body: 'Votre train ${trip.departureStation.name} → ${trip.arrivalStation.name} a ${delayMinutes}min de retard',
+      body:
+          'Votre train ${trip.departureStation.name} → ${trip.arrivalStation.name} a ${delayMinutes}min de retard',
       payload: 'trip_delay:${trip.id}',
     );
   }
@@ -102,7 +104,8 @@ class NotificationService {
   Future<void> notifyCancellation(Trip trip) async {
     await _showLocalNotification(
       title: 'Train annulé',
-      body: 'Votre train ${trip.departureStation.name} → ${trip.arrivalStation.name} a été annulé',
+      body:
+          'Votre train ${trip.departureStation.name} → ${trip.arrivalStation.name} a été annulé',
       payload: 'trip_cancelled:${trip.id}',
     );
   }
@@ -111,7 +114,8 @@ class NotificationService {
   Future<void> notifyReminder(Trip trip, int minutesBefore) async {
     await _showLocalNotification(
       title: 'Rappel de départ',
-      body: 'Votre train ${trip.departureStation.name} → ${trip.arrivalStation.name} part dans ${minutesBefore}min',
+      body:
+          'Votre train ${trip.departureStation.name} → ${trip.arrivalStation.name} part dans ${minutesBefore}min',
       payload: 'trip_reminder:${trip.id}',
     );
   }

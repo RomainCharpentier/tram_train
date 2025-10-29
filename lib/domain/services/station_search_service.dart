@@ -9,7 +9,8 @@ class StationSearchService {
   const StationSearchService({
     required StationSearchGateway searchGateway,
     StationHistoryGateway? historyGateway,
-  }) : _searchGateway = searchGateway, _historyGateway = historyGateway;
+  })  : _searchGateway = searchGateway,
+        _historyGateway = historyGateway;
 
   /// Recherche des gares par nom avec suggestions intelligentes
   Future<List<SearchResult<Station>>> searchStations(String query) async {
@@ -18,12 +19,12 @@ class StationSearchService {
     }
 
     final results = await _searchGateway.searchStations(query);
-    
+
     // Enregistrer la recherche dans l'historique
     if (_historyGateway != null) {
       await _historyGateway!.addSearchQuery(query);
     }
-    
+
     return results;
   }
 
@@ -45,12 +46,14 @@ class StationSearchService {
   }
 
   /// Recherche par ligne
-  Future<List<SearchResult<Station>>> searchStationsByLine(String lineId) async {
+  Future<List<SearchResult<Station>>> searchStationsByLine(
+      String lineId) async {
     return await _searchGateway.searchStationsByLine(lineId);
   }
 
   /// Recherche par type de transport
-  Future<List<SearchResult<Station>>> searchStationsByType(TransportType type) async {
+  Future<List<SearchResult<Station>>> searchStationsByType(
+      TransportType type) async {
     return await _searchGateway.searchStationsByType(type);
   }
 
@@ -59,7 +62,7 @@ class StationSearchService {
     if (_historyGateway == null) {
       return [];
     }
-    
+
     final recentQueries = await _historyGateway!.getRecentQueries();
     final results = <SearchResult<Station>>[];
 
@@ -83,10 +86,11 @@ class StationSearchService {
     if (_historyGateway == null) {
       return [];
     }
-    
+
     final recentQueries = await _historyGateway!.getRecentQueries();
     final suggestions = recentQueries
-        .where((query) => query.toLowerCase().contains(partialQuery.toLowerCase()))
+        .where(
+            (query) => query.toLowerCase().contains(partialQuery.toLowerCase()))
         .take(5)
         .toList();
 

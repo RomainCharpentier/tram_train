@@ -16,7 +16,8 @@ class TrainService {
     return await _gateway.getDepartures(station);
   }
 
-  Future<List<Train>> getDeparturesAt(Station station, DateTime dateTime) async {
+  Future<List<Train>> getDeparturesAt(
+      Station station, DateTime dateTime) async {
     return await _gateway.getDeparturesAt(station, dateTime);
   }
 
@@ -26,9 +27,10 @@ class TrainService {
   }
 
   List<Train> filterByDirection(List<Train> trains, String direction) {
-    return trains.where((train) => 
-      train.direction.toLowerCase().contains(direction.toLowerCase())
-    ).toList();
+    return trains
+        .where((train) =>
+            train.direction.toLowerCase().contains(direction.toLowerCase()))
+        .toList();
   }
 
   List<Train> filterByStatus(List<Train> trains, TrainStatus status) {
@@ -36,14 +38,46 @@ class TrainService {
   }
 
   /// Recherche des trajets entre deux gares
-  Future<List<Train>> findJourneysBetween(Station fromStation, Station toStation) async {
+  Future<List<Train>> findJourneysBetween(
+      Station fromStation, Station toStation) async {
     // Cast vers SncfGateway pour accéder aux méthodes spécifiques
-    if (_gateway is SncfGateway) {
-      final sncfGateway = _gateway as SncfGateway;
-      return await sncfGateway.findJourneysBetween(fromStation, toStation);
+    final gw = _gateway;
+    if (gw is SncfGateway) {
+      return await gw.findJourneysBetween(fromStation, toStation);
     }
-    
+
     // Fallback si ce n'est pas un SncfGateway
-    throw UnsupportedError('findJourneysBetween n\'est supporté que par SncfGateway');
+    throw UnsupportedError(
+        'findJourneysBetween n\'est supporté que par SncfGateway');
+  }
+
+  /// Recherche des trajets avec une contrainte d'heure de départ
+  Future<List<Train>> findJourneysWithDepartureTime(
+    Station fromStation,
+    Station toStation,
+    DateTime departureTime,
+  ) async {
+    final gw = _gateway;
+    if (gw is SncfGateway) {
+      return await gw.findJourneysWithDepartureTime(
+          fromStation, toStation, departureTime);
+    }
+    throw UnsupportedError(
+        'findJourneysWithDepartureTime non supporté par ce gateway');
+  }
+
+  /// Recherche des trajets avec une contrainte d'heure d'arrivée
+  Future<List<Train>> findJourneysWithArrivalTime(
+    Station fromStation,
+    Station toStation,
+    DateTime arrivalTime,
+  ) async {
+    final gw = _gateway;
+    if (gw is SncfGateway) {
+      return await gw.findJourneysWithArrivalTime(
+          fromStation, toStation, arrivalTime);
+    }
+    throw UnsupportedError(
+        'findJourneysWithArrivalTime non supporté par ce gateway');
   }
 }

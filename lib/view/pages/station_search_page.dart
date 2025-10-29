@@ -7,8 +7,9 @@ import '../../infrastructure/dependency_injection.dart';
 
 /// Page de recherche intelligente de gares
 class StationSearchPage extends StatefulWidget {
-  final Station? departureStation; // Gare de départ pour filtrer les gares connectées
-  
+  final Station?
+      departureStation; // Gare de départ pour filtrer les gares connectées
+
   const StationSearchPage({super.key, this.departureStation});
 
   @override
@@ -18,7 +19,7 @@ class StationSearchPage extends StatefulWidget {
 class _StationSearchPageState extends State<StationSearchPage> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
-  
+
   List<SearchResult<Station>> _searchResults = [];
   List<String> _suggestions = [];
   bool _isLoading = false;
@@ -29,9 +30,11 @@ class _StationSearchPageState extends State<StationSearchPage> {
   @override
   void initState() {
     super.initState();
-    // Charger les gares connectées si une gare de départ est fournie
+    // Charger les gares connectées si une gare de départ est fournie, sinon favoris
     if (widget.departureStation != null) {
       _loadConnectedStations();
+    } else {
+      _loadFavoriteStations();
     }
   }
 
@@ -42,12 +45,35 @@ class _StationSearchPageState extends State<StationSearchPage> {
     super.dispose();
   }
 
+  /// Charge les gares favorites (dérivées des trajets enregistrés)
+  Future<void> _loadFavoriteStations() async {
+    try {
+      final trips =
+          await DependencyInjection.instance.tripService.getAllTrips();
+      final stations = <String, Station>{};
+      for (final t in trips) {
+        stations[t.departureStation.id] = t.departureStation;
+        stations[t.arrivalStation.id] = t.arrivalStation;
+      }
+
+      final results = stations.values
+          .map((s) => SearchResult.favorite(s, metadata: {'favorite': true}))
+          .toList();
+
+      setState(() {
+        _searchResults = results;
+      });
+    } catch (_) {
+      // silencieux si pas de favoris
+    }
+  }
+
   /// Charge les destinations connectées à la gare de départ
   Future<void> _loadConnectedStations() async {
     if (widget.departureStation == null) {
       return;
     }
-    
+
     setState(() {
       _isLoading = true;
       _error = null;
@@ -55,13 +81,17 @@ class _StationSearchPageState extends State<StationSearchPage> {
 
     try {
       // Récupérer les noms des destinations connectées
-      final destinationNames = await ConnectedStationsService.getConnectedDestinationNames(widget.departureStation!);
-      
+      final destinationNames =
+          await ConnectedStationsService.getConnectedDestinationNames(
+              widget.departureStation!);
+
       // Créer des résultats de recherche avec des suggestions
-      final results = destinationNames.map((name) => 
-        SearchResult.suggestion(Station(id: 'TEMP_${name.hashCode}', name: name), metadata: {'connected': true, 'suggestion': true})
-      ).toList();
-      
+      final results = destinationNames
+          .map((name) => SearchResult.suggestion(
+              Station(id: 'TEMP_${name.hashCode}', name: name),
+              metadata: {'connected': true, 'suggestion': true}))
+          .toList();
+
       setState(() {
         _searchResults = results;
         _isLoading = false;
@@ -77,7 +107,7 @@ class _StationSearchPageState extends State<StationSearchPage> {
   /// Effectue une recherche de gares
   Future<void> _searchStations([String? query]) async {
     final searchQuery = query ?? _searchController.text.trim();
-    
+
     // Recherche globale dans toute la base SNCF (même avec gare de départ)
     if (searchQuery.isEmpty) {
       // Si pas de recherche, afficher les gares connectées si gare de départ
@@ -99,7 +129,8 @@ class _StationSearchPageState extends State<StationSearchPage> {
 
     try {
       // Recherche globale dans toute la base SNCF
-      final results = await DependencyInjection.instance.stationSearchService.searchStations(searchQuery);
+      final results = await DependencyInjection.instance.stationSearchService
+          .searchStations(searchQuery);
       setState(() {
         _searchResults = results;
         _isLoading = false;
@@ -122,7 +153,9 @@ class _StationSearchPageState extends State<StationSearchPage> {
     }
 
     try {
-      final suggestions = await DependencyInjection.instance.stationSearchService.getSearchSuggestions(query);
+      final suggestions = await DependencyInjection
+          .instance.stationSearchService
+          .getSearchSuggestions(query);
       setState(() {
         _suggestions = suggestions;
       });
@@ -140,7 +173,8 @@ class _StationSearchPageState extends State<StationSearchPage> {
     });
 
     try {
-      final results = await DependencyInjection.instance.stationSearchService.searchStationsByType(type);
+      final results = await DependencyInjection.instance.stationSearchService
+          .searchStationsByType(type);
       setState(() {
         _searchResults = results;
         _isLoading = false;
@@ -161,9 +195,14 @@ class _StationSearchPageState extends State<StationSearchPage> {
     });
 
     try {
-      final results = await DependencyInjection.instance.stationSearchService.advancedSearch(
-        query: _searchController.text.trim().isNotEmpty ? _searchController.text.trim() : null,
-        transportType: _selectedTransportType != TransportType.all ? _selectedTransportType : null,
+      final results = await DependencyInjection.instance.stationSearchService
+          .advancedSearch(
+        query: _searchController.text.trim().isNotEmpty
+            ? _searchController.text.trim()
+            : null,
+        transportType: _selectedTransportType != TransportType.all
+            ? _selectedTransportType
+            : null,
       );
       setState(() {
         _searchResults = results;
@@ -251,7 +290,8 @@ class _StationSearchPageState extends State<StationSearchPage> {
                 icon: const Icon(Icons.search),
                 label: const Text('Rechercher'),
                 style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 ),
               ),
             ],
@@ -366,35 +406,37 @@ class _StationSearchPageState extends State<StationSearchPage> {
       );
     }
 
-        if (_searchResults.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.search, size: 64, color: Colors.grey),
-                const SizedBox(height: 16),
-                Text(
-                  widget.departureStation != null 
-                    ? 'Aucune gare connectée trouvée'
-                    : 'Recherchez une gare',
-                  style: const TextStyle(fontSize: 18, color: Colors.grey),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  widget.departureStation != null
-                    ? 'Aucune gare connectée à ${widget.departureStation!.name}'
-                    : 'Tapez le nom d\'une gare et cliquez sur "Rechercher"',
-                  style: const TextStyle(color: Colors.grey),
-                ),
-              ],
+    if (_searchResults.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.search, size: 64, color: Colors.grey),
+            const SizedBox(height: 16),
+            Text(
+              widget.departureStation != null
+                  ? 'Aucune gare connectée trouvée'
+                  : 'Recherchez une gare',
+              style: const TextStyle(fontSize: 18, color: Colors.grey),
             ),
-          );
-        }
+            const SizedBox(height: 8),
+            Text(
+              widget.departureStation != null
+                  ? 'Aucune gare connectée à ${widget.departureStation!.name}'
+                  : 'Tapez le nom d\'une gare et cliquez sur "Rechercher"',
+              style: const TextStyle(color: Colors.grey),
+            ),
+          ],
+        ),
+      );
+    }
 
     return Column(
       children: [
         // Message informatif pour les gares connectées
-        if (widget.departureStation != null && _searchResults.isNotEmpty && _searchController.text.isEmpty)
+        if (widget.departureStation != null &&
+            _searchResults.isNotEmpty &&
+            _searchController.text.isEmpty)
           Container(
             width: double.infinity,
             margin: const EdgeInsets.all(16),
@@ -402,7 +444,8 @@ class _StationSearchPageState extends State<StationSearchPage> {
             decoration: BoxDecoration(
               color: const Color(0xFF4A90E2).withOpacity(0.1),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFF4A90E2).withOpacity(0.3)),
+              border:
+                  Border.all(color: const Color(0xFF4A90E2).withOpacity(0.3)),
             ),
             child: Row(
               children: [
@@ -440,12 +483,13 @@ class _StationSearchPageState extends State<StationSearchPage> {
   Widget _buildStationCard(SearchResult<Station> result) {
     final station = result.data;
     final isSuggestion = result.metadata?['suggestion'] == true;
-    
+
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: isSuggestion ? Colors.orange : _getTypeColor(result.type),
+          backgroundColor:
+              isSuggestion ? Colors.orange : _getTypeColor(result.type),
           child: Icon(
             isSuggestion ? Icons.lightbulb_outline : _getTypeIcon(result.type),
             color: Colors.white,
@@ -462,7 +506,8 @@ class _StationSearchPageState extends State<StationSearchPage> {
             if (isSuggestion)
               Text(
                 'Suggestion - Cliquez pour rechercher cette gare',
-                style: TextStyle(color: Colors.orange[600], fontStyle: FontStyle.italic),
+                style: TextStyle(
+                    color: Colors.orange[600], fontStyle: FontStyle.italic),
               ),
             if (result.metadata?['distance'] != null)
               Text(
@@ -542,18 +587,19 @@ class _StationSearchPageState extends State<StationSearchPage> {
   void _selectStation(Station station) {
     Navigator.pop(context, station);
   }
-  
+
   /// Gère la sélection d'une suggestion de destination
   Future<void> _selectSuggestion(String destinationName) async {
     setState(() {
       _isLoading = true;
       _error = null;
     });
-    
+
     try {
       // Rechercher la vraie station correspondant à cette destination
-      final results = await DependencyInjection.instance.stationSearchService.searchStations(destinationName);
-      
+      final results = await DependencyInjection.instance.stationSearchService
+          .searchStations(destinationName);
+
       if (results.isNotEmpty) {
         // Prendre le premier résultat (le plus pertinent)
         final station = results.first.data;

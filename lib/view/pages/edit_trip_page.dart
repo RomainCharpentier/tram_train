@@ -8,7 +8,7 @@ import 'station_search_page.dart';
 
 class EditTripPage extends StatefulWidget {
   final domain.Trip trip;
-  
+
   const EditTripPage({
     super.key,
     required this.trip,
@@ -68,9 +68,9 @@ class _EditTripPageState extends State<EditTripPage> {
                 onTap: () => _selectStation(true),
               ),
             ),
-            
+
             const SizedBox(height: 8),
-            
+
             // Bouton d'inversion des stations
             Center(
               child: IconButton(
@@ -90,22 +90,23 @@ class _EditTripPageState extends State<EditTripPage> {
                 tooltip: 'Inverser les stations',
               ),
             ),
-            
+
             const SizedBox(height: 8),
-            
+
             // Station d'arrivée
             Card(
               child: ListTile(
-                leading: const Icon(Icons.location_on, color: Color(0xFF2E5BBA)),
+                leading:
+                    const Icon(Icons.location_on, color: Color(0xFF2E5BBA)),
                 title: Text(_arrivalStation.name),
                 subtitle: Text(_arrivalStation.description ?? ''),
                 trailing: const Icon(Icons.arrow_forward_ios),
                 onTap: () => _selectStation(false),
               ),
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // Jours de la semaine
             const Text(
               'Jours de la semaine',
@@ -133,26 +134,28 @@ class _EditTripPageState extends State<EditTripPage> {
                 );
               }).toList(),
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // Heure de départ
             Card(
               child: ListTile(
-                leading: const Icon(Icons.access_time, color: Color(0xFF4A90E2)),
+                leading:
+                    const Icon(Icons.access_time, color: Color(0xFF4A90E2)),
                 title: Text('Départ à ${_selectedTime.format(context)}'),
                 trailing: const Icon(Icons.arrow_forward_ios),
                 onTap: _selectTime,
               ),
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // Statut actif
             Card(
               child: SwitchListTile(
                 title: const Text('Trajet actif'),
-                subtitle: const Text('Ce trajet sera affiché sur le tableau de bord'),
+                subtitle:
+                    const Text('Ce trajet sera affiché sur le tableau de bord'),
                 value: _isActive,
                 onChanged: (value) {
                   setState(() {
@@ -162,11 +165,12 @@ class _EditTripPageState extends State<EditTripPage> {
                 activeThumbColor: const Color(0xFF4A90E2),
               ),
             ),
-            
+
             Card(
               child: SwitchListTile(
                 title: const Text('Notifications activées'),
-                subtitle: const Text('Recevoir des notifications pour ce trajet'),
+                subtitle:
+                    const Text('Recevoir des notifications pour ce trajet'),
                 value: _notificationsEnabled,
                 onChanged: (value) {
                   setState(() {
@@ -176,9 +180,9 @@ class _EditTripPageState extends State<EditTripPage> {
                 activeThumbColor: const Color(0xFF4A90E2),
               ),
             ),
-            
+
             const Spacer(),
-            
+
             // Bouton de sauvegarde
             _buildSaveButton(),
           ],
@@ -189,7 +193,7 @@ class _EditTripPageState extends State<EditTripPage> {
 
   Widget _buildSaveButton() {
     final canSave = _selectedDays.isNotEmpty;
-    
+
     return ElevatedButton(
       onPressed: canSave ? _saveTrip : null,
       style: ElevatedButton.styleFrom(
@@ -216,7 +220,7 @@ class _EditTripPageState extends State<EditTripPage> {
         ),
       ),
     );
-    
+
     if (result != null) {
       setState(() {
         if (isDeparture) {
@@ -225,18 +229,18 @@ class _EditTripPageState extends State<EditTripPage> {
           _arrivalStation = result;
         }
       });
-      
+
       // Validation immédiate si on sélectionne une gare d'arrivée
       if (!isDeparture) {
         _validateConnection();
       }
     }
   }
-  
+
   /// Valide la connexion entre les gares sélectionnées
   Future<void> _validateConnection() async {
     if (_arrivalStation == null) return;
-    
+
     try {
       final result = await ConnectedStationsService.checkConnection(
         _departureStation,
@@ -271,7 +275,7 @@ class _EditTripPageState extends State<EditTripPage> {
       context: context,
       initialTime: _selectedTime,
     );
-    
+
     if (time != null) {
       setState(() {
         _selectedTime = time;
@@ -316,7 +320,7 @@ class _EditTripPageState extends State<EditTripPage> {
       );
 
       await DependencyInjection.instance.tripService.saveTrip(updatedTrip);
-      
+
       if (mounted) {
         Navigator.pop(context, true);
         ScaffoldMessenger.of(context).showSnackBar(

@@ -43,10 +43,11 @@ class NotificationPauseService {
   Future<List<NotificationPause>> getActiveNotificationPauses() async {
     final pauses = await _storage.getAllNotificationPauses();
     final now = DateTime.now();
-    
-    return pauses.where((pause) => 
-      now.isAfter(pause.startDate) && now.isBefore(pause.endDate)
-    ).toList();
+
+    return pauses
+        .where((pause) =>
+            now.isAfter(pause.startDate) && now.isBefore(pause.endDate))
+        .toList();
   }
 
   /// Vérifie si les notifications sont actuellement en pause
@@ -84,20 +85,16 @@ class NotificationPauseService {
   Future<List<NotificationPause>> getUpcomingNotificationPauses() async {
     final pauses = await _storage.getAllNotificationPauses();
     final now = DateTime.now();
-    
-    return pauses.where((pause) => 
-      pause.startDate.isAfter(now)
-    ).toList();
+
+    return pauses.where((pause) => pause.startDate.isAfter(now)).toList();
   }
 
   /// Récupère les pauses de notifications passées
   Future<List<NotificationPause>> getPastNotificationPauses() async {
     final pauses = await _storage.getAllNotificationPauses();
     final now = DateTime.now();
-    
-    return pauses.where((pause) => 
-      pause.endDate.isBefore(now)
-    ).toList();
+
+    return pauses.where((pause) => pause.endDate.isBefore(now)).toList();
   }
 }
 

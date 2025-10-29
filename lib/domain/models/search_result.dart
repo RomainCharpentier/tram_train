@@ -25,7 +25,8 @@ class SearchResult<T> {
   }
 
   /// Crée un résultat avec correspondance partielle
-  factory SearchResult.partial(T data, double score, {String? highlight, Map<String, dynamic>? metadata}) {
+  factory SearchResult.partial(T data, double score,
+      {String? highlight, Map<String, dynamic>? metadata}) {
     return SearchResult(
       data: data,
       score: score,

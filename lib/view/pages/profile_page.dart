@@ -12,7 +12,8 @@ class ProfilePage extends StatefulWidget {
   State<ProfilePage> createState() => _ProfilePageState();
 }
 
-class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin {
+class _ProfilePageState extends State<ProfilePage>
+    with TickerProviderStateMixin {
   late TabController _tabController;
   List<domain.Trip> _trips = [];
   bool _isLoading = false;
@@ -21,7 +22,7 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
   @override
   void initState() {
     super.initState();
-        _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 2, vsync: this);
     _loadTrips();
   }
 
@@ -39,7 +40,8 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
     });
 
     try {
-      final trips = await DependencyInjection.instance.tripService.getAllTrips();
+      final trips =
+          await DependencyInjection.instance.tripService.getAllTrips();
       setState(() {
         _trips = trips;
         _isLoading = false;
@@ -55,7 +57,7 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
   @override
   Widget build(BuildContext context) {
     final themeService = DependencyInjection.instance.themeService;
-    
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Profil'),
@@ -170,7 +172,39 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
         itemCount: _trips.length,
         itemBuilder: (context, index) {
           final trip = _trips[index];
-          return _buildTripCard(trip);
+          return Dismissible(
+            key: ValueKey(trip.id),
+            direction: DismissDirection.endToStart,
+            background: Container(
+              alignment: Alignment.centerRight,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              color: Colors.red,
+              child: const Icon(Icons.delete, color: Colors.white),
+            ),
+            confirmDismiss: (dir) async {
+              return await showDialog<bool>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('Supprimer le trajet'),
+                      content: Text('Supprimer "${trip.description}" ?'),
+                      actions: [
+                        TextButton(
+                            onPressed: () => Navigator.pop(context, false),
+                            child: const Text('Annuler')),
+                        TextButton(
+                            onPressed: () => Navigator.pop(context, true),
+                            child: const Text('Supprimer',
+                                style: TextStyle(color: Colors.red))),
+                      ],
+                    ),
+                  ) ??
+                  false;
+            },
+            onDismissed: (_) async {
+              await _deleteTrip(trip);
+            },
+            child: _buildTripCard(trip),
+          );
         },
       ),
     );
@@ -194,7 +228,7 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-                Text('${trip.daysName} à ${trip.timeFormatted}'),
+            Text('${trip.daysName} à ${trip.timeFormatted}'),
             const SizedBox(height: 4),
             Row(
               children: [
@@ -213,22 +247,29 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
                 ),
                 const SizedBox(width: 8),
                 Icon(
-                  trip.notificationsEnabled ? Icons.notifications : Icons.notifications_off,
+                  trip.notificationsEnabled
+                      ? Icons.notifications
+                      : Icons.notifications_off,
                   size: 16,
-                  color: trip.notificationsEnabled ? Colors.orange : Colors.grey,
+                  color:
+                      trip.notificationsEnabled ? Colors.orange : Colors.grey,
                 ),
                 const SizedBox(width: 4),
                 Text(
-                  trip.notificationsEnabled ? 'Notifications' : 'Pas de notifications',
+                  trip.notificationsEnabled
+                      ? 'Notifications'
+                      : 'Pas de notifications',
                   style: TextStyle(
-                    color: trip.notificationsEnabled ? Colors.orange : Colors.grey,
+                    color:
+                        trip.notificationsEnabled ? Colors.orange : Colors.grey,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
                 if (trip.isForToday) ...[
                   const SizedBox(width: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
                       color: Colors.blue,
                       borderRadius: BorderRadius.circular(4),
@@ -305,14 +346,15 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
     }
   }
 
-  Future<void> _navigateToEditTrip(BuildContext context, domain.Trip trip) async {
+  Future<void> _navigateToEditTrip(
+      BuildContext context, domain.Trip trip) async {
     final result = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
         builder: (context) => EditTripPage(trip: trip),
       ),
     );
-    
+
     if (result == true) {
       _loadTrips();
     }
@@ -324,9 +366,9 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
         id: domain.Trip.generateId(),
         createdAt: DateTime.now(),
       );
-      
+
       await DependencyInjection.instance.tripService.saveTrip(newTrip);
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -352,15 +394,12 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
     try {
       final updatedTrip = trip.copyWith(isActive: !trip.isActive);
       await DependencyInjection.instance.tripService.saveTrip(updatedTrip);
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              updatedTrip.isActive 
-                ? 'Trajet activé' 
-                : 'Trajet désactivé'
-            ),
+                updatedTrip.isActive ? 'Trajet activé' : 'Trajet désactivé'),
             backgroundColor: Colors.green,
           ),
         );
@@ -383,7 +422,8 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Supprimer le trajet'),
-        content: Text('Êtes-vous sûr de vouloir supprimer le trajet "${trip.description}" ?'),
+        content: Text(
+            'Êtes-vous sûr de vouloir supprimer le trajet "${trip.description}" ?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -401,7 +441,7 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
     if (confirmed == true) {
       try {
         await DependencyInjection.instance.tripService.deleteTrip(trip.id);
-        
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -431,7 +471,7 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
         builder: (context) => const AddTripPage(),
       ),
     );
-    
+
     if (result == true) {
       _loadTrips();
     }

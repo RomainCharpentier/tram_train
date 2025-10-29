@@ -8,7 +8,7 @@ class ConnectionResult {
   final int totalJourneys;
   final int directJourneys;
   final String message;
-  
+
   ConnectionResult({
     required this.isConnected,
     required this.totalJourneys,
@@ -20,51 +20,55 @@ class ConnectionResult {
 /// Service pour gérer les connexions entre gares
 class ConnectedStationsService {
   /// Récupère les noms des destinations connectées à une gare donnée
-  static Future<List<String>> getConnectedDestinationNames(Station station) async {
+  static Future<List<String>> getConnectedDestinationNames(
+      Station station) async {
     try {
       final trainService = DependencyInjection.instance.trainService;
-      
+
       // Utiliser l'API SNCF pour récupérer les départs depuis cette gare
       final departures = await trainService.getNextDepartures(station);
-      
+
       // Extraire seulement les destinations finales (pas les arrêts intermédiaires)
       final destinationNames = <String>{};
-      
+
       for (final departure in departures) {
         final direction = departure.direction;
         if (direction.isNotEmpty) {
           destinationNames.add(direction);
         }
       }
-      
+
       return destinationNames.toList();
-      
     } catch (e) {
       // Fallback : retourner une liste vide
       return [];
     }
   }
-  
+
   /// Récupère les gares connectées à une gare donnée (destinations finales uniquement)
   /// Cette méthode est dépréciée - utiliser getConnectedDestinationNames à la place
-  @Deprecated('Utiliser getConnectedDestinationNames et faire une recherche globale')
+  @Deprecated(
+      'Utiliser getConnectedDestinationNames et faire une recherche globale')
   static Future<List<Station>> getConnectedStations(Station station) async {
     // Retourner une liste vide pour forcer la recherche globale
     return [];
   }
-  
 
   /// Vérifie si deux gares sont connectées
-  static Future<ConnectionResult> checkConnection(Station departure, Station arrival, {bool directOnly = true}) async {
+  static Future<ConnectionResult> checkConnection(
+      Station departure, Station arrival,
+      {bool directOnly = true}) async {
     try {
       final trainService = DependencyInjection.instance.trainService;
-      
+
       // Utiliser l'API des trajets pour vérifier s'il existe un trajet
-      final journeys = await trainService.findJourneysBetween(departure, arrival);
-      
+      final journeys =
+          await trainService.findJourneysBetween(departure, arrival);
+
       final totalJourneys = journeys.length;
-      final directJourneys = journeys.where((journey) => journey.isDirect).length;
-      
+      final directJourneys =
+          journeys.where((journey) => journey.isDirect).length;
+
       // Déterminer le résultat selon les critères
       if (totalJourneys == 0) {
         return ConnectionResult(
@@ -74,7 +78,7 @@ class ConnectedStationsService {
           message: 'Aucun trajet trouvé',
         );
       }
-      
+
       if (directOnly) {
         // Mode "direct uniquement"
         if (directJourneys > 0) {
@@ -89,7 +93,8 @@ class ConnectedStationsService {
             isConnected: false,
             totalJourneys: totalJourneys,
             directJourneys: 0,
-            message: 'NON CONNECTÉ - Aucun trajet direct trouvé (${totalJourneys} trajet(s) avec correspondances)',
+            message:
+                'NON CONNECTÉ - Aucun trajet direct trouvé (${totalJourneys} trajet(s) avec correspondances)',
           );
         }
       } else {
@@ -98,7 +103,8 @@ class ConnectedStationsService {
           isConnected: true,
           totalJourneys: totalJourneys,
           directJourneys: directJourneys,
-          message: 'CONNECTÉ - $totalJourneys trajet(s) trouvé(s) ($directJourneys direct(s))',
+          message:
+              'CONNECTÉ - $totalJourneys trajet(s) trouvé(s) ($directJourneys direct(s))',
         );
       }
     } catch (e) {
@@ -106,13 +112,16 @@ class ConnectedStationsService {
       try {
         final connectedStations = await getConnectedStations(departure);
         final isConnected = connectedStations.any((s) =>
-            _areStationNamesSimilar(s.name, arrival.name) || s.id == arrival.id);
-        
+            _areStationNamesSimilar(s.name, arrival.name) ||
+            s.id == arrival.id);
+
         return ConnectionResult(
           isConnected: isConnected,
           totalJourneys: isConnected ? 1 : 0,
           directJourneys: isConnected ? 1 : 0,
-          message: isConnected ? 'CONNECTÉ - Vérifié via destinations' : 'NON CONNECTÉ - Aucune connexion trouvée',
+          message: isConnected
+              ? 'CONNECTÉ - Vérifié via destinations'
+              : 'NON CONNECTÉ - Aucune connexion trouvée',
         );
       } catch (fallbackError) {
         return ConnectionResult(
@@ -127,11 +136,13 @@ class ConnectedStationsService {
 
   /// Vérifie si deux gares sont connectées directement (méthode de compatibilité)
   @Deprecated('Utiliser checkConnection à la place')
-  static Future<bool> areStationsConnected(Station departure, Station arrival, {bool directOnly = true}) async {
-    final result = await checkConnection(departure, arrival, directOnly: directOnly);
+  static Future<bool> areStationsConnected(Station departure, Station arrival,
+      {bool directOnly = true}) async {
+    final result =
+        await checkConnection(departure, arrival, directOnly: directOnly);
     return result.isConnected;
   }
-  
+
   /// Compare deux noms de gares de manière flexible
   static bool _areStationNamesSimilar(String name1, String name2) {
     // Normaliser les noms (supprimer les parenthèses, tirets, espaces multiples)
@@ -140,35 +151,34 @@ class ConnectedStationsService {
         .replaceAll(RegExp(r'\s+'), ' ')
         .trim()
         .toLowerCase();
-    
+
     final normalized2 = name2
         .replaceAll(RegExp(r'[()\-]'), ' ')
         .replaceAll(RegExp(r'\s+'), ' ')
         .trim()
         .toLowerCase();
-    
+
     // Vérifier l'égalité exacte ou si un nom contient l'autre
-    return normalized1 == normalized2 || 
-           normalized1.contains(normalized2) || 
-           normalized2.contains(normalized1);
+    return normalized1 == normalized2 ||
+        normalized1.contains(normalized2) ||
+        normalized2.contains(normalized1);
   }
-  
+
   /// Récupère les gares connectées avec filtrage par nom
   static Future<List<Station>> getConnectedStationsWithFilter(
-    Station departureStation, 
-    String searchQuery
-  ) async {
+      Station departureStation, String searchQuery) async {
     final allConnectedStations = await getConnectedStations(departureStation);
-    
+
     if (searchQuery.isEmpty) {
       return allConnectedStations;
     }
-    
+
     final query = searchQuery.toLowerCase();
-    return allConnectedStations.where((station) =>
-      station.name.toLowerCase().contains(query) ||
-      (station.description?.toLowerCase().contains(query) ?? false)
-    ).toList();
+    return allConnectedStations
+        .where((station) =>
+            station.name.toLowerCase().contains(query) ||
+            (station.description?.toLowerCase().contains(query) ?? false))
+        .toList();
   }
 
   /// Normalise un nom de gare pour la comparaison
@@ -176,7 +186,8 @@ class ConnectedStationsService {
     return name
         .toLowerCase()
         .replaceAll(RegExp(r'[\(\)-]'), '') // Supprime parenthèses, tirets
-        .replaceAll(RegExp(r'\s+'), ' ') // Remplace multiples espaces par un seul
+        .replaceAll(
+            RegExp(r'\s+'), ' ') // Remplace multiples espaces par un seul
         .trim();
   }
 }

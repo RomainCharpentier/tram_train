@@ -17,15 +17,16 @@ class LocalStorageGateway implements TripStorage {
   Future<void> saveTrip(Trip trip) async {
     final prefs = await SharedPreferences.getInstance();
     final existingTrips = await getAllTrips();
-    
+
     final existingIndex = existingTrips.indexWhere((t) => t.id == trip.id);
     if (existingIndex != -1) {
       existingTrips[existingIndex] = trip;
     } else {
       existingTrips.add(trip);
     }
-    
-    final tripsJson = existingTrips.map((trip) => json.encode(_mapper.toJson(trip))).toList();
+
+    final tripsJson =
+        existingTrips.map((trip) => json.encode(_mapper.toJson(trip))).toList();
     await prefs.setStringList(_tripsKey, tripsJson);
   }
 
@@ -33,7 +34,7 @@ class LocalStorageGateway implements TripStorage {
   Future<List<Trip>> getAllTrips() async {
     final prefs = await SharedPreferences.getInstance();
     final tripsJson = prefs.getStringList(_tripsKey) ?? [];
-    
+
     return tripsJson
         .map((tripJson) => _mapper.fromJson(json.decode(tripJson)))
         .toList();
@@ -43,10 +44,11 @@ class LocalStorageGateway implements TripStorage {
   Future<void> deleteTrip(String tripId) async {
     final prefs = await SharedPreferences.getInstance();
     final existingTrips = await getAllTrips();
-    
+
     existingTrips.removeWhere((trip) => trip.id == tripId);
-    
-    final tripsJson = existingTrips.map((trip) => json.encode(_mapper.toJson(trip))).toList();
+
+    final tripsJson =
+        existingTrips.map((trip) => json.encode(_mapper.toJson(trip))).toList();
     await prefs.setStringList(_tripsKey, tripsJson);
   }
 }

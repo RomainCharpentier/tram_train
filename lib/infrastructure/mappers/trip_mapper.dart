@@ -33,11 +33,11 @@ class TripMapper {
         name: json['arrivalStationName'] as String,
       ),
       days: (json['days'] as List<dynamic>?)
-          ?.map((d) => DayOfWeek.values.firstWhere(
-                (day) => day.name == d,
-                orElse: () => DayOfWeek.monday,
-              ))
-          .toList() ??
+              ?.map((d) => DayOfWeek.values.firstWhere(
+                    (day) => day.name == d,
+                    orElse: () => DayOfWeek.monday,
+                  ))
+              .toList() ??
           [DayOfWeek.monday],
       time: TimeOfDay(
         hour: json['timeHour'] as int,

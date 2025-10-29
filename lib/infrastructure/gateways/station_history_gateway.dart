@@ -13,7 +13,7 @@ class StationHistoryGatewayImpl implements StationHistoryGateway {
 
     final prefs = await SharedPreferences.getInstance();
     final historyJson = prefs.getString(_historyKey);
-    
+
     List<String> history = [];
     if (historyJson != null) {
       try {
@@ -27,10 +27,10 @@ class StationHistoryGatewayImpl implements StationHistoryGateway {
 
     // Supprimer la requête si elle existe déjà
     history.remove(query);
-    
+
     // Ajouter la nouvelle requête en première position
     history.insert(0, query);
-    
+
     // Limiter la taille de l'historique
     if (history.length > _maxHistorySize) {
       history = history.take(_maxHistorySize).toList();
@@ -44,7 +44,7 @@ class StationHistoryGatewayImpl implements StationHistoryGateway {
   Future<List<String>> getRecentQueries() async {
     final prefs = await SharedPreferences.getInstance();
     final historyJson = prefs.getString(_historyKey);
-    
+
     if (historyJson == null) return [];
 
     try {
@@ -65,14 +65,14 @@ class StationHistoryGatewayImpl implements StationHistoryGateway {
   Future<List<String>> getMostFrequentQueries() async {
     final queries = await getRecentQueries();
     final frequency = <String, int>{};
-    
+
     for (final query in queries) {
       frequency[query] = (frequency[query] ?? 0) + 1;
     }
-    
+
     final sortedEntries = frequency.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
-    
+
     return sortedEntries.map((e) => e.key).toList();
   }
 
@@ -82,7 +82,8 @@ class StationHistoryGatewayImpl implements StationHistoryGateway {
 
     final queries = await getRecentQueries();
     final suggestions = queries
-        .where((query) => query.toLowerCase().contains(partialQuery.toLowerCase()))
+        .where(
+            (query) => query.toLowerCase().contains(partialQuery.toLowerCase()))
         .take(5)
         .toList();
 
