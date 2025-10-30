@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import '../../domain/models/train.dart';
 import '../../domain/models/trip.dart' as domain;
 import '../../infrastructure/dependency_injection.dart';
+import '../widgets/train_card.dart';
+import '../widgets/search_bar.dart';
+import '../widgets/empty_state.dart';
+import '../widgets/error_state.dart';
 
 /// Page pour afficher les horaires d'un trajet avec recherche
 class TripSchedulePage extends StatefulWidget {
@@ -33,7 +37,6 @@ class _TripSchedulePageState extends State<TripSchedulePage> {
     super.dispose();
   }
 
-  /// Charge les trains depuis l'API
   Future<void> _loadTrains() async {
     setState(() {
       _isLoading = true;
@@ -70,7 +73,6 @@ class _TripSchedulePageState extends State<TripSchedulePage> {
     }
   }
 
-  /// Filtre les trains selon la recherche
   void _filterTrains() {
     final query = _searchController.text.toLowerCase();
 
@@ -93,54 +95,18 @@ class _TripSchedulePageState extends State<TripSchedulePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-            '${widget.trip.departureStation.name} → ${widget.trip.arrivalStation.name}'),
-        backgroundColor: const Color(0xFF4A90E2),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.white),
-            onPressed: _loadTrains,
-            tooltip: 'Actualiser',
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          _buildSearchBar(),
-          _buildTripInfo(),
-          Expanded(child: _buildTrainsList()),
-        ],
-      ),
-    );
+    return _buildScaffold();
   }
 
   Widget _buildSearchBar() {
     return Container(
       padding: const EdgeInsets.all(16),
-      child: TextField(
+      child: AppSearchBar(
         controller: _searchController,
-        decoration: InputDecoration(
-          hintText: 'Rechercher par destination, heure ou statut...',
-          prefixIcon: const Icon(Icons.search),
-          suffixIcon: _searchController.text.isNotEmpty
-              ? IconButton(
-                  icon: const Icon(Icons.clear),
-                  onPressed: () {
-                    _searchController.clear();
-                    _filterTrains();
-                  },
-                )
-              : null,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
+        hintText: 'Rechercher par destination, heure ou statut...',
+        onChanged: (_) => _filterTrains(),
+        onSubmitted: (_) => _filterTrains(),
+        onSearchPressed: _filterTrains,
       ),
     );
   }
@@ -232,53 +198,18 @@ class _TripSchedulePageState extends State<TripSchedulePage> {
     }
 
     if (_error != null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.error_outline,
-              size: 64,
-              color: Colors.red[300],
-            ),
-            const SizedBox(height: 16),
-            Text(
-              _error!,
-              style: const TextStyle(fontSize: 16),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _loadTrains,
-              child: const Text('Réessayer'),
-            ),
-          ],
-        ),
-      );
+      return ErrorState(message: _error!, onRetry: _loadTrains);
     }
 
     if (_filteredTrains.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.train, size: 64, color: Colors.grey),
-            const SizedBox(height: 16),
-            Text(
-              _searchController.text.isNotEmpty
-                  ? 'Aucun train trouvé pour "${_searchController.text}"'
-                  : 'Aucun train trouvé pour cette destination',
-              style: const TextStyle(fontSize: 18, color: Colors.grey),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              _searchController.text.isNotEmpty
-                  ? 'Essayez avec d\'autres mots-clés'
-                  : 'Vérifiez que la gare de destination est correcte',
-              style: const TextStyle(color: Colors.grey),
-            ),
-          ],
-        ),
+      return EmptyState(
+        icon: Icons.train,
+        title: _searchController.text.isNotEmpty
+            ? 'Aucun train trouvé pour "${_searchController.text}"'
+            : 'Aucun train trouvé pour cette destination',
+        subtitle: _searchController.text.isNotEmpty
+            ? 'Essayez avec d\'autres mots-clés'
+            : 'Vérifiez que la gare de destination est correcte',
       );
     }
 
@@ -287,90 +218,13 @@ class _TripSchedulePageState extends State<TripSchedulePage> {
       itemCount: _filteredTrains.length,
       itemBuilder: (context, index) {
         final train = _filteredTrains[index];
-        return _buildTrainCard(train);
+        return TrainCard(
+          train: train,
+          showAdditionalInfo: true,
+          onTap: () => _showTrainDetails(train),
+        );
       },
     );
-  }
-
-  Widget _buildTrainCard(Train train) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: _getStatusColor(train.status),
-          child: Icon(
-            _getStatusIcon(train.status),
-            color: Colors.white,
-            size: 20,
-          ),
-        ),
-        title: Text(
-          train.direction,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Départ: ${train.departureTimeFormatted}'),
-            if (train.isDelayed)
-              Text(
-                'Retard: +${train.delayMinutes} minutes',
-                style: const TextStyle(
-                    color: Colors.orange, fontWeight: FontWeight.w500),
-              ),
-          ],
-        ),
-        trailing: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              train.statusText,
-              style: TextStyle(
-                color: _getStatusColor(train.status),
-                fontWeight: FontWeight.w500,
-                fontSize: 12,
-              ),
-            ),
-            if (train.additionalInfo.isNotEmpty)
-              Text(
-                train.additionalInfo.first,
-                style: const TextStyle(fontSize: 10, color: Colors.grey),
-              ),
-          ],
-        ),
-        onTap: () => _showTrainDetails(train),
-      ),
-    );
-  }
-
-  Color _getStatusColor(TrainStatus status) {
-    switch (status) {
-      case TrainStatus.onTime:
-        return Colors.green;
-      case TrainStatus.delayed:
-        return Colors.orange;
-      case TrainStatus.early:
-        return Colors.blue;
-      case TrainStatus.cancelled:
-        return Colors.red;
-      case TrainStatus.unknown:
-        return Colors.grey;
-    }
-  }
-
-  IconData _getStatusIcon(TrainStatus status) {
-    switch (status) {
-      case TrainStatus.onTime:
-        return Icons.check_circle;
-      case TrainStatus.delayed:
-        return Icons.schedule;
-      case TrainStatus.early:
-        return Icons.schedule;
-      case TrainStatus.cancelled:
-        return Icons.cancel;
-      case TrainStatus.unknown:
-        return Icons.help;
-    }
   }
 
   void _showTrainDetails(Train train) {
@@ -400,6 +254,34 @@ class _TripSchedulePageState extends State<TripSchedulePage> {
             onPressed: () => Navigator.pop(context),
             child: const Text('Fermer'),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildScaffold() {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+            '${widget.trip.departureStation.name} → ${widget.trip.arrivalStation.name}'),
+        backgroundColor: const Color(0xFF4A90E2),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh, color: Colors.white),
+            onPressed: _loadTrains,
+            tooltip: 'Actualiser',
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          _buildSearchBar(),
+          _buildTripInfo(),
+          Expanded(child: _buildTrainsList()),
         ],
       ),
     );

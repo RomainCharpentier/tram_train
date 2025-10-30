@@ -25,7 +25,7 @@ class _EditTripPageState extends State<EditTripPage> {
   late flutter.TimeOfDay _selectedTime;
   late bool _isActive;
   late bool _notificationsEnabled;
-  String? _connectionError;
+  // Supprimé: ancien état d'erreur de connexion non utilisé
 
   @override
   void initState() {
@@ -41,155 +41,7 @@ class _EditTripPageState extends State<EditTripPage> {
     _notificationsEnabled = widget.trip.notificationsEnabled;
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Modifier le trajet'),
-        backgroundColor: const Color(0xFF4A90E2),
-        foregroundColor: Colors.white,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Station de départ
-            Card(
-              child: ListTile(
-                leading: const Icon(Icons.train, color: Color(0xFF4A90E2)),
-                title: Text(_departureStation.name),
-                subtitle: Text(_departureStation.description ?? ''),
-                trailing: const Icon(Icons.arrow_forward_ios),
-                onTap: () => _selectStation(true),
-              ),
-            ),
-
-            const SizedBox(height: 8),
-
-            // Bouton d'inversion des stations
-            Center(
-              child: IconButton(
-                onPressed: _swapStations,
-                icon: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF4A90E2),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: const Icon(
-                    Icons.swap_vert,
-                    color: Colors.white,
-                    size: 24,
-                  ),
-                ),
-                tooltip: 'Inverser les stations',
-              ),
-            ),
-
-            const SizedBox(height: 8),
-
-            // Station d'arrivée
-            Card(
-              child: ListTile(
-                leading:
-                    const Icon(Icons.location_on, color: Color(0xFF2E5BBA)),
-                title: Text(_arrivalStation.name),
-                subtitle: Text(_arrivalStation.description ?? ''),
-                trailing: const Icon(Icons.arrow_forward_ios),
-                onTap: () => _selectStation(false),
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
-            // Jours de la semaine
-            const Text(
-              'Jours de la semaine',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              children: domain.DayOfWeek.values.map((day) {
-                final isSelected = _selectedDays.contains(day);
-                return FilterChip(
-                  label: Text(day.displayName),
-                  selected: isSelected,
-                  onSelected: (selected) {
-                    setState(() {
-                      if (selected) {
-                        _selectedDays.add(day);
-                      } else {
-                        _selectedDays.remove(day);
-                      }
-                    });
-                  },
-                  selectedColor: const Color(0xFF4A90E2).withOpacity(0.3),
-                  checkmarkColor: const Color(0xFF4A90E2),
-                );
-              }).toList(),
-            ),
-
-            const SizedBox(height: 24),
-
-            // Heure de départ
-            Card(
-              child: ListTile(
-                leading:
-                    const Icon(Icons.access_time, color: Color(0xFF4A90E2)),
-                title: Text('Départ à ${_selectedTime.format(context)}'),
-                trailing: const Icon(Icons.arrow_forward_ios),
-                onTap: _selectTime,
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
-            // Statut actif
-            Card(
-              child: SwitchListTile(
-                title: const Text('Trajet actif'),
-                subtitle:
-                    const Text('Ce trajet sera affiché sur le tableau de bord'),
-                value: _isActive,
-                onChanged: (value) {
-                  setState(() {
-                    _isActive = value;
-                  });
-                },
-                activeThumbColor: const Color(0xFF4A90E2),
-              ),
-            ),
-
-            Card(
-              child: SwitchListTile(
-                title: const Text('Notifications activées'),
-                subtitle:
-                    const Text('Recevoir des notifications pour ce trajet'),
-                value: _notificationsEnabled,
-                onChanged: (value) {
-                  setState(() {
-                    _notificationsEnabled = value;
-                  });
-                },
-                activeThumbColor: const Color(0xFF4A90E2),
-              ),
-            ),
-
-            const Spacer(),
-
-            // Bouton de sauvegarde
-            _buildSaveButton(),
-          ],
-        ),
-      ),
-    );
-  }
+  
 
   Widget _buildSaveButton() {
     final canSave = _selectedDays.isNotEmpty;
@@ -239,26 +91,15 @@ class _EditTripPageState extends State<EditTripPage> {
 
   /// Valide la connexion entre les gares sélectionnées
   Future<void> _validateConnection() async {
-    if (_arrivalStation == null) return;
-
     try {
-      final result = await ConnectedStationsService.checkConnection(
+      await ConnectedStationsService.checkConnection(
         _departureStation,
         _arrivalStation,
         directOnly: false, // Par défaut, accepter tous les trajets
       );
-
-      setState(() {
-        if (!result.isConnected) {
-          _connectionError = '⚠️ ${result.message}';
-        } else {
-          _connectionError = null; // Pas d'erreur si connectées
-        }
-      });
+      // Ici, on valide silencieusement la connexion. On affiche les erreurs lors de la sauvegarde.
     } catch (e) {
-      setState(() {
-        _connectionError = 'Erreur lors de la validation: $e';
-      });
+      // Validation silencieuse; les erreurs seront gérées au moment de la sauvegarde
     }
   }
 
@@ -340,5 +181,132 @@ class _EditTripPageState extends State<EditTripPage> {
         );
       }
     }
+  }
+
+  
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Modifier le trajet'),
+        backgroundColor: const Color(0xFF4A90E2),
+        foregroundColor: Colors.white,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.train, color: Color(0xFF4A90E2)),
+                title: Text(_departureStation.name),
+                subtitle: Text(_departureStation.description ?? ''),
+                trailing: const Icon(Icons.arrow_forward_ios),
+                onTap: () => _selectStation(true),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Center(
+              child: IconButton(
+                onPressed: _swapStations,
+                icon: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF4A90E2),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Icon(
+                    Icons.swap_vert,
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                ),
+                tooltip: 'Inverser les stations',
+              ),
+            ),
+            const SizedBox(height: 8),
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.location_on, color: Color(0xFF2E5BBA)),
+                title: Text(_arrivalStation.name),
+                subtitle: Text(_arrivalStation.description ?? ''),
+                trailing: const Icon(Icons.arrow_forward_ios),
+                onTap: () => _selectStation(false),
+              ),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Jours de la semaine',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              children: domain.DayOfWeek.values.map((day) {
+                final isSelected = _selectedDays.contains(day);
+                return FilterChip(
+                  label: Text(day.displayName),
+                  selected: isSelected,
+                  onSelected: (selected) {
+                    setState(() {
+                      if (selected) {
+                        _selectedDays.add(day);
+                      } else {
+                        _selectedDays.remove(day);
+                      }
+                    });
+                  },
+                  selectedColor: const Color(0xFF4A90E2).withOpacity(0.3),
+                  checkmarkColor: const Color(0xFF4A90E2),
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 24),
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.access_time, color: Color(0xFF4A90E2)),
+                title: Text('Départ à ${_selectedTime.format(context)}'),
+                trailing: const Icon(Icons.arrow_forward_ios),
+                onTap: _selectTime,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Card(
+              child: SwitchListTile(
+                title: const Text('Trajet actif'),
+                subtitle: const Text('Ce trajet sera affiché sur le tableau de bord'),
+                value: _isActive,
+                onChanged: (value) {
+                  setState(() {
+                    _isActive = value;
+                  });
+                },
+                activeThumbColor: const Color(0xFF4A90E2),
+              ),
+            ),
+            Card(
+              child: SwitchListTile(
+                title: const Text('Notifications activées'),
+                subtitle: const Text('Recevoir des notifications pour ce trajet'),
+                value: _notificationsEnabled,
+                onChanged: (value) {
+                  setState(() {
+                    _notificationsEnabled = value;
+                  });
+                },
+                activeThumbColor: const Color(0xFF4A90E2),
+              ),
+            ),
+            const Spacer(),
+            _buildSaveButton(),
+          ],
+        ),
+      ),
+    );
   }
 }

@@ -6,6 +6,8 @@ import '../../domain/models/station.dart';
 import '../../domain/services/connected_stations_service.dart';
 import '../../infrastructure/dependency_injection.dart';
 import 'station_search_page.dart';
+import '../widgets/switch_card.dart';
+import '../widgets/save_button.dart';
 
 enum TimeConstraintMode { departure, arrival }
 
@@ -40,6 +42,10 @@ class _AddTripPageState extends State<AddTripPage> {
 
   @override
   Widget build(BuildContext context) {
+    return _buildScaffold();
+  }
+
+  Widget _buildScaffold() {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Ajouter un favori'),
@@ -449,56 +455,33 @@ class _AddTripPageState extends State<AddTripPage> {
             ],
 
             // Statut actif
-            Card(
-              child: SwitchListTile(
-                title: const Text('Trajet actif'),
-                subtitle:
-                    const Text('Ce trajet sera affiché sur le tableau de bord'),
-                value: _isActive,
-                onChanged: (value) {
-                  setState(() {
-                    _isActive = value;
-                  });
-                },
-                activeThumbColor: const Color(0xFF4A90E2),
-              ),
+            SwitchCard(
+              title: 'Trajet actif',
+              subtitle: 'Ce trajet sera affiché sur le tableau de bord',
+              value: _isActive,
+              onChanged: (v) => setState(() => _isActive = v),
             ),
 
-            Card(
-              child: SwitchListTile(
-                title: const Text('Notifications activées'),
-                subtitle:
-                    const Text('Recevoir des notifications pour ce trajet'),
-                value: _notificationsEnabled,
-                onChanged: (value) {
-                  setState(() {
-                    _notificationsEnabled = value;
-                  });
-                },
-                activeThumbColor: const Color(0xFF4A90E2),
-              ),
+            SwitchCard(
+              title: 'Notifications activées',
+              subtitle: 'Recevoir des notifications pour ce trajet',
+              value: _notificationsEnabled,
+              onChanged: (v) => setState(() => _notificationsEnabled = v),
             ),
 
             const SizedBox(height: 16),
 
             // Option pour trajets directs uniquement
-            Card(
-              child: SwitchListTile(
-                title: const Text('Trajets directs uniquement'),
-                subtitle:
-                    const Text('Exclure les trajets avec correspondances'),
-                value: _directTrainsOnly,
-                onChanged: (value) {
-                  setState(() {
-                    _directTrainsOnly = value;
-                    // Re-valider la connexion si les gares sont déjà sélectionnées
-                    if (_departureStation != null && _arrivalStation != null) {
-                      _validateConnection();
-                    }
-                  });
-                },
-                activeThumbColor: const Color(0xFF4A90E2),
-              ),
+            SwitchCard(
+              title: 'Trajets directs uniquement',
+              subtitle: 'Exclure les trajets avec correspondances',
+              value: _directTrainsOnly,
+              onChanged: (v) {
+                setState(() => _directTrainsOnly = v);
+                if (_departureStation != null && _arrivalStation != null) {
+                  _validateConnection();
+                }
+              },
             ),
 
             const SizedBox(height: 8),
@@ -575,7 +558,14 @@ class _AddTripPageState extends State<AddTripPage> {
             ],
 
             // Bouton de sauvegarde
-            _buildSaveButton(),
+            SaveButton(
+              label: 'Enregistrer le trajet',
+              enabled: _departureStation != null &&
+                  _arrivalStation != null &&
+                  _selectedDays.isNotEmpty &&
+                  _selectedTime != null,
+              onPressed: _saveTrip,
+            ),
           ],
         ),
       ),

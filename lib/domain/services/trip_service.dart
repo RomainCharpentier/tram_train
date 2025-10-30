@@ -5,6 +5,7 @@ abstract class TripStorage {
   Future<void> saveTrip(Trip trip);
   Future<List<Trip>> getAllTrips();
   Future<void> deleteTrip(String tripId);
+  Future<void> clearAllTrips();
 }
 
 class TripService {
@@ -25,6 +26,31 @@ class TripService {
   /// Supprime un trajet
   Future<void> deleteTrip(String tripId) async {
     await _storage.deleteTrip(tripId);
+  }
+
+  /// Supprime tous les trajets
+  Future<void> clearAllTrips() async {
+    await _storage.clearAllTrips();
+  }
+
+  /// Supprime un trajet et tous les doublons (mêmes gares et même heure)
+  Future<void> deleteTripAndSimilar(Trip tripToDelete) async {
+    final all = await _storage.getAllTrips();
+    final remaining = all.where((t) {
+      final sameDeparture =
+          t.departureStation.name == tripToDelete.departureStation.name;
+      final sameArrival =
+          t.arrivalStation.name == tripToDelete.arrivalStation.name;
+      final sameTime = t.time.hour == tripToDelete.time.hour &&
+          t.time.minute == tripToDelete.time.minute;
+      final isSame = sameDeparture && sameArrival && sameTime;
+      return !isSame;
+    }).toList();
+
+    await _storage.clearAllTrips();
+    for (final t in remaining) {
+      await _storage.saveTrip(t);
+    }
   }
 
   /// Récupère les trajets pour un jour spécifique

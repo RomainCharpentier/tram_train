@@ -43,22 +43,7 @@ class _NotificationPausePageState extends State<NotificationPausePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Pauses de notification'),
-        backgroundColor: const Color(0xFF4A90E2),
-        foregroundColor: Colors.white,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-      ),
-      body: _buildBody(),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _showCreatePauseDialog,
-        child: const Icon(Icons.add),
-      ),
-    );
+    return _buildScaffold();
   }
 
   Widget _buildBody() {
@@ -330,6 +315,25 @@ class _NotificationPausePageState extends State<NotificationPausePage> {
 
   String _formatDate(DateTime date) {
     return '${date.day}/${date.month}/${date.year}';
+  }
+  
+  Widget _buildScaffold() {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Pauses de notification'),
+        backgroundColor: const Color(0xFF4A90E2),
+        foregroundColor: Colors.white,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+      ),
+      body: _buildBody(),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _showCreatePauseDialog,
+        child: const Icon(Icons.add),
+      ),
+    );
   }
 }
 

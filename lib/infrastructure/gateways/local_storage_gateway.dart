@@ -51,4 +51,10 @@ class LocalStorageGateway implements TripStorage {
         existingTrips.map((trip) => json.encode(_mapper.toJson(trip))).toList();
     await prefs.setStringList(_tripsKey, tripsJson);
   }
+
+  /// Supprime tous les trajets
+  Future<void> clearAllTrips() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_tripsKey);
+  }
 }

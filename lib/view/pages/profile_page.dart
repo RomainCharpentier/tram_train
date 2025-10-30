@@ -4,6 +4,7 @@ import '../../infrastructure/dependency_injection.dart';
 import 'add_trip_page.dart';
 import 'edit_trip_page.dart';
 import 'notification_pause_page.dart';
+import '../widgets/trip_card.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -18,6 +19,7 @@ class _ProfilePageState extends State<ProfilePage>
   List<domain.Trip> _trips = [];
   bool _isLoading = false;
   String? _error;
+  bool _changed = false;
 
   @override
   void initState() {
@@ -56,50 +58,7 @@ class _ProfilePageState extends State<ProfilePage>
 
   @override
   Widget build(BuildContext context) {
-    final themeService = DependencyInjection.instance.themeService;
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Profil'),
-        backgroundColor: const Color(0xFF4A90E2),
-        actions: [
-          // Toggle de thème
-          AnimatedBuilder(
-            animation: themeService,
-            builder: (context, child) {
-              return IconButton(
-                icon: Icon(
-                  themeService.isDarkMode ? Icons.light_mode : Icons.dark_mode,
-                  color: Colors.white,
-                ),
-                onPressed: () => themeService.toggleTheme(),
-                tooltip: themeService.isDarkMode ? 'Mode clair' : 'Mode sombre',
-              );
-            },
-          ),
-          // Bouton de fermeture
-          IconButton(
-            icon: const Icon(Icons.close, color: Colors.white),
-            onPressed: () => Navigator.pop(context),
-            tooltip: 'Fermer',
-          ),
-        ],
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: const [
-            Tab(icon: Icon(Icons.route), text: 'Mes Trajets'),
-            Tab(icon: Icon(Icons.pause_circle), text: 'Pauses'),
-          ],
-        ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildTripsTab(),
-          const NotificationPausePage(),
-        ],
-      ),
-    );
+    return _buildScaffold();
   }
 
   Widget _buildTripsTab() {
@@ -211,121 +170,9 @@ class _ProfilePageState extends State<ProfilePage>
   }
 
   Widget _buildTripCard(domain.Trip trip) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: trip.isActive ? Colors.green : Colors.grey,
-          child: Icon(
-            trip.isActive ? Icons.check_circle : Icons.pause_circle,
-            color: Colors.white,
-          ),
-        ),
-        title: Text(
-          trip.description,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('${trip.daysName} à ${trip.timeFormatted}'),
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                Icon(
-                  trip.isActive ? Icons.play_circle : Icons.pause_circle,
-                  size: 16,
-                  color: trip.isActive ? Colors.green : Colors.grey,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  trip.isActive ? 'Actif' : 'Inactif',
-                  style: TextStyle(
-                    color: trip.isActive ? Colors.green : Colors.grey,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Icon(
-                  trip.notificationsEnabled
-                      ? Icons.notifications
-                      : Icons.notifications_off,
-                  size: 16,
-                  color:
-                      trip.notificationsEnabled ? Colors.orange : Colors.grey,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  trip.notificationsEnabled
-                      ? 'Notifications'
-                      : 'Pas de notifications',
-                  style: TextStyle(
-                    color:
-                        trip.notificationsEnabled ? Colors.orange : Colors.grey,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                if (trip.isForToday) ...[
-                  const SizedBox(width: 8),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.blue,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: const Text(
-                      'Aujourd\'hui',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ],
-        ),
-        trailing: PopupMenuButton<String>(
-          onSelected: (value) => _handleTripAction(value, trip),
-          itemBuilder: (context) => [
-            const PopupMenuItem(
-              value: 'edit',
-              child: ListTile(
-                leading: Icon(Icons.edit),
-                title: Text('Modifier'),
-                contentPadding: EdgeInsets.zero,
-              ),
-            ),
-            const PopupMenuItem(
-              value: 'duplicate',
-              child: ListTile(
-                leading: Icon(Icons.copy),
-                title: Text('Dupliquer'),
-                contentPadding: EdgeInsets.zero,
-              ),
-            ),
-            const PopupMenuItem(
-              value: 'toggle',
-              child: ListTile(
-                leading: Icon(Icons.play_arrow),
-                title: Text('Activer/Désactiver'),
-                contentPadding: EdgeInsets.zero,
-              ),
-            ),
-            const PopupMenuItem(
-              value: 'delete',
-              child: ListTile(
-                leading: Icon(Icons.delete, color: Colors.red),
-                title: Text('Supprimer', style: TextStyle(color: Colors.red)),
-                contentPadding: EdgeInsets.zero,
-              ),
-            ),
-          ],
-        ),
-      ),
+    return TripCard(
+      trip: trip,
+      onAction: (action, t) => _handleTripAction(action, t),
     );
   }
 
@@ -356,6 +203,7 @@ class _ProfilePageState extends State<ProfilePage>
     );
 
     if (result == true) {
+      _changed = true;
       _loadTrips();
     }
   }
@@ -370,6 +218,7 @@ class _ProfilePageState extends State<ProfilePage>
       await DependencyInjection.instance.tripService.saveTrip(newTrip);
 
       if (mounted) {
+        _changed = true;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Trajet dupliqué avec succès'),
@@ -396,6 +245,7 @@ class _ProfilePageState extends State<ProfilePage>
       await DependencyInjection.instance.tripService.saveTrip(updatedTrip);
 
       if (mounted) {
+        _changed = true;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -440,12 +290,13 @@ class _ProfilePageState extends State<ProfilePage>
 
     if (confirmed == true) {
       try {
-        await DependencyInjection.instance.tripService.deleteTrip(trip.id);
+        await DependencyInjection.instance.tripService.deleteTripAndSimilar(trip);
 
         if (mounted) {
+          _changed = true;
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Trajet supprimé'),
+              content: Text('Trajet supprimé (doublons inclus)'),
               backgroundColor: Colors.green,
             ),
           );
@@ -473,7 +324,85 @@ class _ProfilePageState extends State<ProfilePage>
     );
 
     if (result == true) {
+      _changed = true;
       _loadTrips();
     }
+  }
+
+  Widget _buildScaffold() {
+    final themeService = DependencyInjection.instance.themeService;
+
+    return WillPopScope(
+      onWillPop: () async {
+        Navigator.pop(context, _changed);
+        return false;
+      },
+      child: Scaffold(
+      appBar: AppBar(
+        title: const Text('Profil'),
+        backgroundColor: const Color(0xFF4A90E2),
+        actions: [
+          AnimatedBuilder(
+            animation: themeService,
+            builder: (context, child) {
+              return IconButton(
+                icon: Icon(
+                  themeService.isDarkMode ? Icons.light_mode : Icons.dark_mode,
+                  color: Colors.white,
+                ),
+                onPressed: () => themeService.toggleTheme(),
+                tooltip: themeService.isDarkMode ? 'Mode clair' : 'Mode sombre',
+              );
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.close, color: Colors.white),
+            onPressed: () => Navigator.pop(context, _changed),
+            tooltip: 'Fermer',
+          ),
+          PopupMenuButton<String>(
+            onSelected: (value) async {
+              if (value == 'reset') {
+                await DependencyInjection.instance.tripService.clearAllTrips();
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Données trajets réinitialisées'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                  _loadTrips();
+                }
+              }
+            },
+            itemBuilder: (context) => const [
+              PopupMenuItem(
+                value: 'reset',
+                child: ListTile(
+                  leading: Icon(Icons.delete_sweep),
+                  title: Text('Réinitialiser les trajets'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+            ],
+          ),
+        ],
+        bottom: TabBar(
+          controller: _tabController,
+          tabs: const [
+            Tab(icon: Icon(Icons.route), text: 'Mes Trajets'),
+            Tab(icon: Icon(Icons.pause_circle), text: 'Pauses'),
+          ],
+        ),
+        ),
+        body: TabBarView(
+        controller: _tabController,
+        children: [
+          _buildTripsTab(),
+          const NotificationPausePage(),
+        ],
+        ),
+      ),
+    );
   }
 }

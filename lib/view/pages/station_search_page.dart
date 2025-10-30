@@ -4,12 +4,14 @@ import '../../domain/models/search_result.dart';
 import '../../domain/services/station_search_service.dart';
 import '../../domain/services/connected_stations_service.dart';
 import '../../infrastructure/dependency_injection.dart';
+import '../widgets/search_bar.dart';
+import '../widgets/empty_state.dart';
+import '../widgets/error_state.dart';
+import '../widgets/info_banner.dart';
 
-/// Page de recherche intelligente de gares
 class StationSearchPage extends StatefulWidget {
-  final Station?
-      departureStation; // Gare de départ pour filtrer les gares connectées
-
+  final Station? departureStation; // Gare de départ pour filtrer les gares connectées
+  
   const StationSearchPage({super.key, this.departureStation});
 
   @override
@@ -19,7 +21,7 @@ class StationSearchPage extends StatefulWidget {
 class _StationSearchPageState extends State<StationSearchPage> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
-
+  
   List<SearchResult<Station>> _searchResults = [];
   List<String> _suggestions = [];
   bool _isLoading = false;
@@ -30,11 +32,9 @@ class _StationSearchPageState extends State<StationSearchPage> {
   @override
   void initState() {
     super.initState();
-    // Charger les gares connectées si une gare de départ est fournie, sinon favoris
+    // Charger les gares connectées si une gare de départ est fournie
     if (widget.departureStation != null) {
       _loadConnectedStations();
-    } else {
-      _loadFavoriteStations();
     }
   }
 
@@ -45,35 +45,11 @@ class _StationSearchPageState extends State<StationSearchPage> {
     super.dispose();
   }
 
-  /// Charge les gares favorites (dérivées des trajets enregistrés)
-  Future<void> _loadFavoriteStations() async {
-    try {
-      final trips =
-          await DependencyInjection.instance.tripService.getAllTrips();
-      final stations = <String, Station>{};
-      for (final t in trips) {
-        stations[t.departureStation.id] = t.departureStation;
-        stations[t.arrivalStation.id] = t.arrivalStation;
-      }
-
-      final results = stations.values
-          .map((s) => SearchResult.favorite(s, metadata: {'favorite': true}))
-          .toList();
-
-      setState(() {
-        _searchResults = results;
-      });
-    } catch (_) {
-      // silencieux si pas de favoris
-    }
-  }
-
-  /// Charge les destinations connectées à la gare de départ
   Future<void> _loadConnectedStations() async {
     if (widget.departureStation == null) {
       return;
     }
-
+    
     setState(() {
       _isLoading = true;
       _error = null;
@@ -81,17 +57,13 @@ class _StationSearchPageState extends State<StationSearchPage> {
 
     try {
       // Récupérer les noms des destinations connectées
-      final destinationNames =
-          await ConnectedStationsService.getConnectedDestinationNames(
-              widget.departureStation!);
-
+      final destinationNames = await ConnectedStationsService.getConnectedDestinationNames(widget.departureStation!);
+      
       // Créer des résultats de recherche avec des suggestions
-      final results = destinationNames
-          .map((name) => SearchResult.suggestion(
-              Station(id: 'TEMP_${name.hashCode}', name: name),
-              metadata: {'connected': true, 'suggestion': true}))
-          .toList();
-
+      final results = destinationNames.map((name) => 
+        SearchResult.suggestion(Station(id: 'TEMP_${name.hashCode}', name: name), metadata: {'connected': true, 'suggestion': true})
+      ).toList();
+      
       setState(() {
         _searchResults = results;
         _isLoading = false;
@@ -104,10 +76,9 @@ class _StationSearchPageState extends State<StationSearchPage> {
     }
   }
 
-  /// Effectue une recherche de gares
   Future<void> _searchStations([String? query]) async {
     final searchQuery = query ?? _searchController.text.trim();
-
+    
     // Recherche globale dans toute la base SNCF (même avec gare de départ)
     if (searchQuery.isEmpty) {
       // Si pas de recherche, afficher les gares connectées si gare de départ
@@ -129,8 +100,7 @@ class _StationSearchPageState extends State<StationSearchPage> {
 
     try {
       // Recherche globale dans toute la base SNCF
-      final results = await DependencyInjection.instance.stationSearchService
-          .searchStations(searchQuery);
+      final results = await DependencyInjection.instance.stationSearchService.searchStations(searchQuery);
       setState(() {
         _searchResults = results;
         _isLoading = false;
@@ -143,7 +113,6 @@ class _StationSearchPageState extends State<StationSearchPage> {
     }
   }
 
-  /// Récupère les suggestions de recherche
   Future<void> _getSuggestions(String query) async {
     if (query.length < 2) {
       setState(() {
@@ -153,9 +122,7 @@ class _StationSearchPageState extends State<StationSearchPage> {
     }
 
     try {
-      final suggestions = await DependencyInjection
-          .instance.stationSearchService
-          .getSearchSuggestions(query);
+      final suggestions = await DependencyInjection.instance.stationSearchService.getSearchSuggestions(query);
       setState(() {
         _suggestions = suggestions;
       });
@@ -164,7 +131,6 @@ class _StationSearchPageState extends State<StationSearchPage> {
     }
   }
 
-  /// Recherche par type de transport
   Future<void> _searchByTransportType(TransportType type) async {
     setState(() {
       _isLoading = true;
@@ -173,8 +139,7 @@ class _StationSearchPageState extends State<StationSearchPage> {
     });
 
     try {
-      final results = await DependencyInjection.instance.stationSearchService
-          .searchStationsByType(type);
+      final results = await DependencyInjection.instance.stationSearchService.searchStationsByType(type);
       setState(() {
         _searchResults = results;
         _isLoading = false;
@@ -187,7 +152,6 @@ class _StationSearchPageState extends State<StationSearchPage> {
     }
   }
 
-  /// Recherche avancée
   Future<void> _advancedSearch() async {
     setState(() {
       _isLoading = true;
@@ -195,14 +159,9 @@ class _StationSearchPageState extends State<StationSearchPage> {
     });
 
     try {
-      final results = await DependencyInjection.instance.stationSearchService
-          .advancedSearch(
-        query: _searchController.text.trim().isNotEmpty
-            ? _searchController.text.trim()
-            : null,
-        transportType: _selectedTransportType != TransportType.all
-            ? _selectedTransportType
-            : null,
+      final results = await DependencyInjection.instance.stationSearchService.advancedSearch(
+        query: _searchController.text.trim().isNotEmpty ? _searchController.text.trim() : null,
+        transportType: _selectedTransportType != TransportType.all ? _selectedTransportType : null,
       );
       setState(() {
         _searchResults = results;
@@ -218,36 +177,7 @@ class _StationSearchPageState extends State<StationSearchPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Recherche de Gares'),
-        backgroundColor: const Color(0xFF4A90E2),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(
-              _showAdvancedFilters ? Icons.filter_list_off : Icons.filter_list,
-              color: Colors.white,
-            ),
-            onPressed: () {
-              setState(() {
-                _showAdvancedFilters = !_showAdvancedFilters;
-              });
-            },
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          _buildSearchBar(),
-          if (_showAdvancedFilters) _buildAdvancedFilters(),
-          Expanded(child: _buildBody()),
-        ],
-      ),
-    );
+    return _buildScaffold();
   }
 
   Widget _buildSearchBar() {
@@ -255,46 +185,16 @@ class _StationSearchPageState extends State<StationSearchPage> {
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _searchController,
-                  focusNode: _searchFocusNode,
-                  decoration: InputDecoration(
-                    hintText: 'Rechercher une gare...',
-                    prefixIcon: const Icon(Icons.search),
-                    suffixIcon: _searchController.text.isNotEmpty
-                        ? IconButton(
-                            icon: const Icon(Icons.clear),
-                            onPressed: () {
-                              _searchController.clear();
-                              _searchStations('');
-                            },
-                          )
-                        : null,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  onChanged: (value) {
-                    setState(() {});
-                    _getSuggestions(value);
-                  },
-                  onSubmitted: _searchStations,
-                ),
-              ),
-              const SizedBox(width: 8),
-              ElevatedButton.icon(
-                onPressed: _searchStations,
-                icon: const Icon(Icons.search),
-                label: const Text('Rechercher'),
-                style: ElevatedButton.styleFrom(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                ),
-              ),
-            ],
+          AppSearchBar(
+            controller: _searchController,
+            focusNode: _searchFocusNode,
+            hintText: 'Rechercher une gare...',
+            onChanged: (v) {
+              setState(() {});
+              _getSuggestions(v);
+            },
+            onSubmitted: _searchStations,
+            onSearchPressed: () => _searchStations(),
           ),
           if (_suggestions.isNotEmpty) _buildSuggestions(),
         ],
@@ -381,92 +281,25 @@ class _StationSearchPageState extends State<StationSearchPage> {
     }
 
     if (_error != null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.error_outline,
-              size: 64,
-              color: Colors.red[300],
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Erreur: $_error',
-              style: const TextStyle(fontSize: 16),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () => _searchStations(),
-              child: const Text('Réessayer'),
-            ),
-          ],
-        ),
-      );
+      return ErrorState(message: 'Erreur: $_error', onRetry: () => _searchStations());
     }
 
-    if (_searchResults.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.search, size: 64, color: Colors.grey),
-            const SizedBox(height: 16),
-            Text(
-              widget.departureStation != null
-                  ? 'Aucune gare connectée trouvée'
-                  : 'Recherchez une gare',
-              style: const TextStyle(fontSize: 18, color: Colors.grey),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              widget.departureStation != null
-                  ? 'Aucune gare connectée à ${widget.departureStation!.name}'
-                  : 'Tapez le nom d\'une gare et cliquez sur "Rechercher"',
-              style: const TextStyle(color: Colors.grey),
-            ),
-          ],
-        ),
-      );
-    }
+        if (_searchResults.isEmpty) {
+          return EmptyState(
+            icon: Icons.search,
+            title: widget.departureStation != null
+                ? 'Aucune gare connectée trouvée'
+                : 'Recherchez une gare',
+            subtitle: widget.departureStation != null
+                ? 'Aucune gare connectée à ${widget.departureStation!.name}'
+                : 'Tapez le nom d\'une gare et cliquez sur "Rechercher"',
+          );
+        }
 
     return Column(
       children: [
-        // Message informatif pour les gares connectées
-        if (widget.departureStation != null &&
-            _searchResults.isNotEmpty &&
-            _searchController.text.isEmpty)
-          Container(
-            width: double.infinity,
-            margin: const EdgeInsets.all(16),
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: const Color(0xFF4A90E2).withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-              border:
-                  Border.all(color: const Color(0xFF4A90E2).withOpacity(0.3)),
-            ),
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.info_outline,
-                  color: Color(0xFF4A90E2),
-                  size: 20,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Gares connectées à ${widget.departureStation!.name}',
-                    style: const TextStyle(
-                      color: Color(0xFF4A90E2),
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
+        if (widget.departureStation != null && _searchResults.isNotEmpty && _searchController.text.isEmpty)
+          InfoBanner(text: 'Gares connectées à ${widget.departureStation!.name}'),
         Expanded(
           child: ListView.builder(
             itemCount: _searchResults.length,
@@ -483,13 +316,12 @@ class _StationSearchPageState extends State<StationSearchPage> {
   Widget _buildStationCard(SearchResult<Station> result) {
     final station = result.data;
     final isSuggestion = result.metadata?['suggestion'] == true;
-
+    
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor:
-              isSuggestion ? Colors.orange : _getTypeColor(result.type),
+          backgroundColor: isSuggestion ? Colors.orange : _getTypeColor(result.type),
           child: Icon(
             isSuggestion ? Icons.lightbulb_outline : _getTypeIcon(result.type),
             color: Colors.white,
@@ -506,8 +338,7 @@ class _StationSearchPageState extends State<StationSearchPage> {
             if (isSuggestion)
               Text(
                 'Suggestion - Cliquez pour rechercher cette gare',
-                style: TextStyle(
-                    color: Colors.orange[600], fontStyle: FontStyle.italic),
+                style: TextStyle(color: Colors.orange[600], fontStyle: FontStyle.italic),
               ),
             if (result.metadata?['distance'] != null)
               Text(
@@ -587,19 +418,18 @@ class _StationSearchPageState extends State<StationSearchPage> {
   void _selectStation(Station station) {
     Navigator.pop(context, station);
   }
-
+  
   /// Gère la sélection d'une suggestion de destination
   Future<void> _selectSuggestion(String destinationName) async {
     setState(() {
       _isLoading = true;
       _error = null;
     });
-
+    
     try {
       // Rechercher la vraie station correspondant à cette destination
-      final results = await DependencyInjection.instance.stationSearchService
-          .searchStations(destinationName);
-
+      final results = await DependencyInjection.instance.stationSearchService.searchStations(destinationName);
+      
       if (results.isNotEmpty) {
         // Prendre le premier résultat (le plus pertinent)
         final station = results.first.data;
@@ -616,5 +446,38 @@ class _StationSearchPageState extends State<StationSearchPage> {
         _isLoading = false;
       });
     }
+  }
+
+  Widget _buildScaffold() {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Recherche de Gares'),
+        backgroundColor: const Color(0xFF4A90E2),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        actions: [
+          IconButton(
+            icon: Icon(
+              _showAdvancedFilters ? Icons.filter_list_off : Icons.filter_list,
+              color: Colors.white,
+            ),
+            onPressed: () {
+              setState(() {
+                _showAdvancedFilters = !_showAdvancedFilters;
+              });
+            },
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          _buildSearchBar(),
+          if (_showAdvancedFilters) _buildAdvancedFilters(),
+          Expanded(child: _buildBody()),
+        ],
+      ),
+    );
   }
 }

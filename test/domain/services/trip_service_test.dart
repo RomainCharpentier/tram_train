@@ -25,6 +25,11 @@ class MockTripStorage implements TripStorage {
   Future<void> deleteTrip(String tripId) async {
     _trips.removeWhere((trip) => trip.id == tripId);
   }
+
+  @override
+  Future<void> clearAllTrips() async {
+    _trips.clear();
+  }
 }
 
 void main() {

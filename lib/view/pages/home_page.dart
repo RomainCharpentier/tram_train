@@ -7,6 +7,8 @@ import 'add_trip_page.dart';
 import 'edit_trip_page.dart';
 import 'trip_schedule_page.dart';
 import '../widgets/logo_widget.dart';
+import '../widgets/trip_card.dart';
+import '../widgets/train_card.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -87,48 +89,7 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Row(
-          children: [
-            LogoWidget(size: 40, showText: false),
-            SizedBox(width: 12),
-            Text('Train\'Qil'),
-          ],
-        ),
-        backgroundColor: const Color(0xFF4A90E2),
-        actions: [
-          // Toggle de thème
-          AnimatedBuilder(
-            animation: DependencyInjection.instance.themeService,
-            builder: (context, child) {
-              return IconButton(
-                icon: Icon(
-                  DependencyInjection.instance.themeService.isDarkMode
-                      ? Icons.light_mode
-                      : Icons.dark_mode,
-                  color: Colors.white,
-                ),
-                onPressed: () =>
-                    DependencyInjection.instance.themeService.toggleTheme(),
-                tooltip: DependencyInjection.instance.themeService.isDarkMode
-                    ? 'Mode clair'
-                    : 'Mode sombre',
-              );
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.person, color: Colors.white),
-            onPressed: () => _navigateToProfile(context),
-          ),
-        ],
-      ),
-      body: _buildBody(),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _navigateToAddTrip(context),
-        child: const Icon(Icons.add),
-      ),
-    );
+    return _buildScaffold();
   }
 
   Widget _buildBody() {
@@ -294,215 +255,30 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildTripCard(domain.Trip trip) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.train, color: Color(0xFF4A90E2)),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    '${trip.departureStation.name} → ${trip.arrivalStation.name}',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                ),
-                PopupMenuButton<String>(
-                  onSelected: (value) => _handleTripAction(value, trip),
-                  itemBuilder: (context) => [
-                    const PopupMenuItem(
-                      value: 'edit',
-                      child: Row(
-                        children: [
-                          Icon(Icons.edit),
-                          SizedBox(width: 8),
-                          Text('Modifier'),
-                        ],
-                      ),
-                    ),
-                    const PopupMenuItem(
-                      value: 'duplicate',
-                      child: Row(
-                        children: [
-                          Icon(Icons.copy),
-                          SizedBox(width: 8),
-                          Text('Dupliquer'),
-                        ],
-                      ),
-                    ),
-                    const PopupMenuItem(
-                      value: 'toggle',
-                      child: Row(
-                        children: [
-                          Icon(Icons.power_settings_new),
-                          SizedBox(width: 8),
-                          Text('Activer/Désactiver'),
-                        ],
-                      ),
-                    ),
-                    const PopupMenuItem(
-                      value: 'delete',
-                      child: Row(
-                        children: [
-                          Icon(Icons.delete, color: Colors.red),
-                          SizedBox(width: 8),
-                          Text('Supprimer',
-                              style: TextStyle(color: Colors.red)),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Icon(
-                  trip.isActive ? Icons.check_circle : Icons.cancel,
-                  color: trip.isActive ? Colors.green : Colors.red,
-                  size: 16,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  trip.isActive ? 'Actif' : 'Inactif',
-                  style: TextStyle(
-                    color: trip.isActive ? Colors.green : Colors.red,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Icon(
-                  trip.notificationsEnabled
-                      ? Icons.notifications
-                      : Icons.notifications_off,
-                  size: 16,
-                  color:
-                      trip.notificationsEnabled ? Colors.orange : Colors.grey,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  trip.notificationsEnabled
-                      ? 'Notifications'
-                      : 'Pas de notifications',
-                  style: TextStyle(
-                    color:
-                        trip.notificationsEnabled ? Colors.orange : Colors.grey,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Jours: ${trip.daysName}',
-              style: const TextStyle(color: Colors.grey),
-            ),
-            Text(
-              'Heure: ${trip.timeFormatted}',
-              style: const TextStyle(color: Colors.grey),
-            ),
-            const SizedBox(height: 12),
-            ElevatedButton(
-              onPressed: () => _showTripDetails(trip),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF4A90E2),
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('Voir les horaires'),
-            ),
-          ],
-        ),
-      ),
+    return TripCard(
+      trip: trip,
+      onAction: (action, t) => _handleTripAction(action, t),
+      onTap: () => _showTripDetails(trip),
     );
   }
 
   /// Construit les cartes des trains
   List<Widget> _buildTrainCards() {
-    return _nextTrains
-        .map((train) => Card(
-              margin: const EdgeInsets.only(bottom: 8),
-              child: ListTile(
-                leading: CircleAvatar(
-                  backgroundColor: _getStatusColor(train.status),
-                  child: Icon(
-                    _getStatusIcon(train.status),
-                    color: Colors.white,
-                    size: 16,
-                  ),
-                ),
-                title: Text(
-                  '${train.departureTimeFormatted} - ${train.direction}',
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                subtitle: Text(train.statusText),
-                trailing: train.isDelayed
-                    ? Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: Colors.orange,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          '+${train.delayMinutes}min',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      )
-                    : null,
-              ),
-            ))
-        .toList();
+    return _nextTrains.map((train) => TrainCard(train: train)).toList();
   }
 
-  Color _getStatusColor(TrainStatus status) {
-    switch (status) {
-      case TrainStatus.onTime:
-        return Colors.green;
-      case TrainStatus.delayed:
-        return Colors.orange;
-      case TrainStatus.early:
-        return Colors.blue;
-      case TrainStatus.cancelled:
-        return Colors.red;
-      case TrainStatus.unknown:
-        return Colors.grey;
-    }
-  }
+  
 
-  IconData _getStatusIcon(TrainStatus status) {
-    switch (status) {
-      case TrainStatus.onTime:
-        return Icons.check_circle;
-      case TrainStatus.delayed:
-        return Icons.schedule;
-      case TrainStatus.early:
-        return Icons.schedule;
-      case TrainStatus.cancelled:
-        return Icons.cancel;
-      case TrainStatus.unknown:
-        return Icons.help;
-    }
-  }
-
-  void _navigateToProfile(BuildContext context) {
-    Navigator.push(
+  void _navigateToProfile(BuildContext context) async {
+    final result = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
         builder: (context) => const ProfilePage(),
       ),
     );
+    if (result == true) {
+      _loadActiveTrips();
+    }
   }
 
   void _navigateToAddTrip(BuildContext context) async {
@@ -569,10 +345,10 @@ class _HomePageState extends State<HomePage> {
           ),
         );
         if (confirmed == true) {
-          await DependencyInjection.instance.tripService.deleteTrip(trip.id);
+          await DependencyInjection.instance.tripService.deleteTripAndSimilar(trip);
           _loadActiveTrips();
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Trajet supprimé')),
+            const SnackBar(content: Text('Trajet supprimé (doublons inclus)')),
           );
         }
         break;
@@ -584,6 +360,50 @@ class _HomePageState extends State<HomePage> {
       context,
       MaterialPageRoute(
         builder: (context) => TripSchedulePage(trip: trip),
+      ),
+    );
+  }
+
+  Widget _buildScaffold() {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Row(
+          children: [
+            LogoWidget(size: 40, showText: false),
+            SizedBox(width: 12),
+            Text('Train\'Qil'),
+          ],
+        ),
+        backgroundColor: const Color(0xFF4A90E2),
+        actions: [
+          AnimatedBuilder(
+            animation: DependencyInjection.instance.themeService,
+            builder: (context, child) {
+              return IconButton(
+                icon: Icon(
+                  DependencyInjection.instance.themeService.isDarkMode
+                      ? Icons.light_mode
+                      : Icons.dark_mode,
+                  color: Colors.white,
+                ),
+                onPressed: () =>
+                    DependencyInjection.instance.themeService.toggleTheme(),
+                tooltip: DependencyInjection.instance.themeService.isDarkMode
+                    ? 'Mode clair'
+                    : 'Mode sombre',
+              );
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.person, color: Colors.white),
+            onPressed: () => _navigateToProfile(context),
+          ),
+        ],
+      ),
+      body: _buildBody(),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _navigateToAddTrip(context),
+        child: const Icon(Icons.add),
       ),
     );
   }
