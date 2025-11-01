@@ -660,15 +660,31 @@ class _AddTripPageState extends State<AddTripPage> {
 
   DateTime _buildReferenceDateTime() {
     final now = DateTime.now();
-    final base = DateTime(now.year, now.month, now.day, _selectedTime!.hour,
-        _selectedTime!.minute);
-    // Si des jours sont sélectionnés, prendre la prochaine occurrence du premier jour choisi
-    if (_selectedDays.isEmpty) return base;
-    final targetWeekday =
-        _selectedDays.first.index + 1; // DateTime weekday: 1=Mon
-    int addDays = (targetWeekday - base.weekday) % 7;
-    if (addDays < 0) addDays += 7;
-    return base.add(Duration(days: addDays));
+    final baseToday = DateTime(
+      now.year,
+      now.month,
+      now.day,
+      _selectedTime!.hour,
+      _selectedTime!.minute,
+    );
+
+    if (_selectedDays.isEmpty) {
+      return baseToday;
+    }
+
+    // Chercher la prochaine occurrence parmi tous les jours sélectionnés
+    int bestDelta = 8; // plus que max 7
+    for (final d in _selectedDays) {
+      final targetWeekday = d.index + 1; // 1=Lundi ... 7=Dimanche
+      int delta = (targetWeekday - baseToday.weekday) % 7;
+      if (delta == 0 && baseToday.isBefore(now)) {
+        // même jour mais heure déjà passée → semaine suivante
+        delta = 7;
+      }
+      if (delta < bestDelta) bestDelta = delta;
+    }
+
+    return baseToday.add(Duration(days: bestDelta % 7));
   }
 
   void _applyPagination(List<domain_train.Train> list) {
