@@ -26,19 +26,22 @@ class _AddTripPageState extends State<AddTripPage> {
   flutter.TimeOfDay? _selectedTime;
   bool _isActive = true;
   bool _notificationsEnabled = true;
-  bool _directTrainsOnly =
-      true; // Nouvelle option pour trajets directs uniquement
+  bool _directTrainsOnly = true;
   String? _connectionError;
 
   // Sélection d'un train précis autour d'une heure
   TimeConstraintMode _timeMode = TimeConstraintMode.departure;
   List<domain_train.Train> _candidateTrains = [];
-  List<domain_train.Train> _allTrains = [];
-  String? _selectedTrainId;
   bool _isLoadingCandidates = false;
   bool _hasSearchedCandidates = false;
-  int _pageIndex = 0;
-  final int _pageSize = 10;
+  String? _selectedCandidateId;
+  List<domain.Trip> _existingTrips = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadExistingTrips();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -342,24 +345,7 @@ class _AddTripPageState extends State<AddTripPage> {
               ),
             ),
 
-            // Proposer des trains
-            ElevatedButton.icon(
-              onPressed: (_departureStation != null && _arrivalStation != null)
-                  ? _loadCandidateTrains
-                  : null,
-              icon: _isLoadingCandidates
-                  ? SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                          strokeWidth: 2, color: context.theme.onPrimary))
-                  : const Icon(Icons.search),
-              label: const Text('Filtrer par heure'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: context.theme.primary,
-                foregroundColor: context.theme.onPrimary,
-              ),
-            ),
+            // Bouton "Filtrer par heure" retiré (recherche auto)
 
             // Liste des candidats
             // État de chargement / vide / liste
@@ -377,7 +363,7 @@ class _AddTripPageState extends State<AddTripPage> {
                       SizedBox(width: 8),
                       Expanded(
                           child: Text(
-                              'Aucun train trouvé dans la plage sélectionnée. Ajustez l\'heure ou la tolérance.')),
+                              'Aucun train trouvé autour de l\'horaire choisi.')),
                     ],
                   ),
                 ),
@@ -390,67 +376,47 @@ class _AddTripPageState extends State<AddTripPage> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Bandeau Avant/Après
-                      if (_selectedTime != null) Builder(builder: (context) {
-                        final ref = _buildReferenceDateTime();
-                        final before = _candidateTrains
-                            .where((t) => t.departureTime.isBefore(ref))
-                            .fold<DateTime?>(null, (prev, e) =>
-                                prev == null || e.departureTime.isAfter(prev)
-                                    ? e.departureTime
-                                    : prev);
-                        final after = _candidateTrains
-                            .where((t) => !t.departureTime.isBefore(ref))
-                            .fold<DateTime?>(null, (prev, e) =>
-                                prev == null || e.departureTime.isBefore(prev)
-                                    ? e.departureTime
-                                    : prev);
-                        String fmt(DateTime? dt) => dt == null
-                            ? 'aucun'
-                            : '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 8),
-                          child: Row(
-                            children: [
-                              Chip(
-                                avatar: const Icon(Icons.keyboard_double_arrow_left, size: 16),
-                                label: Text('Avant: ${fmt(before)}'),
-                              ),
-                              const SizedBox(width: 8),
-                              Chip(
-                                avatar: const Icon(Icons.keyboard_double_arrow_right, size: 16),
-                                label: Text('Après: ${fmt(after)}'),
-                              ),
-                            ],
-                          ),
-                        );
-                      }),
+                      // liste des 2 trajets candidats
                       ConstrainedBox(
-                        constraints: const BoxConstraints(maxHeight: 360),
+                        constraints: const BoxConstraints(maxHeight: 160),
                         child: ListView.separated(
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
-                          itemCount: _candidateTrains.length,
+                          itemCount: _candidateTrains.length > 2 ? 2 : _candidateTrains.length,
                           separatorBuilder: (_, __) => const Divider(height: 1),
                           itemBuilder: (context, index) {
                             final t = _candidateTrains[index];
+                            final arr = _extractArrivalTime(t);
+                            final depStr = _formatHHmm(t.departureTime);
+                            final arrStr = arr != null ? _formatHHmm(arr) : '??:??';
+                            final key = _candidateKey(t);
+                            final already = _isAlreadySavedTrain(t);
                             return RadioListTile<String>(
-                              value: t.id,
-                              groupValue: _selectedTrainId,
-                              onChanged: (val) {
-                                setState(() {
-                                  _selectedTrainId = val;
-                                  _selectedTime = flutter.TimeOfDay(
-                                    hour: t.departureTime.hour,
-                                    minute: t.departureTime.minute,
-                                  );
-                                });
-                              },
-                              title: Text(
-                                  '${t.departureTime.hour.toString().padLeft(2, '0')}:${t.departureTime.minute.toString().padLeft(2, '0')} → ${t.direction}'),
+                              value: key,
+                              groupValue: _selectedCandidateId,
+                              onChanged: already
+                                  ? null
+                                  : (val) {
+                                      setState(() {
+                                        _selectedCandidateId = key;
+                                        _selectedTime = flutter.TimeOfDay(
+                                          hour: t.departureTime.hour,
+                                          minute: t.departureTime.minute,
+                                        );
+                                      });
+                                    },
+                              secondary: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.schedule),
+                                  if (already) const SizedBox(width: 8),
+                                  if (already)
+                                    const Chip(label: Text('Déjà enregistré')),
+                                ],
+                              ),
+                              title: Text('$depStr → $arrStr'),
                               subtitle: Text(
-                                '${_formatDayLabel(t.departureTime)} • ${t.statusText}',
+                                '${_formatDayLabel(t.departureTime)} • ${t.direction} • ${t.statusText}',
                                 style: TextStyle(color: context.theme.textSecondary),
                               ),
                             );
@@ -461,29 +427,7 @@ class _AddTripPageState extends State<AddTripPage> {
                   ),
                 ),
               ),
-              // Pagination controls
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    IconButton(
-                      tooltip: 'Précédent',
-                      onPressed: _pageIndex > 0
-                          ? () => _setPage(_pageIndex - 1)
-                          : null,
-                      icon: const Icon(Icons.chevron_left),
-                    ),
-                    Text('Page ${_pageIndex + 1}'),
-                    IconButton(
-                      tooltip: 'Suivant',
-                      onPressed:
-                          _hasNextPage ? () => _setPage(_pageIndex + 1) : null,
-                      icon: const Icon(Icons.chevron_right),
-                    ),
-                  ],
-                ),
-              ),
+              // Pagination supprimée (on n'affiche que 2 trajets)
             ],
 
             // Statut actif
@@ -605,7 +549,10 @@ class _AddTripPageState extends State<AddTripPage> {
   }
 
   void _maybeAutoSearch() {
-    if (_departureStation != null && _arrivalStation != null) {
+    if (_departureStation != null &&
+        _arrivalStation != null &&
+        _selectedTime != null &&
+        _selectedDays.isNotEmpty) {
       _loadCandidateTrains();
     }
   }
@@ -631,10 +578,7 @@ class _AddTripPageState extends State<AddTripPage> {
         }
       });
 
-      // Charger les trains dès que les deux gares sont sélectionnées
-      if (_departureStation != null && _arrivalStation != null) {
-        _loadAllTrains();
-      }
+      // Ne rien charger tant que l'heure et le jour ne sont pas sélectionnés
     }
   }
 
@@ -717,33 +661,9 @@ class _AddTripPageState extends State<AddTripPage> {
     return baseToday.add(Duration(days: bestDelta % 7));
   }
 
-  void _applyPagination(List<domain_train.Train> list) {
-    list.sort((a, b) => a.departureTime.compareTo(b.departureTime));
-    final totalPages = (list.length / _pageSize).ceil();
-    if (_pageIndex >= totalPages) {
-      _pageIndex = (totalPages - 1).clamp(0, totalPages);
-    }
-    final start = _pageIndex * _pageSize;
-    final end = (start + _pageSize).clamp(0, list.length);
-    setState(() {
-      _candidateTrains = list.sublist(start, end);
-    });
-  }
+  
 
-  void _setPage(int index) {
-    setState(() {
-      _pageIndex = index;
-    });
-    // Re-appliquer pagination sur la source actuelle (_allTrains ou derniers filtrés)
-    final source = _allTrains.isNotEmpty ? _allTrains : _candidateTrains;
-    _applyPagination(List<domain_train.Train>.from(source));
-  }
-
-  bool get _hasNextPage {
-    final source = _allTrains.isNotEmpty ? _allTrains : _candidateTrains;
-    final totalPages = (source.length / _pageSize).ceil();
-    return _pageIndex + 1 < totalPages;
-  }
+  
 
   String _formatDayLabel(DateTime dt) {
     const names = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
@@ -751,6 +671,55 @@ class _AddTripPageState extends State<AddTripPage> {
     final dd = dt.day.toString().padLeft(2, '0');
     final mm = dt.month.toString().padLeft(2, '0');
     return '$name $dd/$mm';
+  }
+
+  DateTime? _extractArrivalTime(domain_train.Train t) {
+    try {
+      final info = t.additionalInfo.firstWhere(
+        (s) => s.startsWith('Arrivée:'),
+        orElse: () => '',
+      );
+      if (info.isEmpty) return null;
+      final raw = info.substring('Arrivée:'.length).trim();
+      return DateTime.tryParse(raw);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  String _formatHHmm(DateTime dt) {
+    final h = dt.hour.toString().padLeft(2, '0');
+    final m = dt.minute.toString().padLeft(2, '0');
+    return '$h:$m';
+  }
+
+  String _candidateKey(domain_train.Train t) {
+    // Certaines réponses API peuvent avoir un id vide/identique; on ajoute l'heure pour garantir l'unicité
+    return '${t.id}_${t.departureTime.millisecondsSinceEpoch}';
+  }
+
+  Future<void> _loadExistingTrips() async {
+    final trips = await DependencyInjection.instance.tripService.getAllTrips();
+    if (!mounted) return;
+    setState(() => _existingTrips = trips);
+  }
+
+  bool _isAlreadySavedTrain(domain_train.Train t) {
+    if (_departureStation == null || _arrivalStation == null) return false;
+    return _existingTrips.any((trip) {
+      final sameStations =
+          trip.departureStation.id == _departureStation!.id &&
+          trip.arrivalStation.id == _arrivalStation!.id;
+      if (!sameStations) return false;
+      final sameTime = trip.time.hour == t.departureTime.hour &&
+          trip.time.minute == t.departureTime.minute;
+      if (!sameTime) return false;
+      if (_selectedDays.isNotEmpty) {
+        final d = _selectedDays.first;
+        if (!trip.days.contains(d)) return false;
+      }
+      return true;
+    });
   }
 
   List<domain_train.Train> _deduplicateTrains(List<domain_train.Train> trains) {
@@ -774,7 +743,6 @@ class _AddTripPageState extends State<AddTripPage> {
     if (_departureStation == null || _arrivalStation == null) return;
     setState(() {
       _isLoadingCandidates = true;
-      _selectedTrainId = null;
       _hasSearchedCandidates = true;
     });
 
@@ -872,22 +840,28 @@ class _AddTripPageState extends State<AddTripPage> {
         }
 
         setState(() {
-          _pageIndex = 0;
           _candidateTrains = result;
+          // Pré-sélection prioritaire: si un trajet existe déjà en favoris
+          final existingIdx = _candidateTrains.indexWhere(_isAlreadySavedTrain);
+          if (existingIdx >= 0) {
+            _selectedCandidateId = _candidateKey(_candidateTrains[existingIdx]);
+          } else if (_selectedTime != null && _candidateTrains.isNotEmpty) {
+            // Sinon, si une heure est choisie, cocher le trajet correspondant
+            final match = _candidateTrains.firstWhere(
+              (t) => t.departureTime.hour == _selectedTime!.hour &&
+                  t.departureTime.minute == _selectedTime!.minute,
+              orElse: () => _candidateTrains.first,
+            );
+            _selectedCandidateId = _candidateKey(match);
+          }
         });
         return;
       }
 
-      // Sinon, on filtre localement la liste déjà chargée autour de maintenant
-      if (_allTrains.isEmpty) {
-        await _loadAllTrains();
-      }
-      List<domain_train.Train> subset = _deduplicateTrains(_allTrains);
-      if (_directTrainsOnly) {
-        subset = subset.where((t) => t.isDirect).toList();
-      }
-      subset.sort((a, b) => a.departureTime.compareTo(b.departureTime));
-      _applyPagination(subset);
+      // Sinon, sans heure on n'affiche rien (pas de tableau)
+      setState(() {
+        _candidateTrains = [];
+      });
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -906,54 +880,7 @@ class _AddTripPageState extends State<AddTripPage> {
     }
   }
 
-  /// Charge tous les trains disponibles entre les deux gares
-  Future<void> _loadAllTrains() async {
-    if (_departureStation == null || _arrivalStation == null) return;
-
-    setState(() {
-      _isLoadingCandidates = true;
-      _candidateTrains = [];
-      _selectedTrainId = null;
-      _hasSearchedCandidates = true;
-    });
-
-    try {
-      final service = DependencyInjection.instance.trainService;
-      // Récupère les départs à la gare de départ puis filtre la direction qui contient la gare d'arrivée
-      var departures = await service.getDepartures(_departureStation!);
-      // Étendre la fenêtre en récupérant aussi un créneau +1h
-      final plusOneHour = DateTime.now().add(const Duration(hours: 1));
-      final more =
-          await service.getDeparturesAt(_departureStation!, plusOneHour);
-      departures = [...departures, ...more];
-      var filteredTrains =
-          service.filterByDirection(departures, _arrivalStation!.name);
-      if (_directTrainsOnly) {
-        filteredTrains = filteredTrains.where((t) => t.isDirect).toList();
-      }
-      filteredTrains.sort((a, b) => a.departureTime.compareTo(b.departureTime));
-      final deduped = _deduplicateTrains(filteredTrains);
-      setState(() {
-        _allTrains = deduped;
-      });
-      _applyPagination(deduped);
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erreur lors de la recherche: $e'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoadingCandidates = false;
-        });
-      }
-    }
-  }
+  
 
   Future<void> _saveTrip() async {
     if (_departureStation == null ||

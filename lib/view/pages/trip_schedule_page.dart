@@ -391,25 +391,8 @@ class _TripSchedulePageState extends State<TripSchedulePage> {
                   if (after == null || dt.isBefore(after)) after = dt;
                 }
               }
-              String fmt(DateTime? dt) => dt == null
-                  ? 'aucun'
-                  : '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
-              return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                child: Row(
-                  children: [
-                    Chip(
-                      avatar: const Icon(Icons.keyboard_double_arrow_left, size: 16),
-                      label: Text('Avant: ${fmt(before)}'),
-                    ),
-                    const SizedBox(width: 8),
-                    Chip(
-                      avatar: const Icon(Icons.keyboard_double_arrow_right, size: 16),
-                      label: Text('Après: ${fmt(after)}'),
-                    ),
-                  ],
-                ),
-              );
+              // plus de badge avant/après
+              return const SizedBox.shrink();
             }),
           if (_filteredTrains.isNotEmpty)
             Padding(
