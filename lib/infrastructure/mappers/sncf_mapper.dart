@@ -3,6 +3,17 @@ import '../../domain/models/station.dart';
 
 /// Mapper pour convertir les données SNCF vers les modèles du domain
 class SncfMapper {
+  /// Parse le format datetime SNCF (YYYYMMDDTHHMMSS) en DateTime local
+  DateTime _parseSncfDateTime(String value) {
+    // Exemple: 20250101T081000
+    final y = int.parse(value.substring(0, 4));
+    final m = int.parse(value.substring(4, 6));
+    final d = int.parse(value.substring(6, 8));
+    final h = int.parse(value.substring(9, 11));
+    final min = int.parse(value.substring(11, 13));
+    final s = int.parse(value.substring(13, 15));
+    return DateTime(y, m, d, h, min, s);
+  }
   /// Convertit les départs SNCF vers des trains
   List<Train> mapDeparturesToTrains(
       Map<String, dynamic> response, Station station) {
@@ -20,10 +31,10 @@ class SncfMapper {
     final displayInfo =
         departure['display_informations'] as Map<String, dynamic>;
 
-    final departureTime =
-        DateTime.parse(stopDateTime['departure_date_time'] as String);
-    final baseDepartureTime =
-        DateTime.parse(stopDateTime['base_departure_date_time'] as String);
+    final departureTime = _parseSncfDateTime(
+        stopDateTime['departure_date_time'] as String);
+    final baseDepartureTime = _parseSncfDateTime(
+        stopDateTime['base_departure_date_time'] as String);
 
     // Générer un ID unique basé sur les données disponibles
     final links = departure['links'] as List<dynamic>? ?? [];
@@ -96,7 +107,7 @@ class SncfMapper {
         stopTimes.isNotEmpty ? stopTimes.first as Map<String, dynamic> : {};
 
     final departureTime = firstStopTime['departure_date_time'] != null
-        ? DateTime.parse(firstStopTime['departure_date_time'] as String)
+        ? _parseSncfDateTime(firstStopTime['departure_date_time'] as String)
         : DateTime.now();
 
     return Train.fromTimes(
@@ -134,11 +145,11 @@ class SncfMapper {
     final to = lastSection['to'] as Map<String, dynamic>? ?? {};
 
     final departureTime = from['departure_date_time'] != null
-        ? DateTime.parse(from['departure_date_time'] as String)
+        ? _parseSncfDateTime(from['departure_date_time'] as String)
         : DateTime.now();
 
     final arrivalTime = to['arrival_date_time'] != null
-        ? DateTime.parse(to['arrival_date_time'] as String)
+        ? _parseSncfDateTime(to['arrival_date_time'] as String)
         : DateTime.now();
 
     // Détecter les vraies correspondances (changement de véhicule/mode)
@@ -404,7 +415,7 @@ class SncfMapper {
         arrival['display_informations'] as Map<String, dynamic>? ?? {};
 
     final arrivalTime = stopDateTime['arrival_date_time'] != null
-        ? DateTime.parse(stopDateTime['arrival_date_time'] as String)
+        ? _parseSncfDateTime(stopDateTime['arrival_date_time'] as String)
         : DateTime.now();
 
     return Train.fromTimes(
