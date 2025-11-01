@@ -1,5 +1,4 @@
 import 'package:train_qil/domain/models/station.dart';
-import 'package:train_qil/domain/models/train.dart';
 import 'package:train_qil/infrastructure/dependency_injection.dart';
 
 /// Résultat de vérification de connexion entre deux gares
@@ -181,13 +180,4 @@ class ConnectedStationsService {
         .toList();
   }
 
-  /// Normalise un nom de gare pour la comparaison
-  static String _normalizeStationName(String name) {
-    return name
-        .toLowerCase()
-        .replaceAll(RegExp(r'[\(\)-]'), '') // Supprime parenthèses, tirets
-        .replaceAll(
-            RegExp(r'\s+'), ' ') // Remplace multiples espaces par un seul
-        .trim();
-  }
 }

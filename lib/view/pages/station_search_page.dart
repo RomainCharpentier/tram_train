@@ -4,6 +4,7 @@ import '../../domain/models/station.dart';
 import '../../domain/models/search_result.dart';
 import '../../domain/services/station_search_service.dart';
 import '../../domain/services/connected_stations_service.dart';
+import '../../domain/services/favorite_station_service.dart';
 import '../../infrastructure/dependency_injection.dart';
 import '../widgets/search_bar.dart';
 import '../widgets/empty_state.dart';
@@ -12,8 +13,15 @@ import '../widgets/info_banner.dart';
 
 class StationSearchPage extends StatefulWidget {
   final Station? departureStation; // Gare de départ pour filtrer les gares connectées
+  final bool showFavoriteButton; // Afficher le bouton favori
+  final void Function(Station)? onStationTap; // Callback personnalisé pour le clic
   
-  const StationSearchPage({super.key, this.departureStation});
+  const StationSearchPage({
+    super.key,
+    this.departureStation,
+    this.showFavoriteButton = true,
+    this.onStationTap,
+  });
 
   @override
   State<StationSearchPage> createState() => _StationSearchPageState();
@@ -29,6 +37,9 @@ class _StationSearchPageState extends State<StationSearchPage> {
   String? _error;
   TransportType _selectedTransportType = TransportType.all;
   bool _showAdvancedFilters = false;
+  final FavoriteStationService _favoriteStationService =
+      DependencyInjection.instance.favoriteStationService;
+  Map<String, bool> _favoriteStatus = {};
 
   @override
   void initState() {
@@ -36,6 +47,42 @@ class _StationSearchPageState extends State<StationSearchPage> {
     // Charger les gares connectées si une gare de départ est fournie
     if (widget.departureStation != null) {
       _loadConnectedStations();
+    } else {
+      // Si pas de station de départ, afficher les favoris par défaut
+      _loadFavorites();
+    }
+    _loadFavoriteStatus();
+  }
+
+  Future<void> _loadFavoriteStatus() async {
+    final favorites = await _favoriteStationService.getAllFavoriteStations();
+    setState(() {
+      _favoriteStatus = {
+        for (var fav in favorites) fav.id: true
+      };
+    });
+  }
+
+  Future<void> _loadFavorites() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final favorites = await _favoriteStationService.getAllFavoriteStations();
+      setState(() {
+        // Convertir les favoris en SearchResult pour l'affichage
+        _searchResults = favorites.map((station) {
+          return SearchResult.favorite(station);
+        }).toList();
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = 'Erreur lors du chargement des favoris: $e';
+        _isLoading = false;
+      });
     }
   }
 
@@ -86,10 +133,8 @@ class _StationSearchPageState extends State<StationSearchPage> {
       if (widget.departureStation != null) {
         await _loadConnectedStations();
       } else {
-        setState(() {
-          _searchResults = [];
-          _error = null;
-        });
+        // Sinon, afficher les favoris
+        await _loadFavorites();
       }
       return;
     }
@@ -106,6 +151,8 @@ class _StationSearchPageState extends State<StationSearchPage> {
         _searchResults = results;
         _isLoading = false;
       });
+      // Recharger le statut des favoris après une recherche
+      _loadFavoriteStatus();
     } catch (e) {
       setState(() {
         _error = 'Erreur lors de la recherche: $e';
@@ -353,22 +400,41 @@ class _StationSearchPageState extends State<StationSearchPage> {
               ),
           ],
         ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (result.isHighQuality)
-              const Icon(Icons.star, color: Colors.amber, size: 16),
-            const SizedBox(width: 8),
-            IconButton(
-              icon: const Icon(Icons.add),
-              onPressed: () => _addToFavorites(station),
-            ),
-          ],
-        ),
+        trailing: widget.showFavoriteButton && _favoriteStatus[station.id] == true
+            ? Icon(
+                Icons.star,
+                color: Colors.amber,
+              )
+            : null,
         onTap: () {
+          // Toujours valider avant de sélectionner
           if (isSuggestion) {
             _selectSuggestion(station.name);
+            return;
+          }
+          
+          // Vérifier que la station n'est pas temporaire ou invalide
+          if (station.id.startsWith('TEMP_') || station.id.isEmpty) {
+            if (station.id.startsWith('TEMP_')) {
+              _selectSuggestion(station.name);
+            } else {
+              if (!mounted) return;
+              setState(() {
+                _error = 'Station invalide: ID vide pour "${station.name}"';
+              });
+            }
+            return;
+          }
+          
+          if (widget.onStationTap != null) {
+            // Utiliser le callback personnalisé (station déjà validée)
+            widget.onStationTap!(station);
+          } else if (widget.showFavoriteButton) {
+            // Mode favoris par défaut : toggle favori puis sélectionner
+            _toggleFavorite(station);
+            _selectStation(station);
           } else {
+            // Mode sélection trajet : sélectionner uniquement
             _selectStation(station);
           }
         },
@@ -406,16 +472,72 @@ class _StationSearchPageState extends State<StationSearchPage> {
     }
   }
 
-  void _addToFavorites(Station station) async {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('${station.name} ajoutée aux favorites'),
-        backgroundColor: Colors.green,
-      ),
-    );
+  Future<void> _toggleFavorite(Station station) async {
+    // Ne pas permettre d'ajouter des stations temporaires aux favoris
+    if (station.id.startsWith('TEMP_')) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Veuillez d\'abord rechercher la station "${station.name}" pour l\'ajouter aux favoris'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+    
+    final isFavorite = _favoriteStatus[station.id] == true;
+    
+    try {
+      if (isFavorite) {
+        await _favoriteStationService.removeFavoriteStation(station.id);
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${station.name} retirée des favoris'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      } else {
+        await _favoriteStationService.addFavoriteStation(station);
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${station.name} ajoutée aux favoris'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+      
+      if (!mounted) return;
+      setState(() {
+        _favoriteStatus[station.id] = !isFavorite;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erreur: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   void _selectStation(Station station) {
+    // Vérifier que ce n'est pas une station temporaire (suggestion)
+    if (station.id.startsWith('TEMP_') || station.id.isEmpty) {
+      // Si c'est une suggestion, rechercher la vraie station
+      if (station.id.startsWith('TEMP_')) {
+        _selectSuggestion(station.name);
+        return;
+      }
+      // Si ID vide, afficher une erreur
+      if (!mounted) return;
+      setState(() {
+        _error = 'Station invalide: ID vide pour "${station.name}"';
+      });
+      return;
+    }
     Navigator.pop(context, station);
   }
   
@@ -433,6 +555,16 @@ class _StationSearchPageState extends State<StationSearchPage> {
       if (results.isNotEmpty) {
         // Prendre le premier résultat (le plus pertinent)
         final station = results.first.data;
+        
+        // Vérifier que la station trouvée n'est pas temporaire
+        if (station.id.startsWith('TEMP_')) {
+          setState(() {
+            _error = 'Station invalide trouvée pour "$destinationName". Veuillez rechercher à nouveau.';
+            _isLoading = false;
+          });
+          return;
+        }
+        
         Navigator.pop(context, station);
       } else {
         setState(() {

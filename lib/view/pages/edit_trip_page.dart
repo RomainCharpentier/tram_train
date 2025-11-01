@@ -69,6 +69,11 @@ class _EditTripPageState extends State<EditTripPage> {
       MaterialPageRoute(
         builder: (context) => StationSearchPage(
           departureStation: isDeparture ? null : _departureStation,
+          showFavoriteButton: false,
+          onStationTap: (station) {
+            // Sélectionner uniquement, pas de toggle favori
+            Navigator.pop(context, station);
+          },
         ),
       ),
     );

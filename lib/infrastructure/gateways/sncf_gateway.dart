@@ -24,8 +24,9 @@ class SncfGateway implements TrainGateway {
   /// Endpoint: GET /v1/coverage/sncf/stop_areas/stop_area:{id}/departures
   @override
   Future<List<Train>> getDepartures(Station station) async {
+    final stationId = _normalizeStationId(station.id);
     final apiUrl =
-        'https://api.sncf.com/v1/coverage/sncf/stop_areas/stop_area:${station.id}/departures';
+        'https://api.sncf.com/v1/coverage/sncf/stop_areas/stop_area:$stationId/departures';
 
     try {
       final response = await _makeApiCall(apiUrl);
@@ -43,8 +44,9 @@ class SncfGateway implements TrainGateway {
   Future<List<Train>> getDeparturesAt(
       Station station, DateTime dateTime) async {
     final formattedDateTime = _formatDateTimeForApi(dateTime);
+    final stationId = _normalizeStationId(station.id);
     final apiUrl =
-        'https://api.sncf.com/v1/coverage/sncf/stop_areas/stop_area:${station.id}/departures?datetime=$formattedDateTime&count=100';
+        'https://api.sncf.com/v1/coverage/sncf/stop_areas/stop_area:$stationId/departures?datetime=$formattedDateTime&count=100';
 
     try {
       final response = await _makeApiCall(apiUrl);
@@ -73,8 +75,9 @@ class SncfGateway implements TrainGateway {
   /// Récupère tous les trajets passant par une gare (dans les 2 sens)
   /// Endpoint: GET /v1/coverage/sncf/stop_areas/stop_area:{id}/route_schedules
   Future<List<Train>> getTrainsPassingThrough(Station station) async {
+    final stationId = _normalizeStationId(station.id);
     final apiUrl =
-        'https://api.sncf.com/v1/coverage/sncf/stop_areas/stop_area:${station.id}/route_schedules';
+        'https://api.sncf.com/v1/coverage/sncf/stop_areas/stop_area:$stationId/route_schedules';
 
     try {
       final response = await _makeApiCall(apiUrl);
@@ -89,8 +92,10 @@ class SncfGateway implements TrainGateway {
   /// Endpoint: GET /v1/coverage/sncf/journeys?from=stop_area:{fromId}&to=stop_area:{toId}
   Future<List<Train>> findJourneysBetween(
       Station fromStation, Station toStation) async {
+    final fromId = _normalizeStationId(fromStation.id);
+    final toId = _normalizeStationId(toStation.id);
     final apiUrl =
-        'https://api.sncf.com/v1/coverage/sncf/journeys?from=stop_area:${fromStation.id}&to=stop_area:${toStation.id}&count=20';
+        'https://api.sncf.com/v1/coverage/sncf/journeys?from=stop_area:$fromId&to=stop_area:$toId&count=20';
 
     try {
       final response = await _makeApiCall(apiUrl);
@@ -100,17 +105,32 @@ class SncfGateway implements TrainGateway {
     }
   }
 
+  /// Normalise un ID de station pour l'API SNCF
+  /// Enlève le préfixe 'stop_area:' s'il existe
+  /// Rejette les IDs temporaires (TEMP_)
+  String _normalizeStationId(String stationId) {
+    // Rejeter les IDs temporaires
+    if (stationId.startsWith('TEMP_')) {
+      throw SncfGatewayException(
+        'Station temporaire invalide: $stationId. Veuillez rechercher la station à nouveau.',
+      );
+    }
+    return stationId.replaceFirst(RegExp(r'^stop_area:'), '');
+  }
+
   /// Recherche de trajets avec horaire de départ
   /// Endpoint: GET /v1/coverage/sncf/journeys?from=stop_area:{fromId}&to=stop_area:{toId}&datetime={datetime}
   Future<List<Train>> findJourneysWithDepartureTime(
       Station fromStation, Station toStation, DateTime departureTime) async {
     final formattedDateTime = _formatDateTimeForApi(departureTime);
+    final fromId = _normalizeStationId(fromStation.id);
+    final toId = _normalizeStationId(toStation.id);
     final uri = Uri.https(
       'api.sncf.com',
       '/v1/coverage/sncf/journeys',
       {
-        'from': 'stop_area:${fromStation.id}',
-        'to': 'stop_area:${toStation.id}',
+        'from': 'stop_area:$fromId',
+        'to': 'stop_area:$toId',
         'datetime_represents': 'departure',
         'datetime': formattedDateTime,
         'count': '50',
@@ -135,12 +155,14 @@ class SncfGateway implements TrainGateway {
     required String represents, // 'departure' ou 'arrival'
   }) async {
     final formattedDateTime = _formatDateTimeForApi(time);
+    final fromId = _normalizeStationId(fromStation.id);
+    final toId = _normalizeStationId(toStation.id);
     final uri = Uri.https(
       'api.sncf.com',
       '/v1/coverage/sncf/journeys',
       {
-        'from': 'stop_area:${fromStation.id}',
-        'to': 'stop_area:${toStation.id}',
+        'from': 'stop_area:$fromId',
+        'to': 'stop_area:$toId',
         'datetime_represents': represents,
         'datetime': formattedDateTime,
         'count': '50',
@@ -169,12 +191,14 @@ class SncfGateway implements TrainGateway {
   Future<List<Train>> findJourneysWithArrivalTime(
       Station fromStation, Station toStation, DateTime arrivalTime) async {
     final formattedDateTime = _formatDateTimeForApi(arrivalTime);
+    final fromId = _normalizeStationId(fromStation.id);
+    final toId = _normalizeStationId(toStation.id);
     final uri = Uri.https(
       'api.sncf.com',
       '/v1/coverage/sncf/journeys',
       {
-        'from': 'stop_area:${fromStation.id}',
-        'to': 'stop_area:${toStation.id}',
+        'from': 'stop_area:$fromId',
+        'to': 'stop_area:$toId',
         'datetime_represents': 'arrival',
         'datetime': formattedDateTime,
         'count': '50',
@@ -194,8 +218,9 @@ class SncfGateway implements TrainGateway {
   /// Récupère les informations générales sur les trajets
   /// Endpoint: GET /v1/coverage/sncf/stop_areas/stop_area:{id}/stop_schedules
   Future<Map<String, dynamic>> getStationInfo(Station station) async {
+    final stationId = _normalizeStationId(station.id);
     final apiUrl =
-        'https://api.sncf.com/v1/coverage/sncf/stop_areas/stop_area:${station.id}/stop_schedules';
+        'https://api.sncf.com/v1/coverage/sncf/stop_areas/stop_area:$stationId/stop_schedules';
 
     try {
       final response = await _makeApiCall(apiUrl);
@@ -302,8 +327,9 @@ class SncfGateway implements TrainGateway {
   /// Endpoint: GET /v1/coverage/sncf/stop_areas/{stationId}/arrivals?filter=line.id:{lineId}
   Future<List<Train>> getNextArrivalsForLine(
       Station station, String lineId) async {
+    final stationId = _normalizeStationId(station.id);
     final apiUrl =
-        'https://api.sncf.com/v1/coverage/sncf/stop_areas/${station.id}/arrivals?filter=line.id:$lineId';
+        'https://api.sncf.com/v1/coverage/sncf/stop_areas/$stationId/arrivals?filter=line.id:$lineId';
 
     try {
       final response = await _makeApiCall(apiUrl);

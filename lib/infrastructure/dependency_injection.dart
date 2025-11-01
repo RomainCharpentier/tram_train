@@ -5,10 +5,12 @@ import 'package:train_qil/domain/services/station_search_service.dart';
 import 'package:train_qil/domain/services/notification_pause_service.dart';
 import 'package:train_qil/domain/services/theme_service.dart';
 import 'package:train_qil/domain/services/notification_service.dart';
+import 'package:train_qil/domain/services/favorite_station_service.dart';
 import 'package:train_qil/infrastructure/gateways/local_storage_gateway.dart';
 import 'package:train_qil/infrastructure/gateways/sncf_gateway.dart';
 import 'package:train_qil/infrastructure/gateways/sncf_search_gateway.dart';
 import 'package:train_qil/infrastructure/gateways/notification_pause_storage_gateway.dart';
+import 'package:train_qil/infrastructure/gateways/favorite_station_storage_gateway.dart';
 import 'package:train_qil/infrastructure/mappers/trip_mapper.dart';
 import 'package:train_qil/infrastructure/mappers/sncf_mapper.dart';
 import 'package:train_qil/env_config.dart';
@@ -28,12 +30,14 @@ class DependencyInjection {
   late final NotificationPauseService notificationPauseService;
   late final ThemeService themeService;
   late final NotificationService notificationService;
+  late final FavoriteStationService favoriteStationService;
 
   // Gateways
   late final LocalStorageGateway localStorageGateway;
   late final SncfGateway sncfGateway;
   late final SncfSearchGateway sncfSearchGateway;
   late final NotificationPauseStorageGateway notificationPauseStorageGateway;
+  late final FavoriteStationStorageGateway favoriteStationStorageGateway;
 
   // Mappers
   late final TripMapper tripMapper;
@@ -68,6 +72,8 @@ class DependencyInjection {
     );
     instance.notificationPauseStorageGateway =
         NotificationPauseStorageGateway();
+    instance.favoriteStationStorageGateway =
+        FavoriteStationStorageGateway();
 
     // Initialisation des services
     instance.tripService = TripService(instance.localStorageGateway);
@@ -77,6 +83,8 @@ class DependencyInjection {
     );
     instance.notificationPauseService = NotificationPauseService(
         storage: instance.notificationPauseStorageGateway);
+    instance.favoriteStationService = FavoriteStationService(
+        instance.favoriteStationStorageGateway);
     instance.themeService = ThemeService();
     instance.notificationService = NotificationService();
 

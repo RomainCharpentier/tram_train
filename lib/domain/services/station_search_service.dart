@@ -21,8 +21,9 @@ class StationSearchService {
     final results = await _searchGateway.searchStations(query);
 
     // Enregistrer la recherche dans l'historique
-    if (_historyGateway != null) {
-      await _historyGateway!.addSearchQuery(query);
+    final historyGateway = _historyGateway;
+    if (historyGateway != null) {
+      await historyGateway.addSearchQuery(query);
     }
 
     return results;
@@ -59,11 +60,12 @@ class StationSearchService {
 
   /// Récupère les gares récemment consultées
   Future<List<SearchResult<Station>>> getRecentStations() async {
-    if (_historyGateway == null) {
+    final historyGateway = _historyGateway;
+    if (historyGateway == null) {
       return [];
     }
 
-    final recentQueries = await _historyGateway!.getRecentQueries();
+    final recentQueries = await historyGateway.getRecentQueries();
     final results = <SearchResult<Station>>[];
 
     for (final query in recentQueries) {
@@ -83,11 +85,12 @@ class StationSearchService {
   Future<List<String>> getSearchSuggestions(String partialQuery) async {
     if (partialQuery.length < 2) return [];
 
-    if (_historyGateway == null) {
+    final historyGateway = _historyGateway;
+    if (historyGateway == null) {
       return [];
     }
 
-    final recentQueries = await _historyGateway!.getRecentQueries();
+    final recentQueries = await historyGateway.getRecentQueries();
     final suggestions = recentQueries
         .where(
             (query) => query.toLowerCase().contains(partialQuery.toLowerCase()))

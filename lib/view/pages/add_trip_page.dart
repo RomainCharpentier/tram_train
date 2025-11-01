@@ -565,6 +565,11 @@ class _AddTripPageState extends State<AddTripPage> {
       MaterialPageRoute(
         builder: (context) => StationSearchPage(
           departureStation: isDeparture ? null : _departureStation,
+          showFavoriteButton: false,
+          onStationTap: (station) {
+            // Sélectionner uniquement, pas de toggle favori
+            Navigator.pop(context, station);
+          },
         ),
       ),
     );
@@ -582,9 +587,18 @@ class _AddTripPageState extends State<AddTripPage> {
     }
   }
 
+
   /// Valide la connexion entre les gares sélectionnées
   Future<void> _validateConnection() async {
     if (_departureStation == null || _arrivalStation == null) return;
+
+    // Vérifier que les stations ne sont pas temporaires
+    if (_departureStation!.id.startsWith('TEMP_') || _arrivalStation!.id.startsWith('TEMP_')) {
+      setState(() {
+        _connectionError = '⚠️ Station(s) invalide(s). Veuillez re-sélectionner les stations.';
+      });
+      return;
+    }
 
     try {
       // Utiliser la nouvelle méthode avec plus d'informations
@@ -729,6 +743,23 @@ class _AddTripPageState extends State<AddTripPage> {
 
   Future<void> _loadCandidateTrains() async {
     if (_departureStation == null || _arrivalStation == null) return;
+
+    // Vérifier que les stations ne sont pas temporaires
+    if (_departureStation!.id.startsWith('TEMP_') || _arrivalStation!.id.startsWith('TEMP_')) {
+      setState(() {
+        _isLoadingCandidates = false;
+        _hasSearchedCandidates = false;
+      });
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erreur: Station(s) invalide(s). Veuillez re-sélectionner les stations.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     setState(() {
       _isLoadingCandidates = true;
       _hasSearchedCandidates = true;
