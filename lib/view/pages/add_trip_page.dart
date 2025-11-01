@@ -722,61 +722,11 @@ class _AddTripPageState extends State<AddTripPage> {
     });
 
     try {
-      // Si on a déjà tous les trains, filtrer localement
-      if (_allTrains.isNotEmpty) {
-        List<domain_train.Train> subset = _deduplicateTrains(_allTrains);
-        if (_directTrainsOnly) {
-          subset = subset.where((t) => t.isDirect).toList();
-        }
-        // Filtre jours sélectionnés (si non vide)
-        if (_selectedDays.isNotEmpty) {
-          final allowedWeekdays = _selectedDays
-              .map((d) => d.index + 1)
-              .toSet(); // DateTime.weekday: 1=Mon
-          final dayFiltered = subset
-              .where((t) => allowedWeekdays.contains(t.departureTime.weekday))
-              .toList();
-          // Si la source ne couvre pas plusieurs jours et que ça vide la liste, on garde la liste d'origine
-          if (dayFiltered.isNotEmpty) {
-            subset = dayFiltered;
-          }
-        }
-        // Filtre heure locale HH:mm ± tolérance
-        if (_selectedTime != null) {
-          // On compare sur les minutes depuis minuit, indépendamment de la date
-          int minutesOfDay(DateTime dt) => dt.hour * 60 + dt.minute;
-          final target = _selectedTime!.hour * 60 + _selectedTime!.minute;
-          bool withinTolerance(int a, int b, int tol) => (a - b).abs() <= tol;
-          List<domain_train.Train> inTol = subset
-              .where((t) => withinTolerance(
-                  minutesOfDay(t.departureTime), target, _toleranceMinutes))
-              .toList();
-          if (inTol.isEmpty) {
-            // Repli: trier par proximité HH:mm et prendre une page
-            subset.sort((a, b) {
-              final da = (minutesOfDay(a.departureTime) - target).abs();
-              final db = (minutesOfDay(b.departureTime) - target).abs();
-              return da.compareTo(db);
-            });
-            inTol = subset;
-          } else {
-            // Ordonner les résultats dans la tolérance par proximité
-            inTol.sort((a, b) {
-              final da = (minutesOfDay(a.departureTime) - target).abs();
-              final db = (minutesOfDay(b.departureTime) - target).abs();
-              return da.compareTo(db);
-            });
-          }
-          subset = inTol;
-        }
-        // Toujours trier par heure de départ pour stabilité
-        subset.sort((a, b) => a.departureTime.compareTo(b.departureTime));
-        _applyPagination(subset);
-      } else {
-        // Sinon, charger via API comme avant
-        final ref =
-            _selectedTime != null ? _buildReferenceDateTime() : DateTime.now();
-        final service = DependencyInjection.instance.trainService;
+      final service = DependencyInjection.instance.trainService;
+
+      // Si une heure est choisie, toujours recharger depuis l'API autour de cette heure
+      if (_selectedTime != null) {
+        final ref = _buildReferenceDateTime();
         List<domain_train.Train> trains;
         if (_timeMode == TimeConstraintMode.departure) {
           trains = await service.findJourneysWithDepartureTime(
@@ -788,44 +738,23 @@ class _AddTripPageState extends State<AddTripPage> {
         if (_directTrainsOnly) {
           trains = trains.where((t) => t.isDirect).toList();
         }
-        // Appliquer aussi jours/heure sur résultats API
         var subset = _deduplicateTrains(trains);
-        if (_selectedDays.isNotEmpty) {
-          final allowedWeekdays = _selectedDays.map((d) => d.index + 1).toSet();
-          final dayFiltered = subset
-              .where((t) => allowedWeekdays.contains(t.departureTime.weekday))
-              .toList();
-          if (dayFiltered.isNotEmpty) {
-            subset = dayFiltered;
-          }
-        }
-        if (_selectedTime != null) {
-          int minutesOfDay(DateTime dt) => dt.hour * 60 + dt.minute;
-          final target = _selectedTime!.hour * 60 + _selectedTime!.minute;
-          bool withinTolerance(int a, int b, int tol) => (a - b).abs() <= tol;
-          List<domain_train.Train> inTol = subset
-              .where((t) => withinTolerance(
-                  minutesOfDay(t.departureTime), target, _toleranceMinutes))
-              .toList();
-          if (inTol.isEmpty) {
-            subset.sort((a, b) {
-              final da = (minutesOfDay(a.departureTime) - target).abs();
-              final db = (minutesOfDay(b.departureTime) - target).abs();
-              return da.compareTo(db);
-            });
-            inTol = subset;
-          } else {
-            inTol.sort((a, b) {
-              final da = (minutesOfDay(a.departureTime) - target).abs();
-              final db = (minutesOfDay(b.departureTime) - target).abs();
-              return da.compareTo(db);
-            });
-          }
-          subset = inTol;
-        }
+        // Tri stable par heure
         subset.sort((a, b) => a.departureTime.compareTo(b.departureTime));
         _applyPagination(subset);
+        return;
       }
+
+      // Sinon, on filtre localement la liste déjà chargée autour de maintenant
+      if (_allTrains.isEmpty) {
+        await _loadAllTrains();
+      }
+      List<domain_train.Train> subset = _deduplicateTrains(_allTrains);
+      if (_directTrainsOnly) {
+        subset = subset.where((t) => t.isDirect).toList();
+      }
+      subset.sort((a, b) => a.departureTime.compareTo(b.departureTime));
+      _applyPagination(subset);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
