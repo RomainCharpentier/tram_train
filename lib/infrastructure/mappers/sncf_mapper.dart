@@ -177,9 +177,10 @@ class SncfMapper {
       direction: to['name'] as String? ?? toStation.name,
       departureTime: departureTime,
       baseDepartureTime: departureTime,
+      arrivalTime: arrivalTime,
+      baseArrivalTime: arrivalTime,
       station: fromStation,
       additionalInfo: [
-        'Arrivée: ${arrivalTime.toString()}',
         'Durée: ${_calculateDuration(departureTime, arrivalTime)}',
         if (hasConnections) 'Correspondances: $connectionCount',
         if (hasConnections) 'Type: Avec correspondances' else 'Type: Direct',
@@ -435,6 +436,8 @@ class SncfMapper {
       direction: displayInfo['direction'] as String? ?? '',
       departureTime: arrivalTime,
       baseDepartureTime: arrivalTime,
+      arrivalTime: arrivalTime,
+      baseArrivalTime: arrivalTime,
       station: station,
       additionalInfo: [
         'Ligne: ${displayInfo['label'] ?? ''}',

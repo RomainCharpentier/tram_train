@@ -386,7 +386,7 @@ class _AddTripPageState extends State<AddTripPage> {
                           separatorBuilder: (_, __) => const Divider(height: 1),
                           itemBuilder: (context, index) {
                             final t = _candidateTrains[index];
-                            final arr = _extractArrivalTime(t);
+                            final arr = t.arrivalTime;
                             final depStr = _formatHHmm(t.departureTime);
                             final arrStr = arr != null ? _formatHHmm(arr) : '??:??';
                             final key = _candidateKey(t);
@@ -673,19 +673,7 @@ class _AddTripPageState extends State<AddTripPage> {
     return '$name $dd/$mm';
   }
 
-  DateTime? _extractArrivalTime(domain_train.Train t) {
-    try {
-      final info = t.additionalInfo.firstWhere(
-        (s) => s.startsWith('Arrivée:'),
-        orElse: () => '',
-      );
-      if (info.isEmpty) return null;
-      final raw = info.substring('Arrivée:'.length).trim();
-      return DateTime.tryParse(raw);
-    } catch (_) {
-      return null;
-    }
-  }
+  
 
   String _formatHHmm(DateTime dt) {
     final h = dt.hour.toString().padLeft(2, '0');

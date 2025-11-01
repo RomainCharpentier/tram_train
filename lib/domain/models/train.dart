@@ -13,6 +13,8 @@ class Train {
   final String direction;
   final DateTime departureTime;
   final DateTime? baseDepartureTime;
+  final DateTime? arrivalTime;
+  final DateTime? baseArrivalTime;
   final TrainStatus status;
   final int? delayMinutes;
   final List<String> additionalInfo;
@@ -23,6 +25,8 @@ class Train {
     required this.direction,
     required this.departureTime,
     this.baseDepartureTime,
+    this.arrivalTime,
+    this.baseArrivalTime,
     required this.status,
     this.delayMinutes,
     this.additionalInfo = const [],
@@ -34,6 +38,8 @@ class Train {
     required String direction,
     required DateTime departureTime,
     required DateTime baseDepartureTime,
+    DateTime? arrivalTime,
+    DateTime? baseArrivalTime,
     required Station station,
     List<String> additionalInfo = const [],
   }) {
@@ -57,6 +63,8 @@ class Train {
       direction: direction,
       departureTime: departureTime,
       baseDepartureTime: baseDepartureTime,
+      arrivalTime: arrivalTime,
+      baseArrivalTime: baseArrivalTime,
       status: status,
       delayMinutes: delayMinutes,
       additionalInfo: additionalInfo,
@@ -83,6 +91,14 @@ class Train {
   String get departureTimeFormatted {
     final hour = departureTime.hour.toString().padLeft(2, '0');
     final minute = departureTime.minute.toString().padLeft(2, '0');
+    return '$hour:$minute';
+  }
+
+  /// Retourne l'heure d'arrivée formatée si disponible
+  String? get arrivalTimeFormatted {
+    if (arrivalTime == null) return null;
+    final hour = arrivalTime!.hour.toString().padLeft(2, '0');
+    final minute = arrivalTime!.minute.toString().padLeft(2, '0');
     return '$hour:$minute';
   }
 
