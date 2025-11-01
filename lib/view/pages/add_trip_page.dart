@@ -8,6 +8,7 @@ import '../../infrastructure/dependency_injection.dart';
 import 'station_search_page.dart';
 import '../widgets/switch_card.dart';
 import '../widgets/save_button.dart';
+import '../theme/theme_x.dart';
 
 enum TimeConstraintMode { departure, arrival }
 
@@ -49,10 +50,10 @@ class _AddTripPageState extends State<AddTripPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Ajouter un favori'),
-        backgroundColor: const Color(0xFF4A90E2),
-        foregroundColor: Colors.white,
+        backgroundColor: context.theme.primary,
+        foregroundColor: context.theme.onPrimary,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: Icon(Icons.arrow_back, color: context.theme.onPrimary),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
@@ -64,17 +65,17 @@ class _AddTripPageState extends State<AddTripPage> {
             Card(
               color: _connectionError != null
                   ? (_connectionError!.startsWith('✅')
-                      ? Colors.green.shade50
-                      : Colors.red.shade50)
+                      ? context.theme.successBg
+                      : context.theme.errorBg)
                   : null,
               child: ListTile(
                 leading: Icon(
                   Icons.train,
                   color: _connectionError != null
                       ? (_connectionError!.startsWith('✅')
-                          ? Colors.green
-                          : Colors.red)
-                      : const Color(0xFF4A90E2),
+                          ? context.theme.success
+                          : context.theme.error)
+                      : context.theme.primary,
                 ),
                 title: Text(
                   _departureStation?.name ??
@@ -82,8 +83,8 @@ class _AddTripPageState extends State<AddTripPage> {
                   style: TextStyle(
                       color: _connectionError != null
                           ? (_connectionError!.startsWith('✅')
-                              ? Colors.green
-                              : Colors.red)
+                              ? context.theme.success
+                              : context.theme.error)
                           : null),
                 ),
                 subtitle: _departureStation != null
@@ -92,8 +93,8 @@ class _AddTripPageState extends State<AddTripPage> {
                         style: TextStyle(
                             color: _connectionError != null
                                 ? (_connectionError!.startsWith('✅')
-                                    ? Colors.green.shade700
-                                    : Colors.red.shade700)
+                                    ? context.theme.success
+                                    : context.theme.error)
                                 : null),
                       )
                     : Text(
@@ -101,16 +102,16 @@ class _AddTripPageState extends State<AddTripPage> {
                         style: TextStyle(
                             color: _connectionError != null
                                 ? (_connectionError!.startsWith('✅')
-                                    ? Colors.green.shade700
-                                    : Colors.red.shade700)
+                                    ? context.theme.success
+                                    : context.theme.error)
                                 : null),
                       ),
                 trailing: Icon(
                   Icons.arrow_forward_ios,
                   color: _connectionError != null
                       ? (_connectionError!.startsWith('✅')
-                          ? Colors.green
-                          : Colors.red)
+                          ? context.theme.success
+                          : context.theme.error)
                       : null,
                 ),
                 onTap: () => _selectStation(true),
@@ -126,7 +127,7 @@ class _AddTripPageState extends State<AddTripPage> {
                 icon: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF4A90E2),
+                    color: context.theme.primary,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: const Icon(
@@ -145,28 +146,28 @@ class _AddTripPageState extends State<AddTripPage> {
             Card(
               color: _connectionError != null
                   ? (_connectionError!.startsWith('✅')
-                      ? Colors.green.shade50
-                      : Colors.red.shade50)
+                      ? context.theme.successBg
+                      : context.theme.errorBg)
                   : null,
               child: ListTile(
                 leading: Icon(
                   Icons.location_on,
                   color: _connectionError != null
                       ? (_connectionError!.startsWith('✅')
-                          ? Colors.green
-                          : Colors.red)
+                          ? context.theme.success
+                          : context.theme.error)
                       : (_departureStation != null
-                          ? const Color(0xFF2E5BBA)
-                          : Colors.grey),
+                          ? context.theme.secondary
+                          : context.theme.muted),
                 ),
                 title: Text(
                   _arrivalStation?.name ?? 'Sélectionner la station d\'arrivée',
                   style: TextStyle(
                     color: _connectionError != null
                         ? (_connectionError!.startsWith('✅')
-                            ? Colors.green
-                            : Colors.red)
-                        : (_departureStation != null ? null : Colors.grey),
+                            ? context.theme.success
+                            : context.theme.error)
+                        : (_departureStation != null ? null : context.theme.muted),
                   ),
                 ),
                 subtitle: _arrivalStation != null
@@ -175,8 +176,8 @@ class _AddTripPageState extends State<AddTripPage> {
                         style: TextStyle(
                             color: _connectionError != null
                                 ? (_connectionError!.startsWith('✅')
-                                    ? Colors.green.shade700
-                                    : Colors.red.shade700)
+                                    ? context.theme.success
+                                    : context.theme.error)
                                 : null),
                       )
                     : Text(
@@ -186,29 +187,29 @@ class _AddTripPageState extends State<AddTripPage> {
                         style: TextStyle(
                           color: _connectionError != null
                               ? (_connectionError!.startsWith('✅')
-                                  ? Colors.green.shade700
-                                  : Colors.red.shade700)
+                                  ? context.theme.success
+                                  : context.theme.error)
                               : (_departureStation != null
                                   ? null
-                                  : Colors.grey),
+                                  : context.theme.muted),
                         ),
                       ),
                 trailing: Icon(
                   Icons.arrow_forward_ios,
                   color: _connectionError != null
                       ? (_connectionError!.startsWith('✅')
-                          ? Colors.green
-                          : Colors.red)
-                      : (_departureStation != null ? null : Colors.grey),
+                          ? context.theme.success
+                          : context.theme.error)
+                      : (_departureStation != null ? null : context.theme.muted),
                 ),
                 onTap: _departureStation != null
                     ? () => _selectStation(false)
                     : () {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
+                          SnackBar(
                             content: Text(
                                 'Veuillez d\'abord sélectionner la station de départ'),
-                            backgroundColor: Colors.orange,
+                            backgroundColor: context.theme.warning,
                           ),
                         );
                       },
@@ -222,12 +223,12 @@ class _AddTripPageState extends State<AddTripPage> {
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: _connectionError!.startsWith('✅')
-                      ? Colors.green.shade50
-                      : Colors.red.shade50,
+                      ? context.theme.successBg
+                      : context.theme.errorBg,
                   border: Border.all(
                       color: _connectionError!.startsWith('✅')
-                          ? Colors.green.shade200
-                          : Colors.red.shade200),
+                          ? context.theme.successBorder
+                          : context.theme.errorBorder),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
@@ -237,16 +238,16 @@ class _AddTripPageState extends State<AddTripPage> {
                             ? Icons.check_circle
                             : Icons.warning,
                         color: _connectionError!.startsWith('✅')
-                            ? Colors.green.shade600
-                            : Colors.red.shade600),
+                            ? context.theme.success
+                            : context.theme.error),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         _connectionError!,
                         style: TextStyle(
                           color: _connectionError!.startsWith('✅')
-                              ? Colors.green.shade700
-                              : Colors.red.shade700,
+                              ? context.theme.success
+                              : context.theme.error,
                           fontSize: 14,
                         ),
                       ),
@@ -281,8 +282,8 @@ class _AddTripPageState extends State<AddTripPage> {
                     });
                     _maybeAutoSearch();
                   },
-                  selectedColor: const Color(0xFF4A90E2).withOpacity(0.3),
-                  checkmarkColor: const Color(0xFF4A90E2),
+                  selectedColor: context.theme.primary.withValues(alpha: 0.3),
+                  checkmarkColor: context.theme.primary,
                 );
               }).toList(),
             ),
@@ -293,7 +294,7 @@ class _AddTripPageState extends State<AddTripPage> {
             Card(
               child: ListTile(
                 leading:
-                    const Icon(Icons.access_time, color: Color(0xFF4A90E2)),
+                    Icon(Icons.access_time, color: context.theme.primary),
                 title: Text(
                   _timeMode == TimeConstraintMode.departure
                       ? (_selectedTime != null
@@ -363,16 +364,16 @@ class _AddTripPageState extends State<AddTripPage> {
                   ? _loadCandidateTrains
                   : null,
               icon: _isLoadingCandidates
-                  ? const SizedBox(
+                  ? SizedBox(
                       width: 16,
                       height: 16,
                       child: CircularProgressIndicator(
-                          strokeWidth: 2, color: Colors.white))
+                          strokeWidth: 2, color: context.theme.onPrimary))
                   : const Icon(Icons.search),
               label: const Text('Filtrer par heure'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF4A90E2),
-                foregroundColor: Colors.white,
+                backgroundColor: context.theme.primary,
+                foregroundColor: context.theme.onPrimary,
               ),
             ),
 
@@ -387,8 +388,8 @@ class _AddTripPageState extends State<AddTripPage> {
                 child: Padding(
                   padding: const EdgeInsets.all(12.0),
                   child: Row(
-                    children: const [
-                      Icon(Icons.info_outline, color: Colors.orange),
+                    children: [
+                      Icon(Icons.info_outline, color: context.theme.warning),
                       SizedBox(width: 8),
                       Expanded(
                           child: Text(
@@ -492,7 +493,7 @@ class _AddTripPageState extends State<AddTripPage> {
                 _selectedTime != null) ...[
               Card(
                 elevation: 0,
-                color: Colors.grey.shade50,
+                color: context.theme.bgCard,
                 child: Padding(
                   padding: const EdgeInsets.all(12.0),
                   child: Column(
@@ -500,7 +501,7 @@ class _AddTripPageState extends State<AddTripPage> {
                     children: [
                       Row(
                         children: [
-                          const Icon(Icons.star, color: Color(0xFFFFC107)),
+                          Icon(Icons.star, color: context.theme.warning),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
@@ -578,28 +579,7 @@ class _AddTripPageState extends State<AddTripPage> {
     }
   }
 
-  Widget _buildSaveButton() {
-    final canSave = _departureStation != null &&
-        _arrivalStation != null &&
-        _selectedDays.isNotEmpty &&
-        _selectedTime != null;
-
-    return ElevatedButton(
-      onPressed: canSave ? _saveTrip : null,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFF4A90E2),
-        foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-      ),
-      child: const Text(
-        'Enregistrer le trajet',
-        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-      ),
-    );
-  }
+  
 
   Future<void> _selectStation(bool isDeparture) async {
     final result = await Navigator.push<Station>(
@@ -851,7 +831,7 @@ class _AddTripPageState extends State<AddTripPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Erreur lors de la proposition des trains: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }
@@ -903,7 +883,7 @@ class _AddTripPageState extends State<AddTripPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Erreur lors de la recherche: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }
@@ -965,9 +945,9 @@ class _AddTripPageState extends State<AddTripPage> {
       if (mounted) {
         Navigator.pop(context, true);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('✅ Trajet enregistré avec succès !'),
-            backgroundColor: Color(0xFF4A90E2),
+          SnackBar(
+            content: const Text('✅ Trajet enregistré avec succès !'),
+            backgroundColor: Theme.of(context).colorScheme.primary,
           ),
         );
       }
@@ -976,7 +956,7 @@ class _AddTripPageState extends State<AddTripPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Erreur lors de l\'enregistrement : $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }

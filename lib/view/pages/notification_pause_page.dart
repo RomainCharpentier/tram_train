@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/theme_x.dart';
 import '../../domain/models/notification_pause.dart';
 import '../../infrastructure/dependency_injection.dart';
 
@@ -56,11 +57,11 @@ class _NotificationPausePageState extends State<NotificationPausePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error, size: 64, color: Colors.red),
+            Icon(Icons.error, size: 64, color: context.theme.error),
             const SizedBox(height: 16),
             Text(
               _error!,
-              style: const TextStyle(fontSize: 16, color: Colors.red),
+              style: TextStyle(fontSize: 16, color: context.theme.error),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
@@ -87,14 +88,14 @@ class _NotificationPausePageState extends State<NotificationPausePage> {
         children: [
           const Icon(Icons.pause_circle_outline, size: 64, color: Colors.grey),
           const SizedBox(height: 16),
-          const Text(
+          Text(
             'Aucune pause configurée',
-            style: TextStyle(fontSize: 18, color: Colors.grey),
+            style: TextStyle(fontSize: 18, color: context.theme.muted),
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'Configurez des pauses pour désactiver temporairement les notifications',
-            style: TextStyle(color: Colors.grey),
+            style: TextStyle(color: context.theme.muted),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 24),
@@ -128,8 +129,8 @@ class _NotificationPausePageState extends State<NotificationPausePage> {
       child: ListTile(
         leading: CircleAvatar(
           backgroundColor: isCurrentPause
-              ? Colors.red
-              : (isActive ? Colors.orange : Colors.grey),
+              ? context.theme.error
+              : (isActive ? context.theme.warning : context.theme.outline),
           child: Icon(
             isCurrentPause
                 ? Icons.pause
@@ -151,13 +152,13 @@ class _NotificationPausePageState extends State<NotificationPausePage> {
                 Icon(
                   Icons.access_time,
                   size: 16,
-                  color: Colors.grey[600],
+                  color: context.theme.muted,
                 ),
                 const SizedBox(width: 4),
                 Text(
                   '${_formatDate(pause.startDate)} - ${_formatDate(pause.endDate)}',
                   style: TextStyle(
-                    color: Colors.grey[600],
+                    color: context.theme.muted,
                     fontSize: 12,
                   ),
                 ),
@@ -168,7 +169,7 @@ class _NotificationPausePageState extends State<NotificationPausePage> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: Colors.red,
+                  color: context.theme.error,
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: const Text(
@@ -185,8 +186,8 @@ class _NotificationPausePageState extends State<NotificationPausePage> {
         ),
         trailing: PopupMenuButton<String>(
           onSelected: (value) => _handlePauseAction(value, pause),
-          itemBuilder: (context) => [
-            const PopupMenuItem(
+          itemBuilder: (context) => const [
+            PopupMenuItem(
               value: 'toggle',
               child: ListTile(
                 leading: Icon(Icons.play_arrow),
@@ -194,7 +195,7 @@ class _NotificationPausePageState extends State<NotificationPausePage> {
                 contentPadding: EdgeInsets.zero,
               ),
             ),
-            const PopupMenuItem(
+            PopupMenuItem(
               value: 'delete',
               child: ListTile(
                 leading: Icon(Icons.delete, color: Colors.red),
@@ -237,7 +238,7 @@ class _NotificationPausePageState extends State<NotificationPausePage> {
           SnackBar(
             content: Text(
                 updatedPause.isActive ? 'Pause activée' : 'Pause désactivée'),
-            backgroundColor: Colors.green,
+            backgroundColor: context.theme.success,
           ),
         );
         _loadPauses();
@@ -247,7 +248,7 @@ class _NotificationPausePageState extends State<NotificationPausePage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Erreur: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: context.theme.error,
           ),
         );
       }
@@ -268,7 +269,7 @@ class _NotificationPausePageState extends State<NotificationPausePage> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            style: TextButton.styleFrom(foregroundColor: context.theme.error),
             child: const Text('Supprimer'),
           ),
         ],
@@ -282,9 +283,9 @@ class _NotificationPausePageState extends State<NotificationPausePage> {
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Pause supprimée'),
-              backgroundColor: Colors.green,
+            SnackBar(
+              content: const Text('Pause supprimée'),
+              backgroundColor: context.theme.success,
             ),
           );
           _loadPauses();
@@ -294,7 +295,7 @@ class _NotificationPausePageState extends State<NotificationPausePage> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Erreur: $e'),
-              backgroundColor: Colors.red,
+              backgroundColor: context.theme.error,
             ),
           );
         }
@@ -321,7 +322,7 @@ class _NotificationPausePageState extends State<NotificationPausePage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Pauses de notification'),
-        backgroundColor: const Color(0xFF4A90E2),
+        backgroundColor: context.theme.primary,
         foregroundColor: Colors.white,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
@@ -462,9 +463,9 @@ class _CreatePauseDialogState extends State<_CreatePauseDialog> {
         _startDate == null ||
         _endDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Veuillez remplir tous les champs'),
-          backgroundColor: Colors.red,
+        SnackBar(
+          content: const Text('Veuillez remplir tous les champs'),
+          backgroundColor: context.theme.error,
         ),
       );
       return;
@@ -472,9 +473,9 @@ class _CreatePauseDialogState extends State<_CreatePauseDialog> {
 
     if (_endDate!.isBefore(_startDate!)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('La date de fin doit être après la date de début'),
-          backgroundColor: Colors.red,
+        SnackBar(
+          content: const Text('La date de fin doit être après la date de début'),
+          backgroundColor: context.theme.error,
         ),
       );
       return;
@@ -498,9 +499,9 @@ class _CreatePauseDialogState extends State<_CreatePauseDialog> {
         Navigator.pop(context);
         widget.onPauseCreated?.call(pause);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Pause créée avec succès'),
-            backgroundColor: Colors.green,
+          SnackBar(
+            content: const Text('Pause créée avec succès'),
+            backgroundColor: context.theme.success,
           ),
         );
       }
@@ -509,7 +510,7 @@ class _CreatePauseDialogState extends State<_CreatePauseDialog> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Erreur: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: context.theme.error,
           ),
         );
       }

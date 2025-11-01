@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/theme_x.dart';
 import '../../domain/models/station.dart';
 import '../../domain/models/search_result.dart';
 import '../../domain/services/station_search_service.dart';
@@ -206,9 +207,9 @@ class _StationSearchPageState extends State<StationSearchPage> {
     return Container(
       margin: const EdgeInsets.only(top: 8),
       decoration: BoxDecoration(
-        color: Colors.grey[100],
+        color: context.theme.surface,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey[300]!),
+        border: Border.all(color: context.theme.outline),
       ),
       child: ListView.builder(
         shrinkWrap: true,
@@ -232,9 +233,9 @@ class _StationSearchPageState extends State<StationSearchPage> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
+        color: context.theme.surface,
         border: Border(
-          top: BorderSide(color: Colors.grey[300]!),
+          top: BorderSide(color: context.theme.outline),
         ),
       ),
       child: Column(
@@ -321,7 +322,7 @@ class _StationSearchPageState extends State<StationSearchPage> {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: isSuggestion ? Colors.orange : _getTypeColor(result.type),
+          backgroundColor: isSuggestion ? context.theme.warning : _getTypeColor(result.type),
           child: Icon(
             isSuggestion ? Icons.lightbulb_outline : _getTypeIcon(result.type),
             color: Colors.white,
@@ -338,17 +339,17 @@ class _StationSearchPageState extends State<StationSearchPage> {
             if (isSuggestion)
               Text(
                 'Suggestion - Cliquez pour rechercher cette gare',
-                style: TextStyle(color: Colors.orange[600], fontStyle: FontStyle.italic),
+                style: TextStyle(color: context.theme.warning, fontStyle: FontStyle.italic),
               ),
             if (result.metadata?['distance'] != null)
               Text(
                 'Distance: ${(result.metadata!['distance'] as double).toStringAsFixed(1)} km',
-                style: TextStyle(color: Colors.grey[600]),
+                style: TextStyle(color: context.theme.muted),
               ),
             if (result.highlight != null)
               Text(
                 'Correspondance: ${result.highlight}',
-                style: TextStyle(color: Colors.blue[600]),
+                style: TextStyle(color: context.theme.primary),
               ),
           ],
         ),
@@ -378,15 +379,15 @@ class _StationSearchPageState extends State<StationSearchPage> {
   Color _getTypeColor(SearchResultType type) {
     switch (type) {
       case SearchResultType.exact:
-        return Colors.green;
+        return context.theme.success;
       case SearchResultType.partial:
-        return Colors.blue;
+        return context.theme.primary;
       case SearchResultType.suggestion:
-        return Colors.orange;
+        return context.theme.warning;
       case SearchResultType.recent:
-        return Colors.purple;
+        return context.theme.tertiary;
       case SearchResultType.favorite:
-        return Colors.amber;
+        return context.theme.secondary;
     }
   }
 
@@ -452,7 +453,7 @@ class _StationSearchPageState extends State<StationSearchPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Recherche de Gares'),
-        backgroundColor: const Color(0xFF4A90E2),
+        backgroundColor: context.theme.primary,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.of(context).pop(),

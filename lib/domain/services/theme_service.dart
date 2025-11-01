@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:train_qil/view/theme/app_palette.dart';
+// Removed SemanticColors in favor of AppBrandColors
+import 'package:train_qil/view/theme/app_brand_colors.dart';
 
 /// Service pour gérer les thèmes de l'application
 class ThemeService extends ChangeNotifier {
@@ -44,21 +47,22 @@ class ThemeService extends ChangeNotifier {
 
   /// Obtient le thème clair personnalisé
   ThemeData get lightTheme {
+    final palette = AppPalette.light();
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
-      colorScheme: const ColorScheme.light(
-        primary: Color(0xFF4A90E2),
-        secondary: Color(0xFF2E5BBA),
-        surface: Colors.white,
-        error: Color(0xFFE53E3E),
+      colorScheme: ColorScheme.light(
+        primary: palette.primary,
+        secondary: palette.secondary,
+        surface: palette.surface,
+        error: const Color(0xFFE53E3E),
         onPrimary: Colors.white,
         onSecondary: Colors.white,
-        onSurface: Color(0xFF1A202C),
+        onSurface: palette.onSurface,
         onError: Colors.white,
       ),
-      appBarTheme: const AppBarTheme(
-        backgroundColor: Color(0xFF4A90E2),
+      appBarTheme: AppBarTheme(
+        backgroundColor: palette.primary,
         foregroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
@@ -71,53 +75,62 @@ class ThemeService extends ChangeNotifier {
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF4A90E2),
+          backgroundColor: palette.primary,
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
           ),
         ),
       ),
+      extensions: <ThemeExtension<dynamic>>[
+        AppBrandColors.light(),
+        palette,
+      ],
     );
   }
 
   /// Obtient le thème sombre personnalisé
   ThemeData get darkTheme {
+    final palette = AppPalette.dark();
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
-      colorScheme: const ColorScheme.dark(
-        primary: Color(0xFF5BA0F2),
-        secondary: Color(0xFF3B6BB0),
-        surface: Color(0xFF1A1A1A),
-        error: Color(0xFFFF6B6B),
+      colorScheme: ColorScheme.dark(
+        primary: palette.primary,
+        secondary: palette.secondary,
+        surface: palette.surface,
+        error: const Color(0xFFFF6B6B),
         onPrimary: Colors.white,
         onSecondary: Colors.white,
         onSurface: Colors.white,
         onError: Colors.white,
       ),
-      appBarTheme: const AppBarTheme(
-        backgroundColor: Color(0xFF1A1A1A),
+      appBarTheme: AppBarTheme(
+        backgroundColor: palette.surface,
         foregroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
       ),
       cardTheme: CardThemeData(
         elevation: 4,
-        color: const Color(0xFF2A2A2A),
+        color: palette.card,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF5BA0F2),
+          backgroundColor: palette.primary,
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
           ),
         ),
       ),
+      extensions: <ThemeExtension<dynamic>>[
+        AppBrandColors.dark(),
+        palette,
+      ],
     );
   }
 }

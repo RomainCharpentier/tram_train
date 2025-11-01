@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/theme_x.dart';
 import '../../domain/models/train.dart';
 import '../../domain/models/trip.dart' as domain;
 import '../../infrastructure/dependency_injection.dart';
@@ -121,7 +122,7 @@ class _TripSchedulePageState extends State<TripSchedulePage> {
           children: [
             Row(
               children: [
-                const Icon(Icons.train, color: Color(0xFF4A90E2)),
+                Icon(Icons.train, color: context.theme.primary),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -139,14 +140,14 @@ class _TripSchedulePageState extends State<TripSchedulePage> {
               children: [
                 Icon(
                   widget.trip.isActive ? Icons.check_circle : Icons.cancel,
-                  color: widget.trip.isActive ? Colors.green : Colors.red,
+                  color: widget.trip.isActive ? context.theme.success : context.theme.error,
                   size: 16,
                 ),
                 const SizedBox(width: 4),
                 Text(
                   widget.trip.isActive ? 'Trajet actif' : 'Trajet inactif',
                   style: TextStyle(
-                    color: widget.trip.isActive ? Colors.green : Colors.red,
+                    color: widget.trip.isActive ? context.theme.success : context.theme.error,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -157,8 +158,8 @@ class _TripSchedulePageState extends State<TripSchedulePage> {
                       : Icons.notifications_off,
                   size: 16,
                   color: widget.trip.notificationsEnabled
-                      ? Colors.orange
-                      : Colors.grey,
+                      ? context.theme.warning
+                      : context.theme.muted,
                 ),
                 const SizedBox(width: 4),
                 Text(
@@ -167,16 +168,22 @@ class _TripSchedulePageState extends State<TripSchedulePage> {
                       : 'Pas de notifications',
                   style: TextStyle(
                     color: widget.trip.notificationsEnabled
-                        ? Colors.orange
-                        : Colors.grey,
+                        ? context.theme.warning
+                        : context.theme.muted,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 4),
-            Text('Jours: ${widget.trip.daysName}'),
-            Text('Heure souhaitée: ${widget.trip.timeFormatted}'),
+            Text(
+              'Jours: ${widget.trip.daysName}',
+              style: TextStyle(color: context.theme.textSecondary),
+            ),
+            Text(
+              'Heure souhaitée: ${widget.trip.timeFormatted}',
+              style: TextStyle(color: context.theme.textSecondary),
+            ),
           ],
         ),
       ),
@@ -264,7 +271,7 @@ class _TripSchedulePageState extends State<TripSchedulePage> {
       appBar: AppBar(
         title: Text(
             '${widget.trip.departureStation.name} → ${widget.trip.arrivalStation.name}'),
-        backgroundColor: const Color(0xFF4A90E2),
+        backgroundColor: context.theme.primary,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.of(context).pop(),

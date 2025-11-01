@@ -22,7 +22,7 @@ class SwitchCard extends StatelessWidget {
         subtitle: subtitle != null ? Text(subtitle!) : null,
         value: value,
         onChanged: onChanged,
-        activeThumbColor: const Color(0xFF4A90E2),
+        activeThumbColor: Theme.of(context).colorScheme.primary,
       ),
     );
   }

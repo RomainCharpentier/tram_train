@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart' hide TimeOfDay;
+import '../theme/theme_x.dart';
 import 'package:flutter/material.dart' as flutter show TimeOfDay;
 import '../../domain/models/trip.dart' as domain;
 import '../../domain/models/station.dart';
@@ -49,8 +50,8 @@ class _EditTripPageState extends State<EditTripPage> {
     return ElevatedButton(
       onPressed: canSave ? _saveTrip : null,
       style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFF4A90E2),
-        foregroundColor: Colors.white,
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Theme.of(context).colorScheme.onPrimary,
         padding: const EdgeInsets.symmetric(vertical: 16),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
@@ -140,7 +141,7 @@ class _EditTripPageState extends State<EditTripPage> {
               content: Text(
                 '⚠️ ${result.message}',
               ),
-              backgroundColor: Colors.orange,
+              backgroundColor: context.theme.warning,
               duration: const Duration(seconds: 5),
             ),
           );
@@ -165,9 +166,9 @@ class _EditTripPageState extends State<EditTripPage> {
       if (mounted) {
         Navigator.pop(context, true);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('✅ Trajet modifié avec succès !'),
-            backgroundColor: Color(0xFF4A90E2),
+          SnackBar(
+            content: const Text('✅ Trajet modifié avec succès !'),
+            backgroundColor: Theme.of(context).colorScheme.primary,
           ),
         );
       }
@@ -176,7 +177,7 @@ class _EditTripPageState extends State<EditTripPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Erreur lors de la modification : $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }
@@ -189,10 +190,10 @@ class _EditTripPageState extends State<EditTripPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Modifier le trajet'),
-        backgroundColor: const Color(0xFF4A90E2),
-        foregroundColor: Colors.white,
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Theme.of(context).colorScheme.onPrimary,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onPrimary),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
@@ -203,7 +204,7 @@ class _EditTripPageState extends State<EditTripPage> {
           children: [
             Card(
               child: ListTile(
-                leading: const Icon(Icons.train, color: Color(0xFF4A90E2)),
+                leading: Icon(Icons.train, color: Theme.of(context).colorScheme.primary),
                 title: Text(_departureStation.name),
                 subtitle: Text(_departureStation.description ?? ''),
                 trailing: const Icon(Icons.arrow_forward_ios),
@@ -217,7 +218,7 @@ class _EditTripPageState extends State<EditTripPage> {
                 icon: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF4A90E2),
+                    color: Theme.of(context).colorScheme.primary,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: const Icon(
@@ -232,7 +233,7 @@ class _EditTripPageState extends State<EditTripPage> {
             const SizedBox(height: 8),
             Card(
               child: ListTile(
-                leading: const Icon(Icons.location_on, color: Color(0xFF2E5BBA)),
+                leading: Icon(Icons.location_on, color: Theme.of(context).colorScheme.secondary),
                 title: Text(_arrivalStation.name),
                 subtitle: Text(_arrivalStation.description ?? ''),
                 trailing: const Icon(Icons.arrow_forward_ios),
@@ -261,15 +262,15 @@ class _EditTripPageState extends State<EditTripPage> {
                       }
                     });
                   },
-                  selectedColor: const Color(0xFF4A90E2).withOpacity(0.3),
-                  checkmarkColor: const Color(0xFF4A90E2),
+                  selectedColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+                  checkmarkColor: Theme.of(context).colorScheme.primary,
                 );
               }).toList(),
             ),
             const SizedBox(height: 24),
             Card(
               child: ListTile(
-                leading: const Icon(Icons.access_time, color: Color(0xFF4A90E2)),
+                leading: Icon(Icons.access_time, color: Theme.of(context).colorScheme.primary),
                 title: Text('Départ à ${_selectedTime.format(context)}'),
                 trailing: const Icon(Icons.arrow_forward_ios),
                 onTap: _selectTime,
@@ -286,7 +287,7 @@ class _EditTripPageState extends State<EditTripPage> {
                     _isActive = value;
                   });
                 },
-                activeThumbColor: const Color(0xFF4A90E2),
+                activeThumbColor: Theme.of(context).colorScheme.primary,
               ),
             ),
             Card(
@@ -299,7 +300,7 @@ class _EditTripPageState extends State<EditTripPage> {
                     _notificationsEnabled = value;
                   });
                 },
-                activeThumbColor: const Color(0xFF4A90E2),
+                activeThumbColor: Theme.of(context).colorScheme.primary,
               ),
             ),
             const Spacer(),

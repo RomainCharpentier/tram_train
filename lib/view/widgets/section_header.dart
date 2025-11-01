@@ -8,10 +8,10 @@ class SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       text,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 20,
         fontWeight: FontWeight.bold,
-        color: Color(0xFF1E3A8A),
+        color: Theme.of(context).colorScheme.primary,
       ),
     );
   }

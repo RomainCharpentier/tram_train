@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/theme_x.dart';
 import '../../domain/models/trip.dart' as domain;
 
 class TripCard extends StatelessWidget {
@@ -14,7 +15,7 @@ class TripCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: trip.isActive ? Colors.green : Colors.grey,
+          backgroundColor: trip.isActive ? context.theme.success : context.theme.outline,
           child: Icon(
             trip.isActive ? Icons.check_circle : Icons.pause_circle,
             color: Colors.white,
@@ -35,13 +36,13 @@ class TripCard extends StatelessWidget {
                 Icon(
                   trip.isActive ? Icons.play_circle : Icons.pause_circle,
                   size: 16,
-                  color: trip.isActive ? Colors.green : Colors.grey,
+                  color: trip.isActive ? context.theme.success : context.theme.muted,
                 ),
                 const SizedBox(width: 4),
                 Text(
                   trip.isActive ? 'Actif' : 'Inactif',
                   style: TextStyle(
-                    color: trip.isActive ? Colors.green : Colors.grey,
+                    color: trip.isActive ? context.theme.success : context.theme.muted,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -51,7 +52,7 @@ class TripCard extends StatelessWidget {
                       ? Icons.notifications
                       : Icons.notifications_off,
                   size: 16,
-                  color: trip.notificationsEnabled ? Colors.orange : Colors.grey,
+                  color: trip.notificationsEnabled ? context.theme.warning : context.theme.muted,
                 ),
                 const SizedBox(width: 4),
                 Text(
@@ -59,7 +60,7 @@ class TripCard extends StatelessWidget {
                       ? 'Notifications'
                       : 'Pas de notifications',
                   style: TextStyle(
-                    color: trip.notificationsEnabled ? Colors.orange : Colors.grey,
+                    color: trip.notificationsEnabled ? context.theme.warning : context.theme.muted,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -68,7 +69,7 @@ class TripCard extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
-                      color: Colors.blue,
+                      color: context.theme.primary,
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: const Text(

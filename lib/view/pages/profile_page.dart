@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/theme_x.dart';
 import '../../domain/models/trip.dart' as domain;
 import '../../infrastructure/dependency_injection.dart';
 import 'add_trip_page.dart';
@@ -71,11 +72,11 @@ class _ProfilePageState extends State<ProfilePage>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error, size: 64, color: Colors.red),
+            Icon(Icons.error, size: 64, color: context.theme.error),
             const SizedBox(height: 16),
             Text(
               _error!,
-              style: const TextStyle(fontSize: 16, color: Colors.red),
+              style: TextStyle(fontSize: 16, color: context.theme.error),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
@@ -100,16 +101,16 @@ class _ProfilePageState extends State<ProfilePage>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.route, size: 64, color: Colors.grey),
+          Icon(Icons.route, size: 64, color: context.theme.muted),
           const SizedBox(height: 16),
-          const Text(
+          Text(
             'Aucun trajet enregistré',
-            style: TextStyle(fontSize: 18, color: Colors.grey),
+            style: TextStyle(fontSize: 18, color: context.theme.muted),
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'Ajoutez vos trajets pour les retrouver ici',
-            style: TextStyle(color: Colors.grey),
+            style: TextStyle(color: context.theme.muted),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 24),
@@ -137,7 +138,7 @@ class _ProfilePageState extends State<ProfilePage>
             background: Container(
               alignment: Alignment.centerRight,
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              color: Colors.red,
+              color: context.theme.error,
               child: const Icon(Icons.delete, color: Colors.white),
             ),
             confirmDismiss: (dir) async {
@@ -152,8 +153,8 @@ class _ProfilePageState extends State<ProfilePage>
                             child: const Text('Annuler')),
                         TextButton(
                             onPressed: () => Navigator.pop(context, true),
-                            child: const Text('Supprimer',
-                                style: TextStyle(color: Colors.red))),
+                            child: Text('Supprimer',
+                                style: TextStyle(color: context.theme.error))),
                       ],
                     ),
                   ) ??
@@ -220,9 +221,9 @@ class _ProfilePageState extends State<ProfilePage>
       if (mounted) {
         _changed = true;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text('Trajet dupliqué avec succès'),
-            backgroundColor: Colors.green,
+            backgroundColor: context.theme.success,
           ),
         );
         _loadTrips();
@@ -232,7 +233,7 @@ class _ProfilePageState extends State<ProfilePage>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Erreur lors de la duplication: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: context.theme.error,
           ),
         );
       }
@@ -250,7 +251,7 @@ class _ProfilePageState extends State<ProfilePage>
           SnackBar(
             content: Text(
                 updatedTrip.isActive ? 'Trajet activé' : 'Trajet désactivé'),
-            backgroundColor: Colors.green,
+            backgroundColor: context.theme.success,
           ),
         );
         _loadTrips();
@@ -260,7 +261,7 @@ class _ProfilePageState extends State<ProfilePage>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Erreur lors de la modification: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: context.theme.error,
           ),
         );
       }
@@ -281,7 +282,7 @@ class _ProfilePageState extends State<ProfilePage>
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            style: TextButton.styleFrom(foregroundColor: context.theme.error),
             child: const Text('Supprimer'),
           ),
         ],
@@ -295,9 +296,9 @@ class _ProfilePageState extends State<ProfilePage>
         if (mounted) {
           _changed = true;
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
+            SnackBar(
               content: Text('Trajet supprimé (doublons inclus)'),
-              backgroundColor: Colors.green,
+              backgroundColor: context.theme.success,
             ),
           );
           _loadTrips();
@@ -305,9 +306,9 @@ class _ProfilePageState extends State<ProfilePage>
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
+          SnackBar(
               content: Text('Erreur lors de la suppression: $e'),
-              backgroundColor: Colors.red,
+            backgroundColor: context.theme.error,
             ),
           );
         }
@@ -340,7 +341,7 @@ class _ProfilePageState extends State<ProfilePage>
       child: Scaffold(
       appBar: AppBar(
         title: const Text('Profil'),
-        backgroundColor: const Color(0xFF4A90E2),
+        backgroundColor: context.theme.primary,
         actions: [
           AnimatedBuilder(
             animation: themeService,

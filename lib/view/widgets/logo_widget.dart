@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:train_qil/view/theme/theme_x.dart';
 
 /// Widget pour afficher le logo Train'Qil
 class LogoWidget extends StatelessWidget {
@@ -32,12 +33,15 @@ class LogoWidget extends StatelessWidget {
               return Container(
                 width: size,
                 height: size,
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [Color(0xFF4A90E2), Color(0xFF2E5BBA)],
+                    colors: [
+                      context.theme.gradientStart,
+                      context.theme.gradientEnd,
+                    ],
                   ),
                 ),
                 child: const Icon(
@@ -57,14 +61,14 @@ class LogoWidget extends StatelessWidget {
             style: TextStyle(
               fontSize: size * 0.18,
               fontWeight: FontWeight.bold,
-              color: textColor ?? const Color(0xFF1E3A8A),
+              color: textColor ?? Theme.of(context).colorScheme.primary,
             ),
           ),
           Text(
             'Tranquille & Ponctuel',
             style: TextStyle(
               fontSize: size * 0.1,
-              color: textColor ?? const Color(0xFF4A90E2),
+              color: textColor ?? Theme.of(context).colorScheme.primary,
             ),
           ),
         ],

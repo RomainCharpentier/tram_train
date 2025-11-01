@@ -9,6 +9,7 @@ import 'trip_schedule_page.dart';
 import '../widgets/logo_widget.dart';
 import '../widgets/trip_card.dart';
 import '../widgets/train_card.dart';
+import '../theme/theme_x.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -102,11 +103,11 @@ class _HomePageState extends State<HomePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error, size: 64, color: Colors.red),
+            Icon(Icons.error, size: 64, color: Theme.of(context).colorScheme.error),
             const SizedBox(height: 16),
             Text(
               _error!,
-              style: const TextStyle(fontSize: 16, color: Colors.red),
+              style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.error),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
@@ -134,14 +135,14 @@ class _HomePageState extends State<HomePage> {
         children: [
           const LogoWidget(size: 150),
           const SizedBox(height: 24),
-          const Text(
+          Text(
             'Aucun trajet actif',
-            style: TextStyle(fontSize: 18, color: Colors.grey),
+            style: TextStyle(fontSize: 18, color: context.theme.muted),
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'Ajoutez vos trajets pour voir les prochains départs',
-            style: TextStyle(color: Colors.grey),
+            style: TextStyle(color: context.theme.muted),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 24),
@@ -170,10 +171,10 @@ class _HomePageState extends State<HomePage> {
           const SizedBox(height: 16),
           Text(
             _todayTrips.isNotEmpty ? 'Trajets du jour' : 'Tous mes trajets',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF1E3A8A),
+              color: Theme.of(context).colorScheme.primary,
             ),
           ),
           const SizedBox(height: 12),
@@ -183,12 +184,12 @@ class _HomePageState extends State<HomePage> {
           // Section des prochains trains
           if (_nextTrains.isNotEmpty) ...[
             const SizedBox(height: 24),
-            const Text(
+            Text(
               'Prochains trajets',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF1E3A8A),
+                color: Theme.of(context).colorScheme.primary,
               ),
             ),
             const SizedBox(height: 12),
@@ -208,7 +209,7 @@ class _HomePageState extends State<HomePage> {
           children: [
             Row(
               children: [
-                const Icon(Icons.train, color: Colors.blue),
+                Icon(Icons.train, color: Theme.of(context).colorScheme.primary),
                 const SizedBox(width: 8),
                 Text(
                   'Aujourd\'hui',
@@ -220,7 +221,7 @@ class _HomePageState extends State<HomePage> {
             Text(
               '${_todayTrips.length} trajet${_todayTrips.length > 1 ? 's' : ''} prévu${_todayTrips.length > 1 ? 's' : ''} aujourd\'hui',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.grey[600],
+                    color: context.theme.muted,
                   ),
             ),
           ],
@@ -237,13 +238,13 @@ class _HomePageState extends State<HomePage> {
             padding: const EdgeInsets.all(16),
             child: Column(
               children: [
-                const Icon(Icons.info, color: Colors.orange),
+                Icon(Icons.info, color: context.theme.warning),
                 const SizedBox(height: 8),
                 const Text('Aucun trajet à afficher',
                     style: TextStyle(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 4),
-                const Text('Utilisez le bouton + pour ajouter un trajet',
-                    style: TextStyle(color: Colors.grey)),
+                Text('Utilisez le bouton + pour ajouter un trajet',
+                    style: TextStyle(color: context.theme.muted)),
               ],
             ),
           ),
@@ -374,7 +375,7 @@ class _HomePageState extends State<HomePage> {
             Text('Train\'Qil'),
           ],
         ),
-        backgroundColor: const Color(0xFF4A90E2),
+        backgroundColor: Theme.of(context).colorScheme.primary,
         actions: [
           AnimatedBuilder(
             animation: DependencyInjection.instance.themeService,
