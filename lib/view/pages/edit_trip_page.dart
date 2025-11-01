@@ -26,8 +26,7 @@ class _EditTripPageState extends State<EditTripPage> {
   late flutter.TimeOfDay _selectedTime;
   late bool _isActive;
   late bool _notificationsEnabled;
-  // Supprimé: ancien état d'erreur de connexion non utilisé
-
+  
   @override
   void initState() {
     super.initState();

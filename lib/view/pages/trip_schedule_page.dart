@@ -24,6 +24,7 @@ class _TripSchedulePageState extends State<TripSchedulePage> {
   List<Train> _filteredTrains = [];
   bool _isLoading = true;
   String? _error;
+  DateTime? _lastRequestedRef;
 
   @override
   void initState() {
@@ -45,25 +46,53 @@ class _TripSchedulePageState extends State<TripSchedulePage> {
     });
 
     try {
-      final trains =
-          await DependencyInjection.instance.trainService.getNextDepartures(
+      final service = DependencyInjection.instance.trainService;
+      final ref = _computeReferenceDateTime(widget.trip);
+      _lastRequestedRef = ref;
+
+      // 1) Trajets à/près de l'heure (donne l'après)
+      final base = await service.findJourneysWithDepartureTime(
         widget.trip.departureStation,
+        widget.trip.arrivalStation,
+        ref,
+      );
+      base.sort((a, b) => a.departureTime.compareTo(b.departureTime));
+
+      // 2) Trajet juste après (premier >= ref)
+      Train? after;
+      for (final t in base) {
+        if (!t.departureTime.isBefore(ref)) {
+          after = t;
+          break;
+        }
+      }
+
+      // 3) Trajet juste avant via pagination prev
+      final before = await service.findJourneyJustBefore(
+        widget.trip.departureStation,
+        widget.trip.arrivalStation,
+        ref,
       );
 
-      // Filtrer les trains qui vont vers la destination
-      final filteredTrains = trains
-          .where((train) =>
-              train.direction
-                  .toLowerCase()
-                  .contains(widget.trip.arrivalStation.name.toLowerCase()) ||
-              widget.trip.arrivalStation.name
-                  .toLowerCase()
-                  .contains(train.direction.toLowerCase()))
-          .toList();
+      // 4) Contrainte: garder "avant" si même jour ou <= 3h d'écart
+      final result = <Train>[];
+      if (before != null) {
+        final tt = before.departureTime;
+        final sameDay = tt.year == ref.year && tt.month == ref.month && tt.day == ref.day;
+        final within3h = ref.difference(tt) <= const Duration(hours: 3);
+        if (sameDay || within3h) {
+          result.add(before);
+        }
+      }
+      if (after != null && (result.isEmpty || result.first.departureTime != after.departureTime)) {
+        result.add(after);
+      }
+
+      
 
       setState(() {
-        _allTrains = filteredTrains;
-        _filteredTrains = filteredTrains;
+        _allTrains = result;
+        _filteredTrains = result;
         _isLoading = false;
       });
     } catch (e) {
@@ -72,6 +101,45 @@ class _TripSchedulePageState extends State<TripSchedulePage> {
         _isLoading = false;
       });
     }
+  }
+
+  DateTime _computeReferenceDateTime(domain.Trip trip) {
+    final now = DateTime.now();
+    final baseToday = DateTime(
+      now.year,
+      now.month,
+      now.day,
+      trip.time.hour,
+      trip.time.minute,
+    );
+
+    if (trip.days.isEmpty) {
+      return baseToday.isBefore(now) ? baseToday.add(const Duration(days: 7)) : baseToday;
+    }
+
+    int bestDelta = 8; // > 7 pour initialiser
+    for (final d in trip.days) {
+      final targetWeekday = d.index + 1; // 1 = Lundi ... 7 = Dimanche
+      int delta = (targetWeekday - baseToday.weekday) % 7;
+      if (delta == 0 && baseToday.isBefore(now)) {
+        delta = 7; // même jour mais heure passée -> semaine suivante
+      }
+      if (delta < bestDelta) bestDelta = delta;
+    }
+
+    return baseToday.add(Duration(days: bestDelta % 7));
+  }
+
+  String _formatRefLabel(DateTime dt) {
+    const names = [
+      'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'
+    ];
+    final dayName = names[(dt.weekday - 1).clamp(0, 6)];
+    final dd = dt.day.toString().padLeft(2, '0');
+    final mm = dt.month.toString().padLeft(2, '0');
+    final hh = dt.hour.toString().padLeft(2, '0');
+    final mn = dt.minute.toString().padLeft(2, '0');
+    return '$dayName $dd/$mm • $hh:$mn';
   }
 
   void _filterTrains() {
@@ -288,6 +356,75 @@ class _TripSchedulePageState extends State<TripSchedulePage> {
         children: [
           _buildSearchBar(),
           _buildTripInfo(),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                // Toujours afficher la cible choisie (jour + heure sélectionnés)
+                'Affichage pour: ${_formatRefLabel(_lastRequestedRef ?? _computeReferenceDateTime(widget.trip))}',
+                style: TextStyle(color: context.theme.textSecondary),
+              ),
+            ),
+          ),
+          if (_lastRequestedRef != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Demandée: ${_formatRefLabel(_lastRequestedRef!)}',
+                  style: TextStyle(color: context.theme.textSecondary),
+                ),
+              ),
+            ),
+          if (_filteredTrains.isNotEmpty)
+            Builder(builder: (context) {
+              final ref = _lastRequestedRef ?? _computeReferenceDateTime(widget.trip);
+              DateTime? before;
+              DateTime? after;
+              for (final t in _filteredTrains) {
+                final dt = t.departureTime;
+                if (dt.isBefore(ref)) {
+                  if (before == null || dt.isAfter(before)) before = dt;
+                } else {
+                  if (after == null || dt.isBefore(after)) after = dt;
+                }
+              }
+              String fmt(DateTime? dt) => dt == null
+                  ? 'aucun'
+                  : '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                child: Row(
+                  children: [
+                    Chip(
+                      avatar: const Icon(Icons.keyboard_double_arrow_left, size: 16),
+                      label: Text('Avant: ${fmt(before)}'),
+                    ),
+                    const SizedBox(width: 8),
+                    Chip(
+                      avatar: const Icon(Icons.keyboard_double_arrow_right, size: 16),
+                      label: Text('Après: ${fmt(after)}'),
+                    ),
+                  ],
+                ),
+              );
+            }),
+          if (_filteredTrains.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Builder(builder: (context) {
+                  final first = _filteredTrains.first.departureTime;
+                  return Text(
+                    'Premier départ trouvé: ${_formatRefLabel(first)}',
+                    style: TextStyle(color: context.theme.textSecondary),
+                  );
+                }),
+              ),
+            ),
           Expanded(child: _buildTrainsList()),
         ],
       ),

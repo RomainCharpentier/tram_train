@@ -9,7 +9,6 @@ void main() async {
     await DependencyInjection.initialize();
     runApp(const MyApp());
   } catch (e) {
-    print('Erreur lors de l\'initialisation: $e');
     runApp(MaterialApp(
       home: Scaffold(
         body: Center(

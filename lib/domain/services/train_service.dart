@@ -80,4 +80,76 @@ class TrainService {
     throw UnsupportedError(
         'findJourneysWithArrivalTime non supporté par ce gateway');
   }
+
+  /// Retourne le trajet juste avant l'heure de référence en suivant le lien 'prev'
+  Future<Train?> findJourneyJustBefore(
+    Station fromStation,
+    Station toStation,
+    DateTime reference,
+  ) async {
+    final gw = _gateway;
+    if (gw is SncfGateway) {
+      final raw = await gw.getJourneysRaw(
+        fromStation,
+        toStation,
+        reference,
+        represents: 'departure',
+      );
+      final links = (raw['links'] as List<dynamic>?) ?? const [];
+      final prev = links.cast<Map<String, dynamic>?>().firstWhere(
+            (l) => l != null && l['rel'] == 'prev',
+            orElse: () => null,
+          );
+      if (prev != null && prev['href'] is String) {
+        final trains = await gw.getJourneysByHref(
+          prev['href'] as String,
+          fromStation,
+          toStation,
+        );
+        trains.sort((a, b) => a.departureTime.compareTo(b.departureTime));
+        for (var i = trains.length - 1; i >= 0; i--) {
+          if (trains[i].departureTime.isBefore(reference)) {
+            return trains[i];
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  /// Retourne le trajet juste après l'heure de référence en suivant le lien 'next'
+  Future<Train?> findJourneyJustAfter(
+    Station fromStation,
+    Station toStation,
+    DateTime reference,
+  ) async {
+    final gw = _gateway;
+    if (gw is SncfGateway) {
+      final raw = await gw.getJourneysRaw(
+        fromStation,
+        toStation,
+        reference,
+        represents: 'departure',
+      );
+      final links = (raw['links'] as List<dynamic>?) ?? const [];
+      final next = links.cast<Map<String, dynamic>?>().firstWhere(
+            (l) => l != null && l['rel'] == 'next',
+            orElse: () => null,
+          );
+      if (next != null && next['href'] is String) {
+        final trains = await gw.getJourneysByHref(
+          next['href'] as String,
+          fromStation,
+          toStation,
+        );
+        trains.sort((a, b) => a.departureTime.compareTo(b.departureTime));
+        for (final t in trains) {
+          if (!t.departureTime.isBefore(reference)) {
+            return t;
+          }
+        }
+      }
+    }
+    return null;
+  }
 }

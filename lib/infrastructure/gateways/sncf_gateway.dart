@@ -44,7 +44,7 @@ class SncfGateway implements TrainGateway {
       Station station, DateTime dateTime) async {
     final formattedDateTime = _formatDateTimeForApi(dateTime);
     final apiUrl =
-        'https://api.sncf.com/v1/coverage/sncf/stop_areas/stop_area:${station.id}/departures?datetime=$formattedDateTime&count=20';
+        'https://api.sncf.com/v1/coverage/sncf/stop_areas/stop_area:${station.id}/departures?datetime=$formattedDateTime&count=100';
 
     try {
       final response = await _makeApiCall(apiUrl);
@@ -105,15 +105,63 @@ class SncfGateway implements TrainGateway {
   Future<List<Train>> findJourneysWithDepartureTime(
       Station fromStation, Station toStation, DateTime departureTime) async {
     final formattedDateTime = _formatDateTimeForApi(departureTime);
-    final apiUrl =
-        'https://api.sncf.com/v1/coverage/sncf/journeys?from=stop_area:${fromStation.id}&to=stop_area:${toStation.id}&datetime_represents=departure&datetime=$formattedDateTime&count=50';
+    final uri = Uri.https(
+      'api.sncf.com',
+      '/v1/coverage/sncf/journeys',
+      {
+        'from': 'stop_area:${fromStation.id}',
+        'to': 'stop_area:${toStation.id}',
+        'datetime_represents': 'departure',
+        'datetime': formattedDateTime,
+        'count': '50',
+      },
+    );
 
     try {
-      final response = await _makeApiCall(apiUrl);
+      // ignore: avoid_print
+      print('🔗 Journeys(departure) URL: $uri');
+      final response = await _makeApiCallUri(uri);
       return _mapper.mapJourneysToTrains(response, fromStation, toStation);
     } catch (e) {
       throw SncfGatewayException('Erreur lors de la recherche de trajets: $e');
     }
+  }
+
+  /// Récupère la réponse brute de journeys (pour pagination via links prev/next)
+  Future<Map<String, dynamic>> getJourneysRaw(
+    Station fromStation,
+    Station toStation,
+    DateTime time, {
+    required String represents, // 'departure' ou 'arrival'
+  }) async {
+    final formattedDateTime = _formatDateTimeForApi(time);
+    final uri = Uri.https(
+      'api.sncf.com',
+      '/v1/coverage/sncf/journeys',
+      {
+        'from': 'stop_area:${fromStation.id}',
+        'to': 'stop_area:${toStation.id}',
+        'datetime_represents': represents,
+        'datetime': formattedDateTime,
+        'count': '50',
+      },
+    );
+
+    // ignore: avoid_print
+    print('🔗 Journeys($represents) URL: $uri');
+    return await _makeApiCallUri(uri);
+  }
+
+  /// Suivre un lien de pagination (prev/next) et mapper en trains
+  Future<List<Train>> getJourneysByHref(
+    String href,
+    Station fromStation,
+    Station toStation,
+  ) async {
+    // ignore: avoid_print
+    print('🔗 Journeys(page) HREF: $href');
+    final response = await _makeApiCall(href);
+    return _mapper.mapJourneysToTrains(response, fromStation, toStation);
   }
 
   /// Recherche de trajets avec horaire d'arrivée
@@ -121,11 +169,22 @@ class SncfGateway implements TrainGateway {
   Future<List<Train>> findJourneysWithArrivalTime(
       Station fromStation, Station toStation, DateTime arrivalTime) async {
     final formattedDateTime = _formatDateTimeForApi(arrivalTime);
-    final apiUrl =
-        'https://api.sncf.com/v1/coverage/sncf/journeys?from=stop_area:${fromStation.id}&to=stop_area:${toStation.id}&datetime_represents=arrival&datetime=$formattedDateTime&count=50';
+    final uri = Uri.https(
+      'api.sncf.com',
+      '/v1/coverage/sncf/journeys',
+      {
+        'from': 'stop_area:${fromStation.id}',
+        'to': 'stop_area:${toStation.id}',
+        'datetime_represents': 'arrival',
+        'datetime': formattedDateTime,
+        'count': '50',
+      },
+    );
 
     try {
-      final response = await _makeApiCall(apiUrl);
+      // ignore: avoid_print
+      print('🔗 Journeys(arrival) URL: $uri');
+      final response = await _makeApiCallUri(uri);
       return _mapper.mapJourneysToTrains(response, fromStation, toStation);
     } catch (e) {
       throw SncfGatewayException('Erreur lors de la recherche de trajets: $e');
@@ -303,8 +362,28 @@ class SncfGateway implements TrainGateway {
 
   /// Effectue un appel API avec authentification
   Future<Map<String, dynamic>> _makeApiCall(String url) async {
+    // ignore: avoid_print
+    print('➡️ GET $url');
     final response = await _httpClient.get(
       Uri.parse(url),
+      headers: {
+        'Authorization': 'Basic ${base64Encode(utf8.encode('$_apiKey:'))}'
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw SncfGatewayException('Erreur API: ${response.statusCode}');
+    }
+  }
+
+  /// Effectue un appel API (URI déjà encodée)
+  Future<Map<String, dynamic>> _makeApiCallUri(Uri uri) async {
+    // ignore: avoid_print
+    print('➡️ GET $uri');
+    final response = await _httpClient.get(
+      uri,
       headers: {
         'Authorization': 'Basic ${base64Encode(utf8.encode('$_apiKey:'))}'
       },

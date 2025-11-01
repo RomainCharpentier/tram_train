@@ -144,13 +144,29 @@ class SncfMapper {
     final from = firstSection['from'] as Map<String, dynamic>? ?? {};
     final to = lastSection['to'] as Map<String, dynamic>? ?? {};
 
-    final departureTime = from['departure_date_time'] != null
-        ? _parseSncfDateTime(from['departure_date_time'] as String)
-        : DateTime.now();
+    // Essayer plusieurs emplacements possibles pour les horodatages
+    String? depRaw = firstSection['departure_date_time'] as String?;
+    depRaw ??= from['departure_date_time'] as String?;
+    if (depRaw == null) {
+      final stopDateTimes = firstSection['stop_date_times'] as List<dynamic>?;
+      if (stopDateTimes != null && stopDateTimes.isNotEmpty) {
+        final firstStop = stopDateTimes.first as Map<String, dynamic>;
+        depRaw = firstStop['departure_date_time'] as String?;
+      }
+    }
 
-    final arrivalTime = to['arrival_date_time'] != null
-        ? _parseSncfDateTime(to['arrival_date_time'] as String)
-        : DateTime.now();
+    String? arrRaw = lastSection['arrival_date_time'] as String?;
+    arrRaw ??= to['arrival_date_time'] as String?;
+    if (arrRaw == null) {
+      final stopDateTimes = lastSection['stop_date_times'] as List<dynamic>?;
+      if (stopDateTimes != null && stopDateTimes.isNotEmpty) {
+        final lastStop = stopDateTimes.last as Map<String, dynamic>;
+        arrRaw = lastStop['arrival_date_time'] as String?;
+      }
+    }
+
+    final departureTime = depRaw != null ? _parseSncfDateTime(depRaw) : DateTime.now();
+    final arrivalTime = arrRaw != null ? _parseSncfDateTime(arrRaw) : DateTime.now();
 
     // Détecter les vraies correspondances (changement de véhicule/mode)
     final hasConnections = _hasRealConnections(sections);
@@ -183,7 +199,7 @@ class SncfMapper {
   bool _hasRealConnections(List<dynamic> sections) {
     if (sections.length <= 1) return false;
 
-    print('🔍 Analyse des correspondances: ${sections.length} sections');
+    
 
     // Filtrer les sections qui ont un mode de transport réel
     final transportSections = <Map<String, dynamic>>[];
@@ -197,7 +213,7 @@ class SncfMapper {
       final currentMode = displayInfo['physical_mode'] as String?;
       final currentLine = displayInfo['commercial_mode'] as String?;
 
-      print('  Section $i: mode=$currentMode, ligne=$currentLine');
+      
 
       // Ne garder que les sections avec un mode de transport réel
       if (currentMode != null && currentMode.isNotEmpty) {
@@ -209,11 +225,10 @@ class SncfMapper {
       }
     }
 
-    print('  📊 Sections de transport: ${transportSections.length}');
+    
 
     // Si moins de 2 sections de transport, pas de correspondance
     if (transportSections.length < 2) {
-      print('  ❌ Moins de 2 sections de transport');
       return false;
     }
 
@@ -228,17 +243,14 @@ class SncfMapper {
       final currLine = curr['line'] as String?;
 
       if (prevMode != currMode) {
-        print('  ✅ Changement de mode détecté: $prevMode → $currMode');
         return true;
       }
 
       if (prevLine != null && currLine != null && prevLine != currLine) {
-        print('  ✅ Changement de ligne détecté: $prevLine → $currLine');
         return true;
       }
     }
 
-    print('  ❌ Aucune correspondance détectée');
     return false;
   }
 

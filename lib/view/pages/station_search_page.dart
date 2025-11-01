@@ -407,7 +407,6 @@ class _StationSearchPageState extends State<StationSearchPage> {
   }
 
   void _addToFavorites(Station station) async {
-    // Fonctionnalité des favorites supprimée
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('${station.name} ajoutée aux favorites'),

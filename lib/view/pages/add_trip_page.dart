@@ -32,7 +32,6 @@ class _AddTripPageState extends State<AddTripPage> {
 
   // Sélection d'un train précis autour d'une heure
   TimeConstraintMode _timeMode = TimeConstraintMode.departure;
-  int _toleranceMinutes = 10;
   List<domain_train.Train> _candidateTrains = [];
   List<domain_train.Train> _allTrains = [];
   String? _selectedTrainId;
@@ -275,7 +274,9 @@ class _AddTripPageState extends State<AddTripPage> {
                   onSelected: (selected) {
                     setState(() {
                       if (selected) {
-                        _selectedDays.add(day);
+                        _selectedDays
+                          ..clear()
+                          ..add(day);
                       } else {
                         _selectedDays.remove(day);
                       }
@@ -311,49 +312,32 @@ class _AddTripPageState extends State<AddTripPage> {
 
             const SizedBox(height: 24),
 
-            // Contrainte horaire + Tolérance (compact)
+            // Contrainte horaire (départ/arrivée) – sans tolérance
             Card(
               child: Padding(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
-                child: Row(
-                  children: [
-                    ToggleButtons(
-                      isSelected: [
-                        _timeMode == TimeConstraintMode.departure,
-                        _timeMode == TimeConstraintMode.arrival,
-                      ],
-                      onPressed: (i) {
-                        setState(() => _timeMode = i == 0
-                            ? TimeConstraintMode.departure
-                            : TimeConstraintMode.arrival);
-                        _maybeAutoSearch();
-                      },
-                      children: const [
-                        Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 12),
-                            child: Text('Départ')),
-                        Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 12),
-                            child: Text('Arrivée')),
-                      ],
-                    ),
-                    const Spacer(),
-                    const Text('Tolérance'),
-                    const SizedBox(width: 8),
-                    DropdownButton<int>(
-                      value: _toleranceMinutes,
-                      items: const [5, 10, 15, 20]
-                          .map((m) =>
-                              DropdownMenuItem(value: m, child: Text('±$m')))
-                          .toList(),
-                      onChanged: (m) {
-                        if (m == null) return;
-                        setState(() => _toleranceMinutes = m);
-                        _maybeAutoSearch();
-                      },
-                    ),
-                  ],
+                child: Center(
+                  child: ToggleButtons(
+                    isSelected: [
+                      _timeMode == TimeConstraintMode.departure,
+                      _timeMode == TimeConstraintMode.arrival,
+                    ],
+                    onPressed: (i) {
+                      setState(() => _timeMode = i == 0
+                          ? TimeConstraintMode.departure
+                          : TimeConstraintMode.arrival);
+                      _maybeAutoSearch();
+                    },
+                    children: const [
+                      Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 12),
+                          child: Text('Départ')),
+                      Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 12),
+                          child: Text('Arrivée')),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -401,35 +385,79 @@ class _AddTripPageState extends State<AddTripPage> {
             ] else if (_candidateTrains.isNotEmpty) ...[
               const SizedBox(height: 8),
               Card(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxHeight: 360),
-                  child: ListView.separated(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: _candidateTrains.length,
-                    separatorBuilder: (_, __) => const Divider(height: 1),
-                    itemBuilder: (context, index) {
-                      final t = _candidateTrains[index];
-                      return RadioListTile<String>(
-                        value: t.id,
-                        groupValue: _selectedTrainId,
-                        onChanged: (val) {
-                          setState(() {
-                            _selectedTrainId = val;
-                            _selectedTime = flutter.TimeOfDay(
-                              hour: t.departureTime.hour,
-                              minute: t.departureTime.minute,
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 8.0),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Bandeau Avant/Après
+                      if (_selectedTime != null) Builder(builder: (context) {
+                        final ref = _buildReferenceDateTime();
+                        final before = _candidateTrains
+                            .where((t) => t.departureTime.isBefore(ref))
+                            .fold<DateTime?>(null, (prev, e) =>
+                                prev == null || e.departureTime.isAfter(prev)
+                                    ? e.departureTime
+                                    : prev);
+                        final after = _candidateTrains
+                            .where((t) => !t.departureTime.isBefore(ref))
+                            .fold<DateTime?>(null, (prev, e) =>
+                                prev == null || e.departureTime.isBefore(prev)
+                                    ? e.departureTime
+                                    : prev);
+                        String fmt(DateTime? dt) => dt == null
+                            ? 'aucun'
+                            : '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 8),
+                          child: Row(
+                            children: [
+                              Chip(
+                                avatar: const Icon(Icons.keyboard_double_arrow_left, size: 16),
+                                label: Text('Avant: ${fmt(before)}'),
+                              ),
+                              const SizedBox(width: 8),
+                              Chip(
+                                avatar: const Icon(Icons.keyboard_double_arrow_right, size: 16),
+                                label: Text('Après: ${fmt(after)}'),
+                              ),
+                            ],
+                          ),
+                        );
+                      }),
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxHeight: 360),
+                        child: ListView.separated(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: _candidateTrains.length,
+                          separatorBuilder: (_, __) => const Divider(height: 1),
+                          itemBuilder: (context, index) {
+                            final t = _candidateTrains[index];
+                            return RadioListTile<String>(
+                              value: t.id,
+                              groupValue: _selectedTrainId,
+                              onChanged: (val) {
+                                setState(() {
+                                  _selectedTrainId = val;
+                                  _selectedTime = flutter.TimeOfDay(
+                                    hour: t.departureTime.hour,
+                                    minute: t.departureTime.minute,
+                                  );
+                                });
+                              },
+                              title: Text(
+                                  '${t.departureTime.hour.toString().padLeft(2, '0')}:${t.departureTime.minute.toString().padLeft(2, '0')} → ${t.direction}'),
+                              subtitle: Text(
+                                '${_formatDayLabel(t.departureTime)} • ${t.statusText}',
+                                style: TextStyle(color: context.theme.textSecondary),
+                              ),
                             );
-                          });
-                        },
-                        title: Text(
-                            '${t.departureTime.hour.toString().padLeft(2, '0')}:${t.departureTime.minute.toString().padLeft(2, '0')} → ${t.direction}'),
-                        subtitle: Text(
-                          '${_formatDayLabel(t.departureTime)} • ${t.statusText}',
-                          style: TextStyle(color: context.theme.textSecondary),
+                          },
                         ),
-                      );
-                    },
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -660,12 +688,14 @@ class _AddTripPageState extends State<AddTripPage> {
 
   DateTime _buildReferenceDateTime() {
     final now = DateTime.now();
+    final hour = _selectedTime?.hour ?? now.hour;
+    final minute = _selectedTime?.minute ?? now.minute;
     final baseToday = DateTime(
       now.year,
       now.month,
       now.day,
-      _selectedTime!.hour,
-      _selectedTime!.minute,
+      hour,
+      minute,
     );
 
     if (_selectedDays.isEmpty) {
@@ -766,25 +796,85 @@ class _AddTripPageState extends State<AddTripPage> {
           trains = trains.where((t) => t.isDirect).toList();
         }
         var subset = _deduplicateTrains(trains);
-        // Filtrer autour de l'heure cible ± tolérance
-        int minutesOfDay(DateTime dt) => dt.hour * 60 + dt.minute;
-        final target = _selectedTime!.hour * 60 + _selectedTime!.minute;
-        bool withinTolerance(int a, int b, int tol) => (a - b).abs() <= tol;
-        final filtered = subset
-            .where((t) => withinTolerance(
-                minutesOfDay(t.departureTime), target, _toleranceMinutes))
-            .toList();
-        if (filtered.isNotEmpty) {
-          filtered.sort((a, b) {
-            final da = (minutesOfDay(a.departureTime) - target).abs();
-            final db = (minutesOfDay(b.departureTime) - target).abs();
-            return da.compareTo(db);
-          });
-          subset = filtered;
+
+        // Ne garder que 2 trajets: le plus proche APRÈS et le plus proche AVANT l'heure cible
+        // Référence exacte (même date/heure que la requête envoyée)
+        final targetRef = ref;
+        DateTime getRefTime(domain_train.Train t) => t.departureTime;
+
+        // Trier par horaire croissant sur le champ de référence
+        subset.sort((a, b) => getRefTime(a).compareTo(getRefTime(b)));
+
+        domain_train.Train? after;
+        for (final t in subset) {
+          final tt = getRefTime(t);
+          if (!tt.isBefore(targetRef)) {
+            after = t;
+            break;
+          }
         }
-        // Tri stable par heure
-        subset.sort((a, b) => a.departureTime.compareTo(b.departureTime));
-        _applyPagination(subset);
+
+        domain_train.Train? before;
+        for (var i = subset.length - 1; i >= 0; i--) {
+          final t = subset[i];
+          final tt = getRefTime(t);
+          if (tt.isBefore(targetRef)) {
+            before = t;
+            break;
+          }
+        }
+
+        // Si on n'a pas de "before", utiliser uniquement la pagination journeys: lien 'prev'
+        if (before == null) {
+          try {
+            final byPrev = await service.findJourneyJustBefore(
+                _departureStation!, _arrivalStation!, targetRef);
+            if (byPrev != null) {
+              before = byPrev;
+              subset = _deduplicateTrains([...subset, byPrev]);
+              subset.sort((a, b) => getRefTime(a).compareTo(getRefTime(b)));
+            }
+          } catch (_) {}
+        }
+
+        // Si on n'a pas d'"after", utiliser uniquement la pagination journeys: lien 'next'
+        if (after == null) {
+          try {
+            final byNext = await service.findJourneyJustAfter(
+                _departureStation!, _arrivalStation!, targetRef);
+            if (byNext != null) {
+              after = byNext;
+              subset = _deduplicateTrains([...subset, byNext]);
+              subset.sort((a, b) => getRefTime(a).compareTo(getRefTime(b)));
+            }
+          } catch (_) {}
+        }
+
+        // Construire la liste finale (au plus 2 éléments)
+        final result = <domain_train.Train>[];
+
+        // Conserver le "before" uniquement s'il est le même jour que la cible
+        // ou à défaut dans une fenêtre maximale de 3h avant la cible
+        if (before != null) {
+          final ttBefore = getRefTime(before);
+          final sameDay = ttBefore.year == targetRef.year &&
+              ttBefore.month == targetRef.month &&
+              ttBefore.day == targetRef.day;
+          final within3h = targetRef.difference(ttBefore) <=
+              const Duration(hours: 3);
+          if (sameDay || within3h) {
+            result.add(before);
+          }
+        }
+        if (after != null && (before == null || after.id != before.id ||
+            getRefTime(after) != getRefTime(before))) {
+          result.add(after);
+        }
+
+        setState(() {
+          _pageIndex = 0;
+          _candidateTrains = result;
+        });
         return;
       }
 
@@ -828,8 +918,6 @@ class _AddTripPageState extends State<AddTripPage> {
     });
 
     try {
-      print(
-          '🚂 Recherche trains: ${_departureStation!.name} → ${_arrivalStation!.name}');
       final service = DependencyInjection.instance.trainService;
       // Récupère les départs à la gare de départ puis filtre la direction qui contient la gare d'arrivée
       var departures = await service.getDepartures(_departureStation!);
@@ -850,7 +938,6 @@ class _AddTripPageState extends State<AddTripPage> {
       });
       _applyPagination(deduped);
     } catch (e) {
-      print('❌ Erreur recherche trains: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
