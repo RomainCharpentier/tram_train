@@ -106,7 +106,7 @@ class SncfGateway implements TrainGateway {
       Station fromStation, Station toStation, DateTime departureTime) async {
     final formattedDateTime = _formatDateTimeForApi(departureTime);
     final apiUrl =
-        'https://api.sncf.com/v1/coverage/sncf/journeys?from=stop_area:${fromStation.id}&to=stop_area:${toStation.id}&datetime_represents=departure&datetime=$formattedDateTime&count=20';
+        'https://api.sncf.com/v1/coverage/sncf/journeys?from=stop_area:${fromStation.id}&to=stop_area:${toStation.id}&datetime_represents=departure&datetime=$formattedDateTime&count=50';
 
     try {
       final response = await _makeApiCall(apiUrl);
@@ -122,7 +122,7 @@ class SncfGateway implements TrainGateway {
       Station fromStation, Station toStation, DateTime arrivalTime) async {
     final formattedDateTime = _formatDateTimeForApi(arrivalTime);
     final apiUrl =
-        'https://api.sncf.com/v1/coverage/sncf/journeys?from=stop_area:${fromStation.id}&to=stop_area:${toStation.id}&datetime_represents=arrival&datetime=$formattedDateTime&count=20';
+        'https://api.sncf.com/v1/coverage/sncf/journeys?from=stop_area:${fromStation.id}&to=stop_area:${toStation.id}&datetime_represents=arrival&datetime=$formattedDateTime&count=50';
 
     try {
       final response = await _makeApiCall(apiUrl);

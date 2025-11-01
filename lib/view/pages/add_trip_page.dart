@@ -424,7 +424,10 @@ class _AddTripPageState extends State<AddTripPage> {
                         },
                         title: Text(
                             '${t.departureTime.hour.toString().padLeft(2, '0')}:${t.departureTime.minute.toString().padLeft(2, '0')} → ${t.direction}'),
-                        subtitle: Text(t.statusText),
+                        subtitle: Text(
+                          '${_formatDayLabel(t.departureTime)} • ${t.statusText}',
+                          style: TextStyle(color: context.theme.textSecondary),
+                        ),
                       );
                     },
                   ),
@@ -696,6 +699,14 @@ class _AddTripPageState extends State<AddTripPage> {
     return _pageIndex + 1 < totalPages;
   }
 
+  String _formatDayLabel(DateTime dt) {
+    const names = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+    final name = names[(dt.weekday - 1).clamp(0, 6)];
+    final dd = dt.day.toString().padLeft(2, '0');
+    final mm = dt.month.toString().padLeft(2, '0');
+    return '$name $dd/$mm';
+  }
+
   List<domain_train.Train> _deduplicateTrains(List<domain_train.Train> trains) {
     final seen = <String>{};
     final result = <domain_train.Train>[];
@@ -739,6 +750,22 @@ class _AddTripPageState extends State<AddTripPage> {
           trains = trains.where((t) => t.isDirect).toList();
         }
         var subset = _deduplicateTrains(trains);
+        // Filtrer autour de l'heure cible ± tolérance
+        int minutesOfDay(DateTime dt) => dt.hour * 60 + dt.minute;
+        final target = _selectedTime!.hour * 60 + _selectedTime!.minute;
+        bool withinTolerance(int a, int b, int tol) => (a - b).abs() <= tol;
+        final filtered = subset
+            .where((t) => withinTolerance(
+                minutesOfDay(t.departureTime), target, _toleranceMinutes))
+            .toList();
+        if (filtered.isNotEmpty) {
+          filtered.sort((a, b) {
+            final da = (minutesOfDay(a.departureTime) - target).abs();
+            final db = (minutesOfDay(b.departureTime) - target).abs();
+            return da.compareTo(db);
+          });
+          subset = filtered;
+        }
         // Tri stable par heure
         subset.sort((a, b) => a.departureTime.compareTo(b.departureTime));
         _applyPagination(subset);
