@@ -86,7 +86,8 @@ class AppPalette extends ThemeExtension<AppPalette> {
       primary: Color.lerp(primary, other.primary, t) ?? primary,
       secondary: Color.lerp(secondary, other.secondary, t) ?? secondary,
       tertiary: Color.lerp(tertiary, other.tertiary, t) ?? tertiary,
-      gradientStart: Color.lerp(gradientStart, other.gradientStart, t) ?? gradientStart,
+      gradientStart:
+          Color.lerp(gradientStart, other.gradientStart, t) ?? gradientStart,
       gradientEnd: Color.lerp(gradientEnd, other.gradientEnd, t) ?? gradientEnd,
       surface: Color.lerp(surface, other.surface, t) ?? surface,
       card: Color.lerp(card, other.card, t) ?? card,
@@ -96,5 +97,3 @@ class AppPalette extends ThemeExtension<AppPalette> {
     );
   }
 }
-
-

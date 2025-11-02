@@ -72,8 +72,7 @@ class DependencyInjection {
     );
     instance.notificationPauseStorageGateway =
         NotificationPauseStorageGateway();
-    instance.favoriteStationStorageGateway =
-        FavoriteStationStorageGateway();
+    instance.favoriteStationStorageGateway = FavoriteStationStorageGateway();
 
     // Initialisation des services
     instance.tripService = TripService(instance.localStorageGateway);
@@ -83,8 +82,8 @@ class DependencyInjection {
     );
     instance.notificationPauseService = NotificationPauseService(
         storage: instance.notificationPauseStorageGateway);
-    instance.favoriteStationService = FavoriteStationService(
-        instance.favoriteStationStorageGateway);
+    instance.favoriteStationService =
+        FavoriteStationService(instance.favoriteStationStorageGateway);
     instance.themeService = ThemeService();
     instance.notificationService = NotificationService();
 

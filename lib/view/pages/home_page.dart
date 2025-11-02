@@ -103,11 +103,13 @@ class _HomePageState extends State<HomePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error, size: 64, color: Theme.of(context).colorScheme.error),
+            Icon(Icons.error,
+                size: 64, color: Theme.of(context).colorScheme.error),
             const SizedBox(height: 16),
             Text(
               _error!,
-              style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.error),
+              style: TextStyle(
+                  fontSize: 16, color: Theme.of(context).colorScheme.error),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
@@ -268,8 +270,6 @@ class _HomePageState extends State<HomePage> {
     return _nextTrains.map((train) => TrainCard(train: train)).toList();
   }
 
-  
-
   void _navigateToProfile(BuildContext context) async {
     final result = await Navigator.push<bool>(
       context,
@@ -346,7 +346,8 @@ class _HomePageState extends State<HomePage> {
           ),
         );
         if (confirmed == true) {
-          await DependencyInjection.instance.tripService.deleteTripAndSimilar(trip);
+          await DependencyInjection.instance.tripService
+              .deleteTripAndSimilar(trip);
           _loadActiveTrips();
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Trajet supprimé (doublons inclus)')),

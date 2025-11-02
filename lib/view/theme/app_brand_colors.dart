@@ -68,5 +68,3 @@ class AppBrandColors extends ThemeExtension<AppBrandColors> {
     );
   }
 }
-
-

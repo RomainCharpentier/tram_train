@@ -6,10 +6,12 @@ import 'package:train_qil/infrastructure/gateways/sncf_gateway.dart';
 import 'package:train_qil/domain/models/station.dart';
 
 Future<void> main() async {
-  final apiKey = Platform.environment['API_KEY'] ?? '61032076-d074-439e-8526-5c39a541479f';
+  final apiKey =
+      Platform.environment['API_KEY'] ?? '61032076-d074-439e-8526-5c39a541479f';
   final httpClient = http.Client();
   final mapper = SncfMapper();
-  final gw = SncfGateway(httpClient: httpClient, apiKey: apiKey, mapper: mapper);
+  final gw =
+      SncfGateway(httpClient: httpClient, apiKey: apiKey, mapper: mapper);
 
   // Câbler DI minimal pour TrainService
   DependencyInjection.instance.httpClient = httpClient;
@@ -58,5 +60,3 @@ Future<void> main() async {
     httpClient.close();
   }
 }
-
-

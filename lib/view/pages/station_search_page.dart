@@ -12,10 +12,10 @@ import '../widgets/error_state.dart';
 import '../widgets/info_banner.dart';
 
 class StationSearchPage extends StatefulWidget {
-  final Station? departureStation; // Gare de départ pour filtrer les gares connectées
-  final bool showFavoriteButton; // Afficher le bouton favori
-  final void Function(Station)? onStationTap; // Callback personnalisé pour le clic
-  
+  final Station? departureStation;
+  final bool showFavoriteButton;
+  final void Function(Station)? onStationTap;
+
   const StationSearchPage({
     super.key,
     this.departureStation,
@@ -30,7 +30,7 @@ class StationSearchPage extends StatefulWidget {
 class _StationSearchPageState extends State<StationSearchPage> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
-  
+
   List<SearchResult<Station>> _searchResults = [];
   List<String> _suggestions = [];
   bool _isLoading = false;
@@ -44,11 +44,9 @@ class _StationSearchPageState extends State<StationSearchPage> {
   @override
   void initState() {
     super.initState();
-    // Charger les gares connectées si une gare de départ est fournie
     if (widget.departureStation != null) {
       _loadConnectedStations();
     } else {
-      // Si pas de station de départ, afficher les favoris par défaut
       _loadFavorites();
     }
     _loadFavoriteStatus();
@@ -57,32 +55,20 @@ class _StationSearchPageState extends State<StationSearchPage> {
   Future<void> _loadFavoriteStatus() async {
     final favorites = await _favoriteStationService.getAllFavoriteStations();
     setState(() {
-      _favoriteStatus = {
-        for (var fav in favorites) fav.id: true
-      };
+      _favoriteStatus = {for (var fav in favorites) fav.id: true};
     });
   }
 
   Future<void> _loadFavorites() async {
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
+    _setLoadingState(true);
 
     try {
       final favorites = await _favoriteStationService.getAllFavoriteStations();
-      setState(() {
-        // Convertir les favoris en SearchResult pour l'affichage
-        _searchResults = favorites.map((station) {
-          return SearchResult.favorite(station);
-        }).toList();
-        _isLoading = false;
-      });
+      _setSearchResults(
+        favorites.map((station) => SearchResult.favorite(station)).toList(),
+      );
     } catch (e) {
-      setState(() {
-        _error = 'Erreur lors du chargement des favoris: $e';
-        _isLoading = false;
-      });
+      _setErrorState('Erreur lors du chargement des favoris: $e');
     }
   }
 
@@ -97,67 +83,48 @@ class _StationSearchPageState extends State<StationSearchPage> {
     if (widget.departureStation == null) {
       return;
     }
-    
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
+
+    _setLoadingState(true);
 
     try {
-      // Récupérer les noms des destinations connectées
-      final destinationNames = await ConnectedStationsService.getConnectedDestinationNames(widget.departureStation!);
-      
-      // Créer des résultats de recherche avec des suggestions
-      final results = destinationNames.map((name) => 
-        SearchResult.suggestion(Station(id: 'TEMP_${name.hashCode}', name: name), metadata: {'connected': true, 'suggestion': true})
-      ).toList();
-      
-      setState(() {
-        _searchResults = results;
-        _isLoading = false;
-      });
+      final destinationNames =
+          await ConnectedStationsService.getConnectedDestinationNames(
+              widget.departureStation!);
+
+      final results = destinationNames
+          .map((name) => SearchResult.suggestion(
+              Station(id: 'TEMP_${name.hashCode}', name: name),
+              metadata: {'connected': true, 'suggestion': true}))
+          .toList();
+
+      _setSearchResults(results);
     } catch (e) {
-      setState(() {
-        _error = 'Erreur lors du chargement des destinations connectées: $e';
-        _isLoading = false;
-      });
+      _setErrorState(
+          'Erreur lors du chargement des destinations connectées: $e');
     }
   }
 
   Future<void> _searchStations([String? query]) async {
     final searchQuery = query ?? _searchController.text.trim();
-    
-    // Recherche globale dans toute la base SNCF (même avec gare de départ)
+
     if (searchQuery.isEmpty) {
-      // Si pas de recherche, afficher les gares connectées si gare de départ
       if (widget.departureStation != null) {
         await _loadConnectedStations();
       } else {
-        // Sinon, afficher les favoris
         await _loadFavorites();
       }
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
+    _setLoadingState(true);
 
     try {
-      // Recherche globale dans toute la base SNCF
-      final results = await DependencyInjection.instance.stationSearchService.searchStations(searchQuery);
-      setState(() {
-        _searchResults = results;
-        _isLoading = false;
-      });
-      // Recharger le statut des favoris après une recherche
+      final results = await DependencyInjection.instance.stationSearchService
+          .searchStations(searchQuery);
+      _setSearchResults(results);
       _loadFavoriteStatus();
     } catch (e) {
-      setState(() {
-        _error = 'Erreur lors de la recherche: $e';
-        _isLoading = false;
-      });
+      _setErrorState('Erreur lors de la recherche: $e');
     }
   }
 
@@ -170,13 +137,13 @@ class _StationSearchPageState extends State<StationSearchPage> {
     }
 
     try {
-      final suggestions = await DependencyInjection.instance.stationSearchService.getSearchSuggestions(query);
+      final suggestions = await DependencyInjection
+          .instance.stationSearchService
+          .getSearchSuggestions(query);
       setState(() {
         _suggestions = suggestions;
       });
-    } catch (e) {
-      // Ignorer les erreurs de suggestions
-    }
+    } catch (e) {}
   }
 
   Future<void> _searchByTransportType(TransportType type) async {
@@ -187,39 +154,30 @@ class _StationSearchPageState extends State<StationSearchPage> {
     });
 
     try {
-      final results = await DependencyInjection.instance.stationSearchService.searchStationsByType(type);
-      setState(() {
-        _searchResults = results;
-        _isLoading = false;
-      });
+      final results = await DependencyInjection.instance.stationSearchService
+          .searchStationsByType(type);
+      _setSearchResults(results);
     } catch (e) {
-      setState(() {
-        _error = 'Erreur lors de la recherche par type: $e';
-        _isLoading = false;
-      });
+      _setErrorState('Erreur lors de la recherche par type: $e');
     }
   }
 
   Future<void> _advancedSearch() async {
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
+    _setLoadingState(true);
 
     try {
-      final results = await DependencyInjection.instance.stationSearchService.advancedSearch(
-        query: _searchController.text.trim().isNotEmpty ? _searchController.text.trim() : null,
-        transportType: _selectedTransportType != TransportType.all ? _selectedTransportType : null,
+      final results = await DependencyInjection.instance.stationSearchService
+          .advancedSearch(
+        query: _searchController.text.trim().isNotEmpty
+            ? _searchController.text.trim()
+            : null,
+        transportType: _selectedTransportType != TransportType.all
+            ? _selectedTransportType
+            : null,
       );
-      setState(() {
-        _searchResults = results;
-        _isLoading = false;
-      });
+      _setSearchResults(results);
     } catch (e) {
-      setState(() {
-        _error = 'Erreur lors de la recherche avancée: $e';
-        _isLoading = false;
-      });
+      _setErrorState('Erreur lors de la recherche avancée: $e');
     }
   }
 
@@ -293,153 +251,179 @@ class _StationSearchPageState extends State<StationSearchPage> {
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            children: TransportType.values.map((type) {
-              return FilterChip(
-                label: Text(type.displayName),
-                selected: _selectedTransportType == type,
-                onSelected: (selected) {
-                  if (selected) {
-                    _searchByTransportType(type);
-                  }
-                },
-              );
-            }).toList(),
-          ),
+          _buildTransportTypeFilters(),
           const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: _advancedSearch,
-              icon: const Icon(Icons.search),
-              label: const Text('Recherche avancée'),
-            ),
-          ),
+          _buildAdvancedSearchButton(),
         ],
+      ),
+    );
+  }
+
+  Widget _buildTransportTypeFilters() {
+    return Wrap(
+      spacing: 8,
+      children: TransportType.values.map((type) {
+        return FilterChip(
+          label: Text(type.displayName),
+          selected: _selectedTransportType == type,
+          onSelected: (selected) {
+            if (selected) {
+              _searchByTransportType(type);
+            }
+          },
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildAdvancedSearchButton() {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        onPressed: _advancedSearch,
+        icon: const Icon(Icons.search),
+        label: const Text('Recherche avancée'),
       ),
     );
   }
 
   Widget _buildBody() {
     if (_isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
+      return const Center(child: CircularProgressIndicator());
     }
 
     if (_error != null) {
-      return ErrorState(message: 'Erreur: $_error', onRetry: () => _searchStations());
+      return ErrorState(
+          message: 'Erreur: $_error', onRetry: () => _searchStations());
     }
 
-        if (_searchResults.isEmpty) {
-          return EmptyState(
-            icon: Icons.search,
-            title: widget.departureStation != null
-                ? 'Aucune gare connectée trouvée'
-                : 'Recherchez une gare',
-            subtitle: widget.departureStation != null
-                ? 'Aucune gare connectée à ${widget.departureStation!.name}'
-                : 'Tapez le nom d\'une gare et cliquez sur "Rechercher"',
-          );
-        }
+    if (_searchResults.isEmpty) {
+      return _buildEmptyState();
+    }
 
     return Column(
       children: [
-        if (widget.departureStation != null && _searchResults.isNotEmpty && _searchController.text.isEmpty)
-          InfoBanner(text: 'Gares connectées à ${widget.departureStation!.name}'),
+        if (widget.departureStation != null &&
+            _searchResults.isNotEmpty &&
+            _searchController.text.isEmpty)
+          InfoBanner(
+              text: 'Gares connectées à ${widget.departureStation!.name}'),
         Expanded(
           child: ListView.builder(
             itemCount: _searchResults.length,
-            itemBuilder: (context, index) {
-              final result = _searchResults[index];
-              return _buildStationCard(result);
-            },
+            itemBuilder: (context, index) =>
+                _buildStationCard(_searchResults[index]),
           ),
         ),
       ],
     );
   }
 
+  Widget _buildEmptyState() {
+    return EmptyState(
+      icon: Icons.search,
+      title: widget.departureStation != null
+          ? 'Aucune gare connectée trouvée'
+          : 'Recherchez une gare',
+      subtitle: widget.departureStation != null
+          ? 'Aucune gare connectée à ${widget.departureStation!.name}'
+          : 'Tapez le nom d\'une gare et cliquez sur "Rechercher"',
+    );
+  }
+
   Widget _buildStationCard(SearchResult<Station> result) {
     final station = result.data;
     final isSuggestion = result.metadata?['suggestion'] == true;
-    
+
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: isSuggestion ? context.theme.warning : _getTypeColor(result.type),
-          child: Icon(
-            isSuggestion ? Icons.lightbulb_outline : _getTypeIcon(result.type),
-            color: Colors.white,
-          ),
-        ),
+        leading: _buildStationLeading(result, isSuggestion),
         title: Text(
           station.name,
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(station.description ?? ''),
-            if (isSuggestion)
-              Text(
-                'Suggestion - Cliquez pour rechercher cette gare',
-                style: TextStyle(color: context.theme.warning, fontStyle: FontStyle.italic),
-              ),
-            if (result.metadata?['distance'] != null)
-              Text(
-                'Distance: ${(result.metadata!['distance'] as double).toStringAsFixed(1)} km',
-                style: TextStyle(color: context.theme.muted),
-              ),
-            if (result.highlight != null)
-              Text(
-                'Correspondance: ${result.highlight}',
-                style: TextStyle(color: context.theme.primary),
-              ),
-          ],
-        ),
-        trailing: widget.showFavoriteButton && _favoriteStatus[station.id] == true
-            ? Icon(
-                Icons.star,
-                color: Colors.amber,
-              )
-            : null,
-        onTap: () {
-          // Toujours valider avant de sélectionner
-          if (isSuggestion) {
-            _selectSuggestion(station.name);
-            return;
-          }
-          
-          // Vérifier que la station n'est pas temporaire ou invalide
-          if (station.id.startsWith('TEMP_') || station.id.isEmpty) {
-            if (station.id.startsWith('TEMP_')) {
-              _selectSuggestion(station.name);
-            } else {
-              if (!mounted) return;
-              setState(() {
-                _error = 'Station invalide: ID vide pour "${station.name}"';
-              });
-            }
-            return;
-          }
-          
-          if (widget.onStationTap != null) {
-            // Utiliser le callback personnalisé (station déjà validée)
-            widget.onStationTap!(station);
-          } else if (widget.showFavoriteButton) {
-            // Mode favoris par défaut : toggle favori puis sélectionner
-            _toggleFavorite(station);
-            _selectStation(station);
-          } else {
-            // Mode sélection trajet : sélectionner uniquement
-            _selectStation(station);
-          }
-        },
+        subtitle: _buildStationSubtitle(result, station, isSuggestion),
+        trailing: _buildStationTrailing(station),
+        onTap: () => _handleStationTap(station, isSuggestion),
       ),
     );
+  }
+
+  Widget _buildStationLeading(SearchResult<Station> result, bool isSuggestion) {
+    return CircleAvatar(
+      backgroundColor:
+          isSuggestion ? context.theme.warning : _getTypeColor(result.type),
+      child: Icon(
+        isSuggestion ? Icons.lightbulb_outline : _getTypeIcon(result.type),
+        color: Colors.white,
+      ),
+    );
+  }
+
+  Widget _buildStationSubtitle(
+      SearchResult<Station> result, Station station, bool isSuggestion) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(station.description ?? ''),
+        if (isSuggestion)
+          Text(
+            'Suggestion - Cliquez pour rechercher cette gare',
+            style: TextStyle(
+                color: context.theme.warning, fontStyle: FontStyle.italic),
+          ),
+        if (result.metadata?['distance'] != null)
+          Text(
+            'Distance: ${(result.metadata!['distance'] as double).toStringAsFixed(1)} km',
+            style: TextStyle(color: context.theme.muted),
+          ),
+        if (result.highlight != null)
+          Text(
+            'Correspondance: ${result.highlight}',
+            style: TextStyle(color: context.theme.primary),
+          ),
+      ],
+    );
+  }
+
+  Widget? _buildStationTrailing(Station station) {
+    if (widget.showFavoriteButton && _favoriteStatus[station.id] == true) {
+      return Icon(Icons.star, color: Colors.amber);
+    }
+    return null;
+  }
+
+  void _handleStationTap(Station station, bool isSuggestion) {
+    if (isSuggestion) {
+      _selectSuggestion(station.name);
+      return;
+    }
+
+    if (station.id.startsWith('TEMP_') || station.id.isEmpty) {
+      _handleInvalidStationTap(station);
+      return;
+    }
+
+    if (widget.onStationTap != null) {
+      widget.onStationTap!(station);
+    } else if (widget.showFavoriteButton) {
+      _toggleFavorite(station);
+      _selectStation(station);
+    } else {
+      _selectStation(station);
+    }
+  }
+
+  void _handleInvalidStationTap(Station station) {
+    if (station.id.startsWith('TEMP_')) {
+      _selectSuggestion(station.name);
+    } else {
+      if (!mounted) return;
+      setState(() {
+        _error = 'Station invalide: ID vide pour "${station.name}"';
+      });
+    }
   }
 
   Color _getTypeColor(SearchResultType type) {
@@ -473,65 +457,59 @@ class _StationSearchPageState extends State<StationSearchPage> {
   }
 
   Future<void> _toggleFavorite(Station station) async {
-    // Ne pas permettre d'ajouter des stations temporaires aux favoris
     if (station.id.startsWith('TEMP_')) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Veuillez d\'abord rechercher la station "${station.name}" pour l\'ajouter aux favoris'),
-          backgroundColor: Colors.orange,
-        ),
-      );
+      _showSnackBar(
+          'Veuillez d\'abord rechercher la station "${station.name}" pour l\'ajouter aux favoris',
+          Colors.orange);
       return;
     }
-    
+
     final isFavorite = _favoriteStatus[station.id] == true;
-    
+
     try {
       if (isFavorite) {
-        await _favoriteStationService.removeFavoriteStation(station.id);
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${station.name} retirée des favoris'),
-            backgroundColor: Colors.orange,
-          ),
-        );
+        await _removeFavorite(station);
       } else {
-        await _favoriteStationService.addFavoriteStation(station);
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${station.name} ajoutée aux favoris'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        await _addFavorite(station);
       }
-      
+
       if (!mounted) return;
       setState(() {
         _favoriteStatus[station.id] = !isFavorite;
       });
     } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Erreur: ${e.toString()}'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      _showSnackBar('Erreur: ${e.toString()}', Colors.red);
     }
   }
 
+  Future<void> _removeFavorite(Station station) async {
+    await _favoriteStationService.removeFavoriteStation(station.id);
+    if (!mounted) return;
+    _showSnackBar('${station.name} retirée des favoris', Colors.orange);
+  }
+
+  Future<void> _addFavorite(Station station) async {
+    await _favoriteStationService.addFavoriteStation(station);
+    if (!mounted) return;
+    _showSnackBar('${station.name} ajoutée aux favoris', Colors.green);
+  }
+
+  void _showSnackBar(String message, Color backgroundColor) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: backgroundColor,
+      ),
+    );
+  }
+
   void _selectStation(Station station) {
-    // Vérifier que ce n'est pas une station temporaire (suggestion)
     if (station.id.startsWith('TEMP_') || station.id.isEmpty) {
-      // Si c'est une suggestion, rechercher la vraie station
       if (station.id.startsWith('TEMP_')) {
         _selectSuggestion(station.name);
         return;
       }
-      // Si ID vide, afficher une erreur
       if (!mounted) return;
       setState(() {
         _error = 'Station invalide: ID vide pour "${station.name}"';
@@ -540,69 +518,57 @@ class _StationSearchPageState extends State<StationSearchPage> {
     }
     Navigator.pop(context, station);
   }
-  
-  /// Gère la sélection d'une suggestion de destination
+
   Future<void> _selectSuggestion(String destinationName) async {
+    _setLoadingState(true);
+
+    try {
+      final results = await DependencyInjection.instance.stationSearchService
+          .searchStations(destinationName);
+
+      if (results.isEmpty) {
+        _setErrorState('Aucune gare trouvée pour "$destinationName"');
+        return;
+      }
+
+      final station = results.first.data;
+
+      if (station.id.startsWith('TEMP_')) {
+        _setErrorState(
+            'Station invalide trouvée pour "$destinationName". Veuillez rechercher à nouveau.');
+        return;
+      }
+
+      Navigator.pop(context, station);
+    } catch (e) {
+      _setErrorState('Erreur lors de la recherche de "$destinationName": $e');
+    }
+  }
+
+  void _setLoadingState(bool isLoading) {
     setState(() {
-      _isLoading = true;
+      _isLoading = isLoading;
       _error = null;
     });
-    
-    try {
-      // Rechercher la vraie station correspondant à cette destination
-      final results = await DependencyInjection.instance.stationSearchService.searchStations(destinationName);
-      
-      if (results.isNotEmpty) {
-        // Prendre le premier résultat (le plus pertinent)
-        final station = results.first.data;
-        
-        // Vérifier que la station trouvée n'est pas temporaire
-        if (station.id.startsWith('TEMP_')) {
-          setState(() {
-            _error = 'Station invalide trouvée pour "$destinationName". Veuillez rechercher à nouveau.';
-            _isLoading = false;
-          });
-          return;
-        }
-        
-        Navigator.pop(context, station);
-      } else {
-        setState(() {
-          _error = 'Aucune gare trouvée pour "$destinationName"';
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      setState(() {
-        _error = 'Erreur lors de la recherche de "$destinationName": $e';
-        _isLoading = false;
-      });
-    }
+  }
+
+  void _setErrorState(String error) {
+    setState(() {
+      _error = error;
+      _isLoading = false;
+    });
+  }
+
+  void _setSearchResults(List<SearchResult<Station>> results) {
+    setState(() {
+      _searchResults = results;
+      _isLoading = false;
+    });
   }
 
   Widget _buildScaffold() {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Recherche de Gares'),
-        backgroundColor: context.theme.primary,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(
-              _showAdvancedFilters ? Icons.filter_list_off : Icons.filter_list,
-              color: Colors.white,
-            ),
-            onPressed: () {
-              setState(() {
-                _showAdvancedFilters = !_showAdvancedFilters;
-              });
-            },
-          ),
-        ],
-      ),
+      appBar: _buildAppBar(),
       body: Column(
         children: [
           _buildSearchBar(),
@@ -610,6 +576,30 @@ class _StationSearchPageState extends State<StationSearchPage> {
           Expanded(child: _buildBody()),
         ],
       ),
+    );
+  }
+
+  PreferredSizeWidget _buildAppBar() {
+    return AppBar(
+      title: const Text('Recherche de Gares'),
+      backgroundColor: context.theme.primary,
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back, color: Colors.white),
+        onPressed: () => Navigator.of(context).pop(),
+      ),
+      actions: [
+        IconButton(
+          icon: Icon(
+            _showAdvancedFilters ? Icons.filter_list_off : Icons.filter_list,
+            color: Colors.white,
+          ),
+          onPressed: () {
+            setState(() {
+              _showAdvancedFilters = !_showAdvancedFilters;
+            });
+          },
+        ),
+      ],
     );
   }
 }

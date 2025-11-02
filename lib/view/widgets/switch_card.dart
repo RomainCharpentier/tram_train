@@ -27,5 +27,3 @@ class SwitchCard extends StatelessWidget {
     );
   }
 }
-
-

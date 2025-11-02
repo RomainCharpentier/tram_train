@@ -29,7 +29,6 @@ class _AddTripPageState extends State<AddTripPage> {
   bool _directTrainsOnly = true;
   String? _connectionError;
 
-  // Sélection d'un train précis autour d'une heure
   TimeConstraintMode _timeMode = TimeConstraintMode.departure;
   List<domain_train.Train> _candidateTrains = [];
   bool _isLoadingCandidates = false;
@@ -63,7 +62,6 @@ class _AddTripPageState extends State<AddTripPage> {
         padding: const EdgeInsets.all(16.0),
         child: ListView(
           children: [
-            // Station de départ
             Card(
               color: _connectionError != null
                   ? (_connectionError!.startsWith('✅')
@@ -122,7 +120,6 @@ class _AddTripPageState extends State<AddTripPage> {
 
             const SizedBox(height: 8),
 
-            // Bouton d'inversion des stations
             Center(
               child: IconButton(
                 onPressed: _swapStations,
@@ -144,7 +141,6 @@ class _AddTripPageState extends State<AddTripPage> {
 
             const SizedBox(height: 8),
 
-            // Station d'arrivée
             Card(
               color: _connectionError != null
                   ? (_connectionError!.startsWith('✅')
@@ -169,7 +165,9 @@ class _AddTripPageState extends State<AddTripPage> {
                         ? (_connectionError!.startsWith('✅')
                             ? context.theme.success
                             : context.theme.error)
-                        : (_departureStation != null ? null : context.theme.muted),
+                        : (_departureStation != null
+                            ? null
+                            : context.theme.muted),
                   ),
                 ),
                 subtitle: _arrivalStation != null
@@ -202,7 +200,9 @@ class _AddTripPageState extends State<AddTripPage> {
                       ? (_connectionError!.startsWith('✅')
                           ? context.theme.success
                           : context.theme.error)
-                      : (_departureStation != null ? null : context.theme.muted),
+                      : (_departureStation != null
+                          ? null
+                          : context.theme.muted),
                 ),
                 onTap: _departureStation != null
                     ? () => _selectStation(false)
@@ -261,7 +261,6 @@ class _AddTripPageState extends State<AddTripPage> {
 
             const SizedBox(height: 24),
 
-            // Jours de la semaine
             const Text(
               'Jours de la semaine',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -294,11 +293,9 @@ class _AddTripPageState extends State<AddTripPage> {
 
             const SizedBox(height: 24),
 
-            // Heure de départ
             Card(
               child: ListTile(
-                leading:
-                    Icon(Icons.access_time, color: context.theme.primary),
+                leading: Icon(Icons.access_time, color: context.theme.primary),
                 title: Text(
                   _timeMode == TimeConstraintMode.departure
                       ? (_selectedTime != null
@@ -315,7 +312,6 @@ class _AddTripPageState extends State<AddTripPage> {
 
             const SizedBox(height: 24),
 
-            // Contrainte horaire (départ/arrivée) – sans tolérance
             Card(
               child: Padding(
                 padding:
@@ -382,13 +378,16 @@ class _AddTripPageState extends State<AddTripPage> {
                         child: ListView.separated(
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
-                          itemCount: _candidateTrains.length > 2 ? 2 : _candidateTrains.length,
+                          itemCount: _candidateTrains.length > 2
+                              ? 2
+                              : _candidateTrains.length,
                           separatorBuilder: (_, __) => const Divider(height: 1),
                           itemBuilder: (context, index) {
                             final t = _candidateTrains[index];
                             final arr = t.arrivalTime;
                             final depStr = _formatHHmm(t.departureTime);
-                            final arrStr = arr != null ? _formatHHmm(arr) : '??:??';
+                            final arrStr =
+                                arr != null ? _formatHHmm(arr) : '??:??';
                             final key = _candidateKey(t);
                             final already = _isAlreadySavedTrain(t);
                             return RadioListTile<String>(
@@ -417,7 +416,8 @@ class _AddTripPageState extends State<AddTripPage> {
                               title: Text('$depStr → $arrStr'),
                               subtitle: Text(
                                 '${_formatDayLabel(t.departureTime)} • ${t.direction} • ${t.statusText}',
-                                style: TextStyle(color: context.theme.textSecondary),
+                                style: TextStyle(
+                                    color: context.theme.textSecondary),
                               ),
                             );
                           },
@@ -427,10 +427,8 @@ class _AddTripPageState extends State<AddTripPage> {
                   ),
                 ),
               ),
-              // Pagination supprimée (on n'affiche que 2 trajets)
             ],
 
-            // Statut actif
             SwitchCard(
               title: 'Trajet actif',
               subtitle: 'Ce trajet sera affiché sur le tableau de bord',
@@ -447,7 +445,6 @@ class _AddTripPageState extends State<AddTripPage> {
 
             const SizedBox(height: 16),
 
-            // Option pour trajets directs uniquement
             SwitchCard(
               title: 'Trajets directs uniquement',
               subtitle: 'Exclure les trajets avec correspondances',
@@ -462,7 +459,6 @@ class _AddTripPageState extends State<AddTripPage> {
 
             const SizedBox(height: 8),
 
-            // Résumé du favori
             if (_departureStation != null &&
                 _arrivalStation != null &&
                 _selectedTime != null) ...[
@@ -557,8 +553,6 @@ class _AddTripPageState extends State<AddTripPage> {
     }
   }
 
-  
-
   Future<void> _selectStation(bool isDeparture) async {
     final result = await Navigator.push<Station>(
       context,
@@ -566,10 +560,7 @@ class _AddTripPageState extends State<AddTripPage> {
         builder: (context) => StationSearchPage(
           departureStation: isDeparture ? null : _departureStation,
           showFavoriteButton: false,
-          onStationTap: (station) {
-            // Sélectionner uniquement, pas de toggle favori
-            Navigator.pop(context, station);
-          },
+          onStationTap: (station) => Navigator.pop(context, station),
         ),
       ),
     );
@@ -582,26 +573,23 @@ class _AddTripPageState extends State<AddTripPage> {
           _arrivalStation = result;
         }
       });
-
-      // Ne rien charger tant que l'heure et le jour ne sont pas sélectionnés
     }
   }
 
-
-  /// Valide la connexion entre les gares sélectionnées
   Future<void> _validateConnection() async {
     if (_departureStation == null || _arrivalStation == null) return;
 
     // Vérifier que les stations ne sont pas temporaires
-    if (_departureStation!.id.startsWith('TEMP_') || _arrivalStation!.id.startsWith('TEMP_')) {
+    if (_departureStation!.id.startsWith('TEMP_') ||
+        _arrivalStation!.id.startsWith('TEMP_')) {
       setState(() {
-        _connectionError = '⚠️ Station(s) invalide(s). Veuillez re-sélectionner les stations.';
+        _connectionError =
+            '⚠️ Station(s) invalide(s). Veuillez re-sélectionner les stations.';
       });
       return;
     }
 
     try {
-      // Utiliser la nouvelle méthode avec plus d'informations
       final result = await ConnectedStationsService.checkConnection(
         _departureStation!,
         _arrivalStation!,
@@ -660,13 +648,11 @@ class _AddTripPageState extends State<AddTripPage> {
       return baseToday;
     }
 
-    // Chercher la prochaine occurrence parmi tous les jours sélectionnés
     int bestDelta = 8; // plus que max 7
     for (final d in _selectedDays) {
       final targetWeekday = d.index + 1; // 1=Lundi ... 7=Dimanche
       int delta = (targetWeekday - baseToday.weekday) % 7;
       if (delta == 0 && baseToday.isBefore(now)) {
-        // même jour mais heure déjà passée → semaine suivante
         delta = 7;
       }
       if (delta < bestDelta) bestDelta = delta;
@@ -674,10 +660,6 @@ class _AddTripPageState extends State<AddTripPage> {
 
     return baseToday.add(Duration(days: bestDelta % 7));
   }
-
-  
-
-  
 
   String _formatDayLabel(DateTime dt) {
     const names = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
@@ -687,8 +669,6 @@ class _AddTripPageState extends State<AddTripPage> {
     return '$name $dd/$mm';
   }
 
-  
-
   String _formatHHmm(DateTime dt) {
     final h = dt.hour.toString().padLeft(2, '0');
     final m = dt.minute.toString().padLeft(2, '0');
@@ -696,7 +676,6 @@ class _AddTripPageState extends State<AddTripPage> {
   }
 
   String _candidateKey(domain_train.Train t) {
-    // Certaines réponses API peuvent avoir un id vide/identique; on ajoute l'heure pour garantir l'unicité
     return '${t.id}_${t.departureTime.millisecondsSinceEpoch}';
   }
 
@@ -709,8 +688,7 @@ class _AddTripPageState extends State<AddTripPage> {
   bool _isAlreadySavedTrain(domain_train.Train t) {
     if (_departureStation == null || _arrivalStation == null) return false;
     return _existingTrips.any((trip) {
-      final sameStations =
-          trip.departureStation.id == _departureStation!.id &&
+      final sameStations = trip.departureStation.id == _departureStation!.id &&
           trip.arrivalStation.id == _arrivalStation!.id;
       if (!sameStations) return false;
       final sameTime = trip.time.hour == t.departureTime.hour &&
@@ -731,7 +709,6 @@ class _AddTripPageState extends State<AddTripPage> {
       final key = '${t.id}-${t.departureTime.toIso8601String()}';
       final timeKey =
           '${t.departureTime.hour}:${t.departureTime.minute}-${t.direction}';
-      // Utiliser clé stricte puis clé horaire si id instable
       if (!seen.contains(key) && !seen.contains(timeKey)) {
         seen.add(key);
         seen.add(timeKey);
@@ -745,7 +722,8 @@ class _AddTripPageState extends State<AddTripPage> {
     if (_departureStation == null || _arrivalStation == null) return;
 
     // Vérifier que les stations ne sont pas temporaires
-    if (_departureStation!.id.startsWith('TEMP_') || _arrivalStation!.id.startsWith('TEMP_')) {
+    if (_departureStation!.id.startsWith('TEMP_') ||
+        _arrivalStation!.id.startsWith('TEMP_')) {
       setState(() {
         _isLoadingCandidates = false;
         _hasSearchedCandidates = false;
@@ -753,7 +731,8 @@ class _AddTripPageState extends State<AddTripPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Erreur: Station(s) invalide(s). Veuillez re-sélectionner les stations.'),
+          content: Text(
+              'Erreur: Station(s) invalide(s). Veuillez re-sélectionner les stations.'),
           backgroundColor: Colors.red,
         ),
       );
@@ -768,7 +747,6 @@ class _AddTripPageState extends State<AddTripPage> {
     try {
       final service = DependencyInjection.instance.trainService;
 
-      // Si une heure est choisie, toujours recharger depuis l'API autour de cette heure
       if (_selectedTime != null) {
         final ref = _buildReferenceDateTime();
         List<domain_train.Train> trains;
@@ -784,12 +762,9 @@ class _AddTripPageState extends State<AddTripPage> {
         }
         var subset = _deduplicateTrains(trains);
 
-        // Ne garder que 2 trajets: le plus proche APRÈS et le plus proche AVANT l'heure cible
-        // Référence exacte (même date/heure que la requête envoyée)
         final targetRef = ref;
         DateTime getRefTime(domain_train.Train t) => t.departureTime;
 
-        // Trier par horaire croissant sur le champ de référence
         subset.sort((a, b) => getRefTime(a).compareTo(getRefTime(b)));
 
         domain_train.Train? after;
@@ -811,7 +786,6 @@ class _AddTripPageState extends State<AddTripPage> {
           }
         }
 
-        // Si on n'a pas de "before", utiliser uniquement la pagination journeys: lien 'prev'
         if (before == null) {
           try {
             final byPrev = await service.findJourneyJustBefore(
@@ -824,7 +798,6 @@ class _AddTripPageState extends State<AddTripPage> {
           } catch (_) {}
         }
 
-        // Si on n'a pas d'"after", utiliser uniquement la pagination journeys: lien 'next'
         if (after == null) {
           try {
             final byNext = await service.findJourneyJustAfter(
@@ -837,37 +810,35 @@ class _AddTripPageState extends State<AddTripPage> {
           } catch (_) {}
         }
 
-        // Construire la liste finale (au plus 2 éléments)
         final result = <domain_train.Train>[];
 
-        // Conserver le "before" uniquement s'il est le même jour que la cible
-        // ou à défaut dans une fenêtre maximale de 3h avant la cible
         if (before != null) {
           final ttBefore = getRefTime(before);
           final sameDay = ttBefore.year == targetRef.year &&
               ttBefore.month == targetRef.month &&
               ttBefore.day == targetRef.day;
-          final within3h = targetRef.difference(ttBefore) <=
-              const Duration(hours: 3);
+          final within3h =
+              targetRef.difference(ttBefore) <= const Duration(hours: 3);
           if (sameDay || within3h) {
             result.add(before);
           }
         }
-        if (after != null && (before == null || after.id != before.id ||
-            getRefTime(after) != getRefTime(before))) {
+        if (after != null &&
+            (before == null ||
+                after.id != before.id ||
+                getRefTime(after) != getRefTime(before))) {
           result.add(after);
         }
 
         setState(() {
           _candidateTrains = result;
-          // Pré-sélection prioritaire: si un trajet existe déjà en favoris
           final existingIdx = _candidateTrains.indexWhere(_isAlreadySavedTrain);
           if (existingIdx >= 0) {
             _selectedCandidateId = _candidateKey(_candidateTrains[existingIdx]);
           } else if (_selectedTime != null && _candidateTrains.isNotEmpty) {
-            // Sinon, si une heure est choisie, cocher le trajet correspondant
             final match = _candidateTrains.firstWhere(
-              (t) => t.departureTime.hour == _selectedTime!.hour &&
+              (t) =>
+                  t.departureTime.hour == _selectedTime!.hour &&
                   t.departureTime.minute == _selectedTime!.minute,
               orElse: () => _candidateTrains.first,
             );
@@ -877,7 +848,6 @@ class _AddTripPageState extends State<AddTripPage> {
         return;
       }
 
-      // Sinon, sans heure on n'affiche rien (pas de tableau)
       setState(() {
         _candidateTrains = [];
       });
@@ -899,8 +869,6 @@ class _AddTripPageState extends State<AddTripPage> {
     }
   }
 
-  
-
   Future<void> _saveTrip() async {
     if (_departureStation == null ||
         _arrivalStation == null ||
@@ -909,7 +877,6 @@ class _AddTripPageState extends State<AddTripPage> {
     }
 
     try {
-      // Vérifier que les gares sont connectées
       final result = await ConnectedStationsService.checkConnection(
         _departureStation!,
         _arrivalStation!,

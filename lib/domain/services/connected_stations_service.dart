@@ -179,5 +179,4 @@ class ConnectedStationsService {
             (station.description?.toLowerCase().contains(query) ?? false))
         .toList();
   }
-
 }

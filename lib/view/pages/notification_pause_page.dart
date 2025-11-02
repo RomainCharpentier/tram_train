@@ -317,7 +317,7 @@ class _NotificationPausePageState extends State<NotificationPausePage> {
   String _formatDate(DateTime date) {
     return '${date.day}/${date.month}/${date.year}';
   }
-  
+
   Widget _buildScaffold() {
     return Scaffold(
       appBar: AppBar(
@@ -474,7 +474,8 @@ class _CreatePauseDialogState extends State<_CreatePauseDialog> {
     if (_endDate!.isBefore(_startDate!)) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('La date de fin doit être après la date de début'),
+          content:
+              const Text('La date de fin doit être après la date de début'),
           backgroundColor: context.theme.error,
         ),
       );

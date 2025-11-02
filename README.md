@@ -92,6 +92,38 @@ lib/
 - **HTTP** : Requêtes API
 - **Flutter Local Notifications** : Notifications locales
 
+## 📐 Formatage et style de code
+
+Le projet utilise des règles strictes de formatage et de style pour garantir la cohérence du code.
+
+### Formatage automatique
+
+Dart/Flutter inclut un formateur natif (`dart format`) - l'équivalent de Prettier pour JavaScript.
+
+**Formater tout le projet :**
+```bash
+dart format lib/ test/ tool/
+```
+
+**Vérifier le formatage (sans modifier) :**
+```bash
+dart format --set-exit-if-changed lib/ test/ tool/
+```
+
+### Configuration IDE
+
+- **VS Code** : Formatage automatique activé via `.vscode/settings.json`
+- **Android Studio / IntelliJ** : Formatage automatique disponible par défaut
+- Le formatage utilise automatiquement les règles de `analysis_options.yaml`
+
+### Analyse du code
+
+```bash
+flutter analyze
+```
+
+Cela vérifie les erreurs et les warnings selon les règles définies dans `analysis_options.yaml`.
+
 ## 📄 Licence
 
 Ce projet est sous licence MIT.

@@ -24,8 +24,7 @@ class FavoriteStationStorageGateway implements FavoriteStationStorage {
 
     favorites.add(station);
 
-    final favoritesJson =
-        favorites.map((s) => _stationToJson(s)).toList();
+    final favoritesJson = favorites.map((s) => _stationToJson(s)).toList();
     await prefs.setString(_favoritesKey, json.encode(favoritesJson));
   }
 
@@ -38,17 +37,20 @@ class FavoriteStationStorageGateway implements FavoriteStationStorage {
 
     try {
       final List<dynamic> favoritesList = json.decode(favoritesJson);
-      final stations = favoritesList.map((json) => _stationFromJson(json)).toList();
-      
+      final stations =
+          favoritesList.map((json) => _stationFromJson(json)).toList();
+
       // Filtrer les stations avec des IDs invalides (temporaires)
-      final validStations = stations.where((s) => !s.id.startsWith('TEMP_')).toList();
-      
+      final validStations =
+          stations.where((s) => !s.id.startsWith('TEMP_')).toList();
+
       // Si des stations invalides ont été trouvées, les supprimer de la liste
       if (validStations.length != stations.length) {
-        final validFavoritesJson = validStations.map((s) => _stationToJson(s)).toList();
+        final validFavoritesJson =
+            validStations.map((s) => _stationToJson(s)).toList();
         await prefs.setString(_favoritesKey, json.encode(validFavoritesJson));
       }
-      
+
       return validStations;
     } catch (e) {
       return [];
@@ -62,8 +64,7 @@ class FavoriteStationStorageGateway implements FavoriteStationStorage {
 
     favorites.removeWhere((station) => station.id == stationId);
 
-    final favoritesJson =
-        favorites.map((s) => _stationToJson(s)).toList();
+    final favoritesJson = favorites.map((s) => _stationToJson(s)).toList();
     await prefs.setString(_favoritesKey, json.encode(favoritesJson));
   }
 

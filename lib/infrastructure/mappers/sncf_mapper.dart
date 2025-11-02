@@ -14,6 +14,7 @@ class SncfMapper {
     final s = int.parse(value.substring(13, 15));
     return DateTime(y, m, d, h, min, s);
   }
+
   /// Convertit les départs SNCF vers des trains
   List<Train> mapDeparturesToTrains(
       Map<String, dynamic> response, Station station) {
@@ -31,10 +32,10 @@ class SncfMapper {
     final displayInfo =
         departure['display_informations'] as Map<String, dynamic>;
 
-    final departureTime = _parseSncfDateTime(
-        stopDateTime['departure_date_time'] as String);
-    final baseDepartureTime = _parseSncfDateTime(
-        stopDateTime['base_departure_date_time'] as String);
+    final departureTime =
+        _parseSncfDateTime(stopDateTime['departure_date_time'] as String);
+    final baseDepartureTime =
+        _parseSncfDateTime(stopDateTime['base_departure_date_time'] as String);
 
     // Générer un ID unique basé sur les données disponibles
     final links = departure['links'] as List<dynamic>? ?? [];
@@ -165,8 +166,10 @@ class SncfMapper {
       }
     }
 
-    final departureTime = depRaw != null ? _parseSncfDateTime(depRaw) : DateTime.now();
-    final arrivalTime = arrRaw != null ? _parseSncfDateTime(arrRaw) : DateTime.now();
+    final departureTime =
+        depRaw != null ? _parseSncfDateTime(depRaw) : DateTime.now();
+    final arrivalTime =
+        arrRaw != null ? _parseSncfDateTime(arrRaw) : DateTime.now();
 
     // Détecter les vraies correspondances (changement de véhicule/mode)
     final hasConnections = _hasRealConnections(sections);
@@ -200,8 +203,6 @@ class SncfMapper {
   bool _hasRealConnections(List<dynamic> sections) {
     if (sections.length <= 1) return false;
 
-    
-
     // Filtrer les sections qui ont un mode de transport réel
     final transportSections = <Map<String, dynamic>>[];
 
@@ -214,8 +215,6 @@ class SncfMapper {
       final currentMode = displayInfo['physical_mode'] as String?;
       final currentLine = displayInfo['commercial_mode'] as String?;
 
-      
-
       // Ne garder que les sections avec un mode de transport réel
       if (currentMode != null && currentMode.isNotEmpty) {
         transportSections.add({
@@ -225,8 +224,6 @@ class SncfMapper {
         });
       }
     }
-
-    
 
     // Si moins de 2 sections de transport, pas de correspondance
     if (transportSections.length < 2) {

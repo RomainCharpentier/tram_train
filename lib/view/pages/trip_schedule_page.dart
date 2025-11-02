@@ -78,17 +78,18 @@ class _TripSchedulePageState extends State<TripSchedulePage> {
       final result = <Train>[];
       if (before != null) {
         final tt = before.departureTime;
-        final sameDay = tt.year == ref.year && tt.month == ref.month && tt.day == ref.day;
+        final sameDay =
+            tt.year == ref.year && tt.month == ref.month && tt.day == ref.day;
         final within3h = ref.difference(tt) <= const Duration(hours: 3);
         if (sameDay || within3h) {
           result.add(before);
         }
       }
-      if (after != null && (result.isEmpty || result.first.departureTime != after.departureTime)) {
+      if (after != null &&
+          (result.isEmpty ||
+              result.first.departureTime != after.departureTime)) {
         result.add(after);
       }
-
-      
 
       setState(() {
         _allTrains = result;
@@ -114,7 +115,9 @@ class _TripSchedulePageState extends State<TripSchedulePage> {
     );
 
     if (trip.days.isEmpty) {
-      return baseToday.isBefore(now) ? baseToday.add(const Duration(days: 7)) : baseToday;
+      return baseToday.isBefore(now)
+          ? baseToday.add(const Duration(days: 7))
+          : baseToday;
     }
 
     int bestDelta = 8; // > 7 pour initialiser
@@ -132,7 +135,13 @@ class _TripSchedulePageState extends State<TripSchedulePage> {
 
   String _formatRefLabel(DateTime dt) {
     const names = [
-      'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'
+      'Lundi',
+      'Mardi',
+      'Mercredi',
+      'Jeudi',
+      'Vendredi',
+      'Samedi',
+      'Dimanche'
     ];
     final dayName = names[(dt.weekday - 1).clamp(0, 6)];
     final dd = dt.day.toString().padLeft(2, '0');
@@ -208,14 +217,18 @@ class _TripSchedulePageState extends State<TripSchedulePage> {
               children: [
                 Icon(
                   widget.trip.isActive ? Icons.check_circle : Icons.cancel,
-                  color: widget.trip.isActive ? context.theme.success : context.theme.error,
+                  color: widget.trip.isActive
+                      ? context.theme.success
+                      : context.theme.error,
                   size: 16,
                 ),
                 const SizedBox(width: 4),
                 Text(
                   widget.trip.isActive ? 'Trajet actif' : 'Trajet inactif',
                   style: TextStyle(
-                    color: widget.trip.isActive ? context.theme.success : context.theme.error,
+                    color: widget.trip.isActive
+                        ? context.theme.success
+                        : context.theme.error,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -380,7 +393,8 @@ class _TripSchedulePageState extends State<TripSchedulePage> {
             ),
           if (_filteredTrains.isNotEmpty)
             Builder(builder: (context) {
-              final ref = _lastRequestedRef ?? _computeReferenceDateTime(widget.trip);
+              final ref =
+                  _lastRequestedRef ?? _computeReferenceDateTime(widget.trip);
               DateTime? before;
               DateTime? after;
               for (final t in _filteredTrains) {

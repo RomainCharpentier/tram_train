@@ -7,7 +7,8 @@ class TripCard extends StatelessWidget {
   final void Function(String action, domain.Trip trip) onAction;
   final VoidCallback? onTap;
 
-  const TripCard({super.key, required this.trip, required this.onAction, this.onTap});
+  const TripCard(
+      {super.key, required this.trip, required this.onAction, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -15,7 +16,8 @@ class TripCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: trip.isActive ? context.theme.success : context.theme.outline,
+          backgroundColor:
+              trip.isActive ? context.theme.success : context.theme.outline,
           child: Icon(
             trip.isActive ? Icons.check_circle : Icons.pause_circle,
             color: Colors.white,
@@ -28,21 +30,24 @@ class TripCard extends StatelessWidget {
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('${trip.daysName} à ${trip.timeFormatted}')
-          ,
+            Text('${trip.daysName} à ${trip.timeFormatted}'),
             const SizedBox(height: 4),
             Row(
               children: [
                 Icon(
                   trip.isActive ? Icons.play_circle : Icons.pause_circle,
                   size: 16,
-                  color: trip.isActive ? context.theme.success : context.theme.muted,
+                  color: trip.isActive
+                      ? context.theme.success
+                      : context.theme.muted,
                 ),
                 const SizedBox(width: 4),
                 Text(
                   trip.isActive ? 'Actif' : 'Inactif',
                   style: TextStyle(
-                    color: trip.isActive ? context.theme.success : context.theme.muted,
+                    color: trip.isActive
+                        ? context.theme.success
+                        : context.theme.muted,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -52,7 +57,9 @@ class TripCard extends StatelessWidget {
                       ? Icons.notifications
                       : Icons.notifications_off,
                   size: 16,
-                  color: trip.notificationsEnabled ? context.theme.warning : context.theme.muted,
+                  color: trip.notificationsEnabled
+                      ? context.theme.warning
+                      : context.theme.muted,
                 ),
                 const SizedBox(width: 4),
                 Text(
@@ -60,14 +67,17 @@ class TripCard extends StatelessWidget {
                       ? 'Notifications'
                       : 'Pas de notifications',
                   style: TextStyle(
-                    color: trip.notificationsEnabled ? context.theme.warning : context.theme.muted,
+                    color: trip.notificationsEnabled
+                        ? context.theme.warning
+                        : context.theme.muted,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
                 if (trip.isForToday) ...[
                   const SizedBox(width: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
                       color: context.theme.primary,
                       borderRadius: BorderRadius.circular(4),
@@ -128,5 +138,3 @@ class TripCard extends StatelessWidget {
     );
   }
 }
-
-

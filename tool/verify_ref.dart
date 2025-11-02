@@ -31,7 +31,13 @@ DateTime computeReferenceDateTimeForTrip(Trip trip, DateTime now) {
 
 String formatRefLabel(DateTime dt) {
   const names = [
-    'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'
+    'Lundi',
+    'Mardi',
+    'Mercredi',
+    'Jeudi',
+    'Vendredi',
+    'Samedi',
+    'Dimanche'
   ];
   final dayName = names[(dt.weekday - 1).clamp(0, 6)];
   final dd = dt.day.toString().padLeft(2, '0');
@@ -62,5 +68,3 @@ void main() {
   print('Ref label:  ${formatRefLabel(ref)}');
   // Attendu: Lundi 03/11/2025 • 08:00, weekday=1
 }
-
-

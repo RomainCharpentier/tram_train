@@ -51,5 +51,3 @@ void main() {
   }
   print('OK: mapper preserves Monday for journey datetime.');
 }
-
-

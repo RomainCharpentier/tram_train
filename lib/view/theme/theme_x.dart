@@ -50,5 +50,3 @@ class AppThemeColors {
 extension AppThemeX on BuildContext {
   AppThemeColors get theme => AppThemeColors(this);
 }
-
-

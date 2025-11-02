@@ -39,5 +39,3 @@ class InfoBanner extends StatelessWidget {
     );
   }
 }
-
-

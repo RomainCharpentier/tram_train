@@ -25,9 +25,12 @@ class EmptyState extends StatelessWidget {
         children: [
           Icon(icon, size: 64, color: context.theme.muted),
           const SizedBox(height: 16),
-          Text(title, style: TextStyle(fontSize: 18, color: context.theme.muted)),
+          Text(title,
+              style: TextStyle(fontSize: 18, color: context.theme.muted)),
           const SizedBox(height: 8),
-          Text(subtitle, style: TextStyle(color: context.theme.muted), textAlign: TextAlign.center),
+          Text(subtitle,
+              style: TextStyle(color: context.theme.muted),
+              textAlign: TextAlign.center),
           if (actionLabel != null && onAction != null) ...[
             const SizedBox(height: 24),
             ElevatedButton(
@@ -40,5 +43,3 @@ class EmptyState extends StatelessWidget {
     );
   }
 }
-
-
