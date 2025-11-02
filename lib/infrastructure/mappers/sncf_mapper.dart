@@ -71,7 +71,6 @@ class SncfMapper {
 
   /// Convertit un lieu SNCF vers une gare
   Station mapPlaceToStation(Map<String, dynamic> place) {
-    // Extraire l'ID SNCF depuis l'ID complet (ex: "stop_area:SNCF:87590349" -> "SNCF:87590349")
     final fullId = place['id'] as String? ?? '';
     final sncfId = fullId.replaceFirst('stop_area:', '');
 

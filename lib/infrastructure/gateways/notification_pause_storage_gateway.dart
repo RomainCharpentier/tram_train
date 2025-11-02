@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../domain/models/notification_pause.dart';
 import '../../domain/services/notification_pause_service.dart';
@@ -31,8 +32,29 @@ class NotificationPauseStorageGateway implements NotificationPauseStorage {
 
     if (pausesJson == null) return [];
 
-    final List<dynamic> pausesList = json.decode(pausesJson);
-    return pausesList.map((json) => _pauseFromJson(json)).toList();
+    try {
+      final List<dynamic> pausesList = json.decode(pausesJson);
+      final List<NotificationPause> validPauses = [];
+
+      for (final pauseData in pausesList) {
+        try {
+          validPauses.add(_pauseFromJson(pauseData as Map<String, dynamic>));
+        } catch (e) {
+          debugPrint('Erreur lors du décodage d\'une pause: $e');
+        }
+      }
+
+      if (validPauses.length != pausesList.length && validPauses.isNotEmpty) {
+        final validPausesJson =
+            validPauses.map((pause) => _pauseToJson(pause)).toList();
+        await prefs.setString(_pausesKey, json.encode(validPausesJson));
+      }
+
+      return validPauses;
+    } catch (e) {
+      debugPrint('Erreur lors de la lecture des pauses: $e');
+      return [];
+    }
   }
 
   @override

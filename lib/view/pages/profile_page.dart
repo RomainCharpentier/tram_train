@@ -9,6 +9,7 @@ import 'edit_trip_page.dart';
 import 'notification_pause_page.dart';
 import 'station_search_page.dart';
 import '../widgets/trip_card.dart';
+import 'notification_test_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -402,6 +403,16 @@ class _ProfilePageState extends State<ProfilePage>
           icon: const Icon(Icons.close, color: Colors.white),
           onPressed: () => Navigator.pop(context, _changed),
           tooltip: 'Fermer',
+        ),
+        IconButton(
+          icon: const Icon(Icons.bug_report, color: Colors.white),
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const NotificationTestPage(),
+            ),
+          ),
+          tooltip: 'Tester les notifications',
         ),
         _buildMenuButton(),
       ],

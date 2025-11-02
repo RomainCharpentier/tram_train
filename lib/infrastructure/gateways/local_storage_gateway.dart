@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../mappers/trip_mapper.dart';
 import '../../domain/models/trip.dart';
@@ -25,8 +26,13 @@ class LocalStorageGateway implements TripStorage {
       existingTrips.add(trip);
     }
 
+    await _saveTrips(existingTrips);
+  }
+
+  Future<void> _saveTrips(List<Trip> trips) async {
+    final prefs = await SharedPreferences.getInstance();
     final tripsJson =
-        existingTrips.map((trip) => json.encode(_mapper.toJson(trip))).toList();
+        trips.map((trip) => json.encode(_mapper.toJson(trip))).toList();
     await prefs.setStringList(_tripsKey, tripsJson);
   }
 
@@ -35,9 +41,22 @@ class LocalStorageGateway implements TripStorage {
     final prefs = await SharedPreferences.getInstance();
     final tripsJson = prefs.getStringList(_tripsKey) ?? [];
 
-    return tripsJson
-        .map((tripJson) => _mapper.fromJson(json.decode(tripJson)))
-        .toList();
+    final List<Trip> validTrips = [];
+    for (final tripJson in tripsJson) {
+      try {
+        final decoded = json.decode(tripJson);
+        final trip = _mapper.fromJson(decoded);
+        validTrips.add(trip);
+      } catch (e) {
+        debugPrint('Erreur lors du décodage d\'un trajet: $e');
+      }
+    }
+
+    if (validTrips.length != tripsJson.length && validTrips.isNotEmpty) {
+      await _saveTrips(validTrips);
+    }
+
+    return validTrips;
   }
 
   /// Supprime un trajet
@@ -47,9 +66,7 @@ class LocalStorageGateway implements TripStorage {
 
     existingTrips.removeWhere((trip) => trip.id == tripId);
 
-    final tripsJson =
-        existingTrips.map((trip) => json.encode(_mapper.toJson(trip))).toList();
-    await prefs.setStringList(_tripsKey, tripsJson);
+    await _saveTrips(existingTrips);
   }
 
   /// Supprime tous les trajets
