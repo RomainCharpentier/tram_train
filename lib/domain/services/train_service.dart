@@ -16,8 +16,7 @@ class TrainService {
     return await _gateway.getDepartures(station);
   }
 
-  Future<List<Train>> getDeparturesAt(
-      Station station, DateTime dateTime) async {
+  Future<List<Train>> getDeparturesAt(Station station, DateTime dateTime) async {
     return await _gateway.getDeparturesAt(station, dateTime);
   }
 
@@ -28,8 +27,7 @@ class TrainService {
 
   List<Train> filterByDirection(List<Train> trains, String direction) {
     return trains
-        .where((train) =>
-            train.direction.toLowerCase().contains(direction.toLowerCase()))
+        .where((train) => train.direction.toLowerCase().contains(direction.toLowerCase()))
         .toList();
   }
 
@@ -38,17 +36,21 @@ class TrainService {
   }
 
   /// Recherche des trajets entre deux gares
-  Future<List<Train>> findJourneysBetween(
-      Station fromStation, Station toStation) async {
+  Future<List<Train>> findJourneysBetween(Station fromStation, Station toStation) async {
     // Cast vers SncfGateway pour accéder aux méthodes spécifiques
     final gw = _gateway;
     if (gw is SncfGateway) {
       return await gw.findJourneysBetween(fromStation, toStation);
     }
 
+    // Support pour MockTrainGateway via extension
+    if (gw.runtimeType.toString() == 'MockTrainGateway') {
+      final mockGw = gw as dynamic;
+      return await mockGw.findJourneysBetween(fromStation, toStation);
+    }
+
     // Fallback si ce n'est pas un SncfGateway
-    throw UnsupportedError(
-        'findJourneysBetween n\'est supporté que par SncfGateway');
+    throw UnsupportedError('findJourneysBetween n\'est supporté que par SncfGateway');
   }
 
   /// Recherche des trajets avec une contrainte d'heure de départ
@@ -59,11 +61,16 @@ class TrainService {
   ) async {
     final gw = _gateway;
     if (gw is SncfGateway) {
-      return await gw.findJourneysWithDepartureTime(
-          fromStation, toStation, departureTime);
+      return await gw.findJourneysWithDepartureTime(fromStation, toStation, departureTime);
     }
-    throw UnsupportedError(
-        'findJourneysWithDepartureTime non supporté par ce gateway');
+
+    // Support pour MockTrainGateway
+    if (gw.runtimeType.toString() == 'MockTrainGateway') {
+      final mockGw = gw as dynamic;
+      return await mockGw.findJourneysWithDepartureTime(fromStation, toStation, departureTime);
+    }
+
+    throw UnsupportedError('findJourneysWithDepartureTime non supporté par ce gateway');
   }
 
   /// Recherche des trajets avec une contrainte d'heure d'arrivée
@@ -74,11 +81,16 @@ class TrainService {
   ) async {
     final gw = _gateway;
     if (gw is SncfGateway) {
-      return await gw.findJourneysWithArrivalTime(
-          fromStation, toStation, arrivalTime);
+      return await gw.findJourneysWithArrivalTime(fromStation, toStation, arrivalTime);
     }
-    throw UnsupportedError(
-        'findJourneysWithArrivalTime non supporté par ce gateway');
+
+    // Support pour MockTrainGateway
+    if (gw.runtimeType.toString() == 'MockTrainGateway') {
+      final mockGw = gw as dynamic;
+      return await mockGw.findJourneysWithArrivalTime(fromStation, toStation, arrivalTime);
+    }
+
+    throw UnsupportedError('findJourneysWithArrivalTime non supporté par ce gateway');
   }
 
   /// Retourne le trajet juste avant l'heure de référence en suivant le lien 'prev'
@@ -113,6 +125,9 @@ class TrainService {
           }
         }
       }
+    } else if (gw.runtimeType.toString() == 'MockTrainGateway') {
+      // Pour les mocks, retourner null (pas de pagination)
+      return null;
     }
     return null;
   }
@@ -149,6 +164,9 @@ class TrainService {
           }
         }
       }
+    } else if (gw.runtimeType.toString() == 'MockTrainGateway') {
+      // Pour les mocks, retourner null (pas de pagination)
+      return null;
     }
     return null;
   }
