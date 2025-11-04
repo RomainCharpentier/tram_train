@@ -1,0 +1,74 @@
+import 'package:flutter/material.dart';
+import '../../domain/models/train.dart';
+import '../utils/train_status_colors.dart';
+
+/// Widget réutilisable pour afficher l'indicateur de statut d'un train
+class TrainStatusIndicator extends StatelessWidget {
+  final Train? train;
+  final double size;
+  final double iconSize;
+  final double borderWidth;
+
+  const TrainStatusIndicator({
+    super.key,
+    required this.train,
+    this.size = 48,
+    this.iconSize = 24,
+    this.borderWidth = 2,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (train == null) {
+      return _buildIndicator(
+        color: TrainStatusColors.unknownColor,
+        icon: TrainStatusColors.getStatusIcon(TrainStatus.unknown),
+        size: size,
+        iconSize: iconSize,
+        borderWidth: borderWidth,
+      );
+    }
+
+    final isInProgress = TrainStatusColors.isTrainInProgress(train!);
+    final color = TrainStatusColors.getStatusColor(
+      train!.status,
+      isInProgress: isInProgress,
+    );
+    final icon = TrainStatusColors.getStatusIcon(
+      train!.status,
+      isInProgress: isInProgress,
+    );
+
+    return _buildIndicator(
+      color: color,
+      icon: icon,
+      size: size,
+      iconSize: iconSize,
+      borderWidth: borderWidth,
+    );
+  }
+
+  Widget _buildIndicator({
+    required Color color,
+    required IconData icon,
+    required double size,
+    required double iconSize,
+    required double borderWidth,
+  }) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        shape: BoxShape.circle,
+        border: Border.all(color: color, width: borderWidth),
+      ),
+      child: Icon(
+        icon,
+        color: color,
+        size: iconSize,
+      ),
+    );
+  }
+}
+

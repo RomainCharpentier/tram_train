@@ -16,8 +16,7 @@ class SncfMapper {
   }
 
   /// Convertit les départs SNCF vers des trains
-  List<Train> mapDeparturesToTrains(
-      Map<String, dynamic> response, Station station) {
+  List<Train> mapDeparturesToTrains(Map<String, dynamic> response, Station station) {
     final departures = (response['departures'] as List<dynamic>?)
             ?.map((departure) => _mapDepartureToTrain(departure, station))
             .toList() ??
@@ -29,11 +28,9 @@ class SncfMapper {
   /// Convertit un départ SNCF vers un train
   Train _mapDepartureToTrain(Map<String, dynamic> departure, Station station) {
     final stopDateTime = departure['stop_date_time'] as Map<String, dynamic>;
-    final displayInfo =
-        departure['display_informations'] as Map<String, dynamic>;
+    final displayInfo = departure['display_informations'] as Map<String, dynamic>;
 
-    final departureTime =
-        _parseSncfDateTime(stopDateTime['departure_date_time'] as String);
+    final departureTime = _parseSncfDateTime(stopDateTime['departure_date_time'] as String);
     final baseDepartureTime =
         _parseSncfDateTime(stopDateTime['base_departure_date_time'] as String);
 
@@ -61,10 +58,9 @@ class SncfMapper {
 
   /// Convertit les lieux SNCF vers des gares
   List<Station> mapPlacesToStations(Map<String, dynamic> response) {
-    final places = (response['places'] as List<dynamic>?)
-            ?.map((place) => mapPlaceToStation(place))
-            .toList() ??
-        [];
+    final places =
+        (response['places'] as List<dynamic>?)?.map((place) => mapPlaceToStation(place)).toList() ??
+            [];
 
     return places;
   }
@@ -82,17 +78,13 @@ class SncfMapper {
   }
 
   /// Convertit les horaires de route vers des trains
-  List<Train> mapRouteSchedulesToTrains(
-      Map<String, dynamic> response, Station station) {
-    final routeSchedules = (response['route_schedules'] as List<dynamic>?)
-            ?.expand((routeSchedule) {
-          final displayInfo =
-              routeSchedule['display_informations'] as Map<String, dynamic>;
+  List<Train> mapRouteSchedulesToTrains(Map<String, dynamic> response, Station station) {
+    final routeSchedules = (response['route_schedules'] as List<dynamic>?)?.expand((routeSchedule) {
+          final displayInfo = routeSchedule['display_informations'] as Map<String, dynamic>;
           final table = routeSchedule['table'] as Map<String, dynamic>;
           final rows = table['rows'] as List<dynamic>? ?? [];
 
-          return rows.map(
-              (row) => _mapRouteScheduleRowToTrain(row, displayInfo, station));
+          return rows.map((row) => _mapRouteScheduleRowToTrain(row, displayInfo, station));
         }).toList() ??
         [];
 
@@ -100,11 +92,10 @@ class SncfMapper {
   }
 
   /// Convertit une ligne d'horaire de route vers un train
-  Train _mapRouteScheduleRowToTrain(Map<String, dynamic> row,
-      Map<String, dynamic> displayInfo, Station station) {
+  Train _mapRouteScheduleRowToTrain(
+      Map<String, dynamic> row, Map<String, dynamic> displayInfo, Station station) {
     final stopTimes = row['stop_times'] as List<dynamic>? ?? [];
-    final firstStopTime =
-        stopTimes.isNotEmpty ? stopTimes.first as Map<String, dynamic> : {};
+    final firstStopTime = stopTimes.isNotEmpty ? stopTimes.first as Map<String, dynamic> : {};
 
     final departureTime = firstStopTime['departure_date_time'] != null
         ? _parseSncfDateTime(firstStopTime['departure_date_time'] as String)
@@ -124,8 +115,7 @@ class SncfMapper {
   List<Train> mapJourneysToTrains(
       Map<String, dynamic> response, Station fromStation, Station toStation) {
     final journeys = (response['journeys'] as List<dynamic>?)
-            ?.map((journey) =>
-                _mapJourneyToTrain(journey, fromStation, toStation))
+            ?.map((journey) => _mapJourneyToTrain(journey, fromStation, toStation))
             .toList() ??
         [];
 
@@ -133,13 +123,10 @@ class SncfMapper {
   }
 
   /// Convertit un trajet SNCF vers un train
-  Train _mapJourneyToTrain(
-      Map<String, dynamic> journey, Station fromStation, Station toStation) {
+  Train _mapJourneyToTrain(Map<String, dynamic> journey, Station fromStation, Station toStation) {
     final sections = journey['sections'] as List<dynamic>? ?? [];
-    final firstSection =
-        sections.isNotEmpty ? sections.first as Map<String, dynamic> : {};
-    final lastSection =
-        sections.isNotEmpty ? sections.last as Map<String, dynamic> : {};
+    final firstSection = sections.isNotEmpty ? sections.first as Map<String, dynamic> : {};
+    final lastSection = sections.isNotEmpty ? sections.last as Map<String, dynamic> : {};
 
     final from = firstSection['from'] as Map<String, dynamic>? ?? {};
     final to = lastSection['to'] as Map<String, dynamic>? ?? {};
@@ -165,10 +152,8 @@ class SncfMapper {
       }
     }
 
-    final departureTime =
-        depRaw != null ? _parseSncfDateTime(depRaw) : DateTime.now();
-    final arrivalTime =
-        arrRaw != null ? _parseSncfDateTime(arrRaw) : DateTime.now();
+    final departureTime = depRaw != null ? _parseSncfDateTime(depRaw) : DateTime.now();
+    final arrivalTime = arrRaw != null ? _parseSncfDateTime(arrRaw) : DateTime.now();
 
     // Détecter les vraies correspondances (changement de véhicule/mode)
     final hasConnections = _hasRealConnections(sections);
@@ -208,8 +193,7 @@ class SncfMapper {
     for (int i = 0; i < sections.length; i++) {
       final section = sections[i];
       final sectionData = section as Map<String, dynamic>;
-      final displayInfo =
-          sectionData['display_informations'] as Map<String, dynamic>? ?? {};
+      final displayInfo = sectionData['display_informations'] as Map<String, dynamic>? ?? {};
 
       final currentMode = displayInfo['physical_mode'] as String?;
       final currentLine = displayInfo['commercial_mode'] as String?;
@@ -261,8 +245,7 @@ class SncfMapper {
     for (int i = 0; i < sections.length; i++) {
       final section = sections[i];
       final sectionData = section as Map<String, dynamic>;
-      final displayInfo =
-          sectionData['display_informations'] as Map<String, dynamic>? ?? {};
+      final displayInfo = sectionData['display_informations'] as Map<String, dynamic>? ?? {};
 
       final currentMode = displayInfo['physical_mode'] as String?;
       final currentLine = displayInfo['commercial_mode'] as String?;
@@ -304,11 +287,9 @@ class SncfMapper {
   /// Convertit les informations de gare
   Map<String, dynamic> mapStationInfo(Map<String, dynamic> response) {
     final stopSchedules = response['stop_schedules'] as List<dynamic>? ?? [];
-    final firstSchedule = stopSchedules.isNotEmpty
-        ? stopSchedules.first as Map<String, dynamic>
-        : {};
-    final displayInfo =
-        firstSchedule['display_informations'] as Map<String, dynamic>? ?? {};
+    final firstSchedule =
+        stopSchedules.isNotEmpty ? stopSchedules.first as Map<String, dynamic> : {};
+    final displayInfo = firstSchedule['display_informations'] as Map<String, dynamic>? ?? {};
 
     return {
       'name': displayInfo['name'] ?? '',
@@ -406,8 +387,7 @@ class SncfMapper {
   }
 
   /// Convertit les arrivées vers des trains
-  List<Train> mapArrivalsToTrains(
-      Map<String, dynamic> response, Station station) {
+  List<Train> mapArrivalsToTrains(Map<String, dynamic> response, Station station) {
     final arrivals = (response['arrivals'] as List<dynamic>?)
             ?.map((arrival) => _mapArrivalToTrain(arrival, station))
             .toList() ??
@@ -418,10 +398,8 @@ class SncfMapper {
 
   /// Convertit une arrivée vers un train
   Train _mapArrivalToTrain(Map<String, dynamic> arrival, Station station) {
-    final stopDateTime =
-        arrival['stop_date_time'] as Map<String, dynamic>? ?? {};
-    final displayInfo =
-        arrival['display_informations'] as Map<String, dynamic>? ?? {};
+    final stopDateTime = arrival['stop_date_time'] as Map<String, dynamic>? ?? {};
+    final displayInfo = arrival['display_informations'] as Map<String, dynamic>? ?? {};
 
     final arrivalTime = stopDateTime['arrival_date_time'] != null
         ? _parseSncfDateTime(stopDateTime['arrival_date_time'] as String)

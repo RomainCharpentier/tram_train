@@ -90,6 +90,36 @@ class MockTrainGateway implements TrainGateway {
 
     if (baseTrains.isEmpty) return [];
 
+    final now = DateTime.now();
+    final trains = <Train>[];
+
+    // Vérifier si on a un train en cours dans les mocks qui correspond
+    final allMockTrains = MockData.getMockTrains();
+    final inProgressTrain = allMockTrains.firstWhere(
+      (t) =>
+          t.id == 'mock_train_in_progress' &&
+          _stationMatches(t.station, fromStation) &&
+          t.direction.contains(toStation.name),
+      orElse: () => Train(
+        id: '',
+        direction: '',
+        departureTime: now,
+        status: TrainStatus.unknown,
+        station: fromStation,
+      ),
+    );
+
+    // Si le train en cours correspond, toujours l'inclure (peu importe l'heure)
+    // car il représente un train actuellement en cours de trajet
+    if (inProgressTrain.id == 'mock_train_in_progress') {
+      // Vérifier que le train est toujours en cours (départ passé, arrivée future)
+      if (inProgressTrain.departureTime.isBefore(now) &&
+          inProgressTrain.arrivalTime != null &&
+          inProgressTrain.arrivalTime!.isAfter(now)) {
+        trains.add(inProgressTrain);
+      }
+    }
+
     // Générer des trains à des heures fixes autour de l'heure demandée
     // pour le jour demandé, plutôt que d'utiliser les heures relatives à "maintenant"
     final targetDate = DateTime(
@@ -97,8 +127,6 @@ class MockTrainGateway implements TrainGateway {
       departureTime.month,
       departureTime.day,
     );
-
-    final trains = <Train>[];
 
     // Créer des trains à des heures fixes autour de l'heure demandée
     // Exemple : si recherche à 8h, créer des trains à 7h30, 8h, 8h30, 9h

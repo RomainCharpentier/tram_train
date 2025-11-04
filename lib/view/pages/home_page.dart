@@ -5,10 +5,9 @@ import '../../infrastructure/dependency_injection.dart';
 import 'profile_page.dart';
 import 'add_trip_page.dart';
 import 'edit_trip_page.dart';
-import 'trip_schedule_page.dart';
+import 'trip_progress_page.dart';
 import '../widgets/logo_widget.dart';
 import '../widgets/trip_card.dart';
-import '../widgets/train_card.dart';
 import '../theme/theme_x.dart';
 
 class HomePage extends StatefulWidget {
@@ -19,9 +18,8 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  List<domain.Trip> _todayTrips = [];
   List<domain.Trip> _allTrips = [];
-  List<Train> _nextTrains = [];
+  Map<String, Train?> _tripNextTrains = {}; // Map tripId -> nextTrain
   bool _isLoading = false;
   String? _error;
 
@@ -38,7 +36,7 @@ class _HomePageState extends State<HomePage> {
     _loadActiveTrips();
   }
 
-  /// Charge les trajets du jour (tous), et calcule les prochains trajets
+  /// Charge tous les trajets et récupère le prochain train pour chacun
   Future<void> _loadActiveTrips() async {
     setState(() {
       _isLoading = true;
@@ -46,18 +44,16 @@ class _HomePageState extends State<HomePage> {
     });
 
     try {
-      final trips =
-          await DependencyInjection.instance.tripService.getAllTrips();
-      final todayTrips = trips.where((trip) => trip.isForToday).toList();
+      // Récupérer tous les trajets
+      final trips = await DependencyInjection.instance.tripService.getAllTrips();
 
       setState(() {
         _allTrips = trips;
-        _todayTrips = todayTrips;
-        _isLoading = false;
+        _tripNextTrains = {};
       });
 
-      // Charger les horaires pour chaque trajet actif
-      await _loadNextTrains();
+      // Charger le prochain train pour chaque trajet actif
+      await _loadNextTrainsForTrips();
     } catch (e) {
       setState(() {
         _error = 'Erreur lors du chargement des trajets: $e';
@@ -66,26 +62,78 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  /// Charge les 3 prochains trains pour les trajets actifs du jour
-  Future<void> _loadNextTrains() async {
-    final nextTrains = <Train>[];
+  /// Charge le prochain train pour chaque trajet actif
+  Future<void> _loadNextTrainsForTrips() async {
+    final tripNextTrains = <String, Train?>{};
+    final now = DateTime.now();
 
-    for (final trip in _todayTrips.where((t) => t.isActive)) {
+    for (final trip in _allTrips.where((t) => t.isActive)) {
       try {
+        // Calculer la date/heure de référence pour ce trajet
+        final refDateTime = _computeReferenceDateTime(trip, now);
+
+        // Chercher le prochain train pour ce trajet
         final trains =
-            await DependencyInjection.instance.trainService.getNextDepartures(
+            await DependencyInjection.instance.trainService.findJourneysWithDepartureTime(
           trip.departureStation,
+          trip.arrivalStation,
+          refDateTime,
         );
-        nextTrains.addAll(trains);
+
+        // Filtrer les trains qui vont vers la destination et prendre le premier futur ou en cours
+        Train? nextTrain;
+        for (final train in trains) {
+          if (train.direction.contains(trip.arrivalStation.name)) {
+            // Prendre le train s'il :
+            // - est en cours (départ dans le passé mais arrivée dans le futur)
+            // - ou est futur (départ après maintenant)
+            final isInProgress = train.departureTime.isBefore(now) &&
+                train.arrivalTime != null &&
+                train.arrivalTime!.isAfter(now);
+            final isFuture = train.departureTime.isAfter(now.subtract(const Duration(minutes: 5)));
+
+            if (isInProgress || isFuture) {
+              nextTrain = train;
+              break;
+            }
+          }
+        }
+
+        tripNextTrains[trip.id] = nextTrain;
       } catch (e) {
-        // Ignorer les erreurs pour un trajet spécifique
+        // Si erreur, pas de train disponible
+        tripNextTrains[trip.id] = null;
       }
     }
 
-    nextTrains.sort((a, b) => a.departureTime.compareTo(b.departureTime));
     setState(() {
-      _nextTrains = nextTrains.take(3).toList();
+      _tripNextTrains = tripNextTrains;
+      _isLoading = false;
     });
+  }
+
+  /// Calcule la date/heure de référence pour un trajet
+  DateTime _computeReferenceDateTime(domain.Trip trip, DateTime now) {
+    // Calculer la date de base avec l'heure du trajet
+    final today = DateTime(now.year, now.month, now.day, trip.time.hour, trip.time.minute);
+
+    // Si l'heure est passée aujourd'hui, prendre demain (ou le prochain jour du trajet)
+    if (today.isBefore(now)) {
+      // Trouver le prochain jour où ce trajet est actif
+      for (int i = 1; i <= 7; i++) {
+        final nextDay = today.add(Duration(days: i));
+        final weekday = nextDay.weekday;
+        final dayOfWeek = domain.DayOfWeek.values.firstWhere(
+          (d) => d.index + 1 == weekday,
+          orElse: () => domain.DayOfWeek.monday,
+        );
+        if (trip.days.contains(dayOfWeek)) {
+          return nextDay;
+        }
+      }
+    }
+
+    return today;
   }
 
   @override
@@ -103,13 +151,11 @@ class _HomePageState extends State<HomePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error,
-                size: 64, color: Theme.of(context).colorScheme.error),
+            Icon(Icons.error, size: 64, color: Theme.of(context).colorScheme.error),
             const SizedBox(height: 16),
             Text(
               _error!,
-              style: TextStyle(
-                  fontSize: 16, color: Theme.of(context).colorScheme.error),
+              style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.error),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
@@ -123,7 +169,7 @@ class _HomePageState extends State<HomePage> {
     }
 
     // Afficher l'état vide seulement si aucun trajet existant
-    if (_todayTrips.isEmpty && _allTrips.isEmpty) {
+    if (_allTrips.isEmpty) {
       return _buildEmptyState();
     }
 
@@ -159,115 +205,62 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildDashboard() {
+    // Trier les trajets par heure du prochain train (du plus proche au plus éloigné)
+    final sortedTrips = _allTrips.where((trip) => trip.isActive).toList()
+      ..sort((a, b) {
+        final trainA = _tripNextTrains[a.id];
+        final trainB = _tripNextTrains[b.id];
+
+        // Si un trajet n'a pas de train, le mettre à la fin
+        if (trainA == null && trainB == null) return 0;
+        if (trainA == null) return 1;
+        if (trainB == null) return -1;
+
+        // Trier par heure de départ
+        return trainA.departureTime.compareTo(trainB.departureTime);
+      });
+
     return RefreshIndicator(
       onRefresh: _loadActiveTrips,
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // Logo en en-tête
-          const Center(
-            child: LogoWidget(size: 120, showText: false),
-          ),
-          const SizedBox(height: 24),
-          _buildHeader(),
-          const SizedBox(height: 16),
-          Text(
-            _todayTrips.isNotEmpty ? 'Trajets du jour' : 'Tous mes trajets',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-          ),
-          const SizedBox(height: 12),
-          ..._buildTripCardsFor(
-              _todayTrips.isNotEmpty ? _todayTrips : _allTrips),
-
-          // Section des prochains trains
-          if (_nextTrains.isNotEmpty) ...[
-            const SizedBox(height: 24),
-            Text(
-              'Prochains trajets',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-            ),
-            const SizedBox(height: 12),
-            ..._buildTrainCards(),
+          if (sortedTrips.isEmpty) ...[
+            _buildEmptyTripsMessage(),
+          ] else ...[
+            ...sortedTrips.map((trip) => _buildTripCard(trip)),
           ],
         ],
       ),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildEmptyTripsMessage() {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Icon(Icons.train, color: Theme.of(context).colorScheme.primary),
-                const SizedBox(width: 8),
-                Text(
-                  'Aujourd\'hui',
-                  style: Theme.of(context).textTheme.headlineSmall,
-                ),
-              ],
-            ),
+            Icon(Icons.info, color: context.theme.warning),
             const SizedBox(height: 8),
-            Text(
-              '${_todayTrips.length} trajet${_todayTrips.length > 1 ? 's' : ''} prévu${_todayTrips.length > 1 ? 's' : ''} aujourd\'hui',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: context.theme.muted,
-                  ),
-            ),
+            const Text('Aucun trajet actif', style: TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 4),
+            Text('Utilisez le bouton + pour ajouter un trajet',
+                style: TextStyle(color: context.theme.muted)),
           ],
         ),
       ),
     );
   }
 
-  List<Widget> _buildTripCardsFor(List<domain.Trip> trips) {
-    if (trips.isEmpty) {
-      return [
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                Icon(Icons.info, color: context.theme.warning),
-                const SizedBox(height: 8),
-                const Text('Aucun trajet à afficher',
-                    style: TextStyle(fontWeight: FontWeight.bold)),
-                const SizedBox(height: 4),
-                Text('Utilisez le bouton + pour ajouter un trajet',
-                    style: TextStyle(color: context.theme.muted)),
-              ],
-            ),
-          ),
-        ),
-      ];
-    }
-
-    return trips.map((trip) => _buildTripCard(trip)).toList();
-  }
-
   Widget _buildTripCard(domain.Trip trip) {
+    final nextTrain = _tripNextTrains[trip.id];
     return TripCard(
       trip: trip,
+      nextTrain: nextTrain,
       onAction: (action, t) => _handleTripAction(action, t),
       onTap: () => _showTripDetails(trip),
     );
-  }
-
-  /// Construit les cartes des trains
-  List<Widget> _buildTrainCards() {
-    return _nextTrains.map((train) => TrainCard(train: train)).toList();
   }
 
   void _navigateToProfile(BuildContext context) async {
@@ -320,9 +313,7 @@ class _HomePageState extends State<HomePage> {
         await DependencyInjection.instance.tripService.saveTrip(updatedTrip);
         _loadActiveTrips();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(
-                  'Trajet ${updatedTrip.isActive ? 'activé' : 'désactivé'}')),
+          SnackBar(content: Text('Trajet ${updatedTrip.isActive ? 'activé' : 'désactivé'}')),
         );
         break;
       case 'delete':
@@ -330,8 +321,7 @@ class _HomePageState extends State<HomePage> {
           context: context,
           builder: (context) => AlertDialog(
             title: const Text('Supprimer le trajet'),
-            content:
-                const Text('Êtes-vous sûr de vouloir supprimer ce trajet ?'),
+            content: const Text('Êtes-vous sûr de vouloir supprimer ce trajet ?'),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
@@ -339,15 +329,13 @@ class _HomePageState extends State<HomePage> {
               ),
               TextButton(
                 onPressed: () => Navigator.pop(context, true),
-                child: const Text('Supprimer',
-                    style: TextStyle(color: Colors.red)),
+                child: const Text('Supprimer', style: TextStyle(color: Colors.red)),
               ),
             ],
           ),
         );
         if (confirmed == true) {
-          await DependencyInjection.instance.tripService
-              .deleteTripAndSimilar(trip);
+          await DependencyInjection.instance.tripService.deleteTripAndSimilar(trip);
           _loadActiveTrips();
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Trajet supprimé (doublons inclus)')),
@@ -358,10 +346,14 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _showTripDetails(domain.Trip trip) {
+    final nextTrain = _tripNextTrains[trip.id];
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => TripSchedulePage(trip: trip),
+        builder: (context) => TripProgressPage(
+          trip: trip,
+          currentTrain: nextTrain,
+        ),
       ),
     );
   }
@@ -388,8 +380,7 @@ class _HomePageState extends State<HomePage> {
                       : Icons.dark_mode,
                   color: Colors.white,
                 ),
-                onPressed: () =>
-                    DependencyInjection.instance.themeService.toggleTheme(),
+                onPressed: () => DependencyInjection.instance.themeService.toggleTheme(),
                 tooltip: DependencyInjection.instance.themeService.isDarkMode
                     ? 'Mode clair'
                     : 'Mode sombre',

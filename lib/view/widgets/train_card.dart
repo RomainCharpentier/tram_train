@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/theme_x.dart';
 import '../../domain/models/train.dart';
+import '../utils/train_status_colors.dart';
 
 class TrainCard extends StatelessWidget {
   final Train train;
@@ -22,9 +23,15 @@ class TrainCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: _getStatusColor(context, train.status),
+          backgroundColor: TrainStatusColors.getStatusColor(
+            train.status,
+            isInProgress: TrainStatusColors.isTrainInProgress(train),
+          ),
           child: Icon(
-            _getStatusIcon(train.status),
+            TrainStatusColors.getStatusIcon(
+              train.status,
+              isInProgress: TrainStatusColors.isTrainInProgress(train),
+            ),
             color: Colors.white,
             size: 16,
           ),
@@ -45,7 +52,7 @@ class TrainCard extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
         decoration: BoxDecoration(
-          color: context.theme.warning,
+          color: TrainStatusColors.delayedColor,
           borderRadius: BorderRadius.circular(4),
         ),
         child: Text(
@@ -65,35 +72,5 @@ class TrainCard extends StatelessWidget {
       );
     }
     return null;
-  }
-
-  Color _getStatusColor(BuildContext context, TrainStatus status) {
-    switch (status) {
-      case TrainStatus.onTime:
-        return context.theme.success;
-      case TrainStatus.delayed:
-        return context.theme.warning;
-      case TrainStatus.early:
-        return context.theme.primary;
-      case TrainStatus.cancelled:
-        return context.theme.error;
-      case TrainStatus.unknown:
-        return context.theme.outline;
-    }
-  }
-
-  IconData _getStatusIcon(TrainStatus status) {
-    switch (status) {
-      case TrainStatus.onTime:
-        return Icons.check_circle;
-      case TrainStatus.delayed:
-        return Icons.schedule;
-      case TrainStatus.early:
-        return Icons.schedule;
-      case TrainStatus.cancelled:
-        return Icons.cancel;
-      case TrainStatus.unknown:
-        return Icons.help;
-    }
   }
 }

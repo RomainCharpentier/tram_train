@@ -219,6 +219,19 @@ class MockData {
         station: parisNord,
         additionalInfo: ['Train annulé'],
       ),
+      // Train en cours (départ dans le passé, arrivée dans le futur) - Paris → Lille
+      Train(
+        id: 'mock_train_in_progress',
+        direction: 'Lille Europe',
+        departureTime: now.subtract(const Duration(minutes: 30)), // Départ il y a 30 min
+        baseDepartureTime: now.subtract(const Duration(minutes: 30)),
+        arrivalTime: now.add(const Duration(minutes: 35)), // Arrivée dans 35 min
+        baseArrivalTime: now.add(const Duration(minutes: 35)),
+        status: TrainStatus.onTime,
+        delayMinutes: null,
+        station: parisNord,
+        additionalInfo: [],
+      ),
     ];
   }
 
@@ -238,5 +251,119 @@ class MockData {
       // Vérifier que la direction contient la destination
       return train.direction.contains(trip.arrivalStation.name);
     }).toList();
+  }
+
+  /// Retourne les stations intermédiaires pour un trajet (mock)
+  static List<Station> getIntermediateStationsForTrip(domain.Trip trip) {
+    // Définir les stations intermédiaires selon le trajet
+    final parisNord = Station(
+      id: 'stop_point:SNCF:87384008',
+      name: 'Paris Nord',
+      latitude: 48.8809,
+      longitude: 2.3553,
+    );
+
+    final lilleEurope = Station(
+      id: 'stop_point:SNCF:87286025',
+      name: 'Lille Europe',
+      latitude: 50.6394,
+      longitude: 3.0758,
+    );
+
+    final lyonPartDieu = Station(
+      id: 'stop_point:SNCF:87751008',
+      name: 'Lyon Part-Dieu',
+      latitude: 45.7606,
+      longitude: 4.8604,
+    );
+
+    final marseilleStCharles = Station(
+      id: 'stop_point:SNCF:87751000',
+      name: 'Marseille St-Charles',
+      latitude: 43.3032,
+      longitude: 5.3842,
+    );
+
+    final bordeauxStJean = Station(
+      id: 'stop_point:SNCF:87581009',
+      name: 'Bordeaux St-Jean',
+      latitude: 44.8258,
+      longitude: -0.5563,
+    );
+
+    // Stations intermédiaires réalistes
+    final arras = Station(
+      id: 'stop_point:SNCF:87286000',
+      name: 'Arras',
+      latitude: 50.2914,
+      longitude: 2.7811,
+    );
+
+    final creil = Station(
+      id: 'stop_point:SNCF:87276004',
+      name: 'Creil',
+      latitude: 49.2578,
+      longitude: 2.4697,
+    );
+
+    final macon = Station(
+      id: 'stop_point:SNCF:87724000',
+      name: 'Mâcon-Ville',
+      latitude: 46.3078,
+      longitude: 4.8322,
+    );
+
+    final valence = Station(
+      id: 'stop_point:SNCF:87760000',
+      name: 'Valence TGV',
+      latitude: 44.9908,
+      longitude: 4.9431,
+    );
+
+    final avignon = Station(
+      id: 'stop_point:SNCF:87751000',
+      name: 'Avignon TGV',
+      latitude: 43.9214,
+      longitude: 4.7858,
+    );
+
+    final tours = Station(
+      id: 'stop_point:SNCF:87571000',
+      name: 'Tours',
+      latitude: 47.3925,
+      longitude: 0.6944,
+    );
+
+    final poitiers = Station(
+      id: 'stop_point:SNCF:87585000',
+      name: 'Poitiers',
+      latitude: 46.5808,
+      longitude: 0.3406,
+    );
+
+    // Retourner les stations intermédiaires selon le trajet
+    if (trip.departureStation.id == parisNord.id && trip.arrivalStation.id == lilleEurope.id) {
+      // Paris → Lille : Arras, Creil
+      return [arras, creil];
+    } else if (trip.departureStation.id == parisNord.id &&
+        trip.arrivalStation.id == lyonPartDieu.id) {
+      // Paris → Lyon : Mâcon
+      return [macon];
+    } else if (trip.departureStation.id == lyonPartDieu.id &&
+        trip.arrivalStation.id == marseilleStCharles.id) {
+      // Lyon → Marseille : Valence, Avignon
+      return [valence, avignon];
+    } else if (trip.departureStation.id == parisNord.id &&
+        trip.arrivalStation.id == bordeauxStJean.id) {
+      // Paris → Bordeaux : Tours, Poitiers
+      return [tours, poitiers];
+    } else if (trip.departureStation.id == lilleEurope.id &&
+        trip.arrivalStation.id == parisNord.id) {
+      // Lille → Paris : Arras, Creil
+      return [creil, arras];
+    }
+
+    // Par défaut, retourner une liste vide ou quelques stations génériques
+    return [];
   }
 }
