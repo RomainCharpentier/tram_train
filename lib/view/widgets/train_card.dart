@@ -19,19 +19,15 @@ class TrainCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final presentation = TrainStatusColors.buildPresentation(train);
+
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: TrainStatusColors.getStatusColor(
-            train.status,
-            isInProgress: TrainStatusColors.isTrainInProgress(train),
-          ),
+          backgroundColor: presentation.primaryColor,
           child: Icon(
-            TrainStatusColors.getStatusIcon(
-              train.status,
-              isInProgress: TrainStatusColors.isTrainInProgress(train),
-            ),
+            presentation.primaryIcon,
             color: Colors.white,
             size: 16,
           ),
@@ -40,7 +36,44 @@ class TrainCard extends StatelessWidget {
           '${train.departureTimeFormatted} - ${train.direction}',
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
-        subtitle: Text(train.statusText),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              presentation.primaryText,
+              style: TextStyle(
+                fontSize: 12,
+                color: presentation.primaryColor,
+                fontWeight: presentation.state == TrainJourneyState.cancelled
+                    ? FontWeight.w600
+                    : FontWeight.normal,
+              ),
+            ),
+            if (presentation.scheduleText != null &&
+                presentation.scheduleColor != null) ...[
+              const SizedBox(height: 2),
+              Text(
+                presentation.scheduleText!,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: presentation.scheduleColor,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+            if (train.departurePlatform != null && train.departurePlatform!.isNotEmpty) ...[
+              const SizedBox(height: 2),
+              Text(
+                'Voie: ${train.departurePlatform}',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: context.theme.textSecondary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ],
+        ),
         trailing: _buildTrailing(context),
         onTap: onTap,
       ),
@@ -73,4 +106,5 @@ class TrainCard extends StatelessWidget {
     }
     return null;
   }
+
 }

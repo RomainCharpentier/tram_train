@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme/theme_x.dart';
 import '../../domain/models/trip.dart' as domain;
 import '../../domain/models/train.dart';
+import '../utils/train_status_colors.dart';
 import 'train_status_indicator.dart';
 
 class TripCard extends StatelessWidget {
@@ -10,11 +11,18 @@ class TripCard extends StatelessWidget {
   final void Function(String action, domain.Trip trip) onAction;
   final VoidCallback? onTap;
 
-  const TripCard(
-      {super.key, required this.trip, this.nextTrain, required this.onAction, this.onTap});
+  const TripCard({
+    super.key,
+    required this.trip,
+    this.nextTrain,
+    required this.onAction,
+    this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final presentation = nextTrain != null ? TrainStatusColors.buildPresentation(nextTrain!) : null;
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: InkWell(
@@ -24,7 +32,6 @@ class TripCard extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
-              // Contenu réutilisable (sans le Card extérieur)
               Expanded(
                 child: Row(
                   children: [
@@ -42,14 +49,36 @@ class TripCard extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(height: 4),
-                          if (nextTrain != null) ...[
+                          if (presentation != null) ...[
                             Text(
-                              'Prochain départ: ${nextTrain!.departureTimeFormatted}',
+                              presentation.primaryText,
                               style: TextStyle(
                                 fontSize: 14,
-                                color: context.theme.textSecondary,
+                                color: presentation.primaryColor,
+                                fontWeight: presentation.state == TrainJourneyState.cancelled
+                                    ? FontWeight.w600
+                                    : FontWeight.normal,
                               ),
                             ),
+                            if (presentation.scheduleText != null &&
+                                presentation.scheduleColor != null &&
+                                presentation.scheduleIcon != null) ...[
+                              const SizedBox(height: 4),
+                              _buildScheduleBadge(presentation),
+                            ],
+                            if (nextTrain != null &&
+                                nextTrain!.departurePlatform != null &&
+                                nextTrain!.departurePlatform!.isNotEmpty) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                'Voie: ${nextTrain!.departurePlatform}',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: context.theme.textSecondary,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
                           ] else ...[
                             Text(
                               '${trip.daysName} à ${trip.timeFormatted}',
@@ -65,7 +94,6 @@ class TripCard extends StatelessWidget {
                   ],
                 ),
               ),
-              // Menu
               PopupMenuButton<String>(
                 onSelected: (value) => onAction(value, trip),
                 itemBuilder: (context) => const [
@@ -106,6 +134,33 @@ class TripCard extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildScheduleBadge(TrainStatusPresentation presentation) {
+    final color = presentation.scheduleColor!;
+    final icon = presentation.scheduleIcon!;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: color, size: 14),
+          const SizedBox(width: 4),
+          Text(
+            presentation.scheduleText!,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
+          ),
+        ],
       ),
     );
   }

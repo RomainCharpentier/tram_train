@@ -13,35 +13,35 @@ import '../../../../domain/models/station.dart';
 /// - Trains avec différents statuts et heures de départ
 class MockData {
   static List<domain.Trip> getMockTrips() {
-    final parisNord = Station(
+    const parisNord = Station(
       id: 'stop_point:SNCF:87384008',
       name: 'Paris Nord',
       latitude: 48.8809,
       longitude: 2.3553,
     );
 
-    final lilleEurope = Station(
+    const lilleEurope = Station(
       id: 'stop_point:SNCF:87286025',
       name: 'Lille Europe',
       latitude: 50.6394,
       longitude: 3.0758,
     );
 
-    final lyonPartDieu = Station(
+    const lyonPartDieu = Station(
       id: 'stop_point:SNCF:87751008',
       name: 'Lyon Part-Dieu',
       latitude: 45.7606,
       longitude: 4.8604,
     );
 
-    final marseilleStCharles = Station(
+    const marseilleStCharles = Station(
       id: 'stop_point:SNCF:87751008',
       name: 'Marseille St-Charles',
       latitude: 43.3032,
       longitude: 5.3842,
     );
 
-    final bordeauxStJean = Station(
+    const bordeauxStJean = Station(
       id: 'stop_point:SNCF:87581009',
       name: 'Bordeaux St-Jean',
       latitude: 44.8258,
@@ -53,35 +53,24 @@ class MockData {
         id: 'mock_trip_1',
         departureStation: parisNord,
         arrivalStation: lilleEurope,
-        days: [
-          domain.DayOfWeek.monday,
-          domain.DayOfWeek.tuesday,
-          domain.DayOfWeek.wednesday,
-          domain.DayOfWeek.thursday,
-          domain.DayOfWeek.friday
-        ],
+        day: domain.DayOfWeek.monday,
         time: const domain.TimeOfDay(hour: 7, minute: 30),
-        isActive: true,
-        notificationsEnabled: true,
         createdAt: DateTime.now().subtract(const Duration(days: 30)),
       ),
       domain.Trip(
         id: 'mock_trip_2',
         departureStation: parisNord,
         arrivalStation: lyonPartDieu,
-        days: [domain.DayOfWeek.monday, domain.DayOfWeek.wednesday, domain.DayOfWeek.friday],
+        day: domain.DayOfWeek.monday,
         time: const domain.TimeOfDay(hour: 8, minute: 15),
-        isActive: true,
-        notificationsEnabled: true,
         createdAt: DateTime.now().subtract(const Duration(days: 15)),
       ),
       domain.Trip(
         id: 'mock_trip_3',
         departureStation: lyonPartDieu,
         arrivalStation: marseilleStCharles,
-        days: [domain.DayOfWeek.tuesday, domain.DayOfWeek.thursday],
+        day: domain.DayOfWeek.tuesday,
         time: const domain.TimeOfDay(hour: 9, minute: 0),
-        isActive: true,
         notificationsEnabled: false,
         createdAt: DateTime.now().subtract(const Duration(days: 10)),
       ),
@@ -89,41 +78,32 @@ class MockData {
         id: 'mock_trip_4',
         departureStation: parisNord,
         arrivalStation: bordeauxStJean,
-        days: [domain.DayOfWeek.saturday, domain.DayOfWeek.sunday],
+        day: domain.DayOfWeek.saturday,
         time: const domain.TimeOfDay(hour: 10, minute: 45),
         isActive: false,
-        notificationsEnabled: true,
         createdAt: DateTime.now().subtract(const Duration(days: 5)),
       ),
       domain.Trip(
         id: 'mock_trip_5',
         departureStation: lilleEurope,
         arrivalStation: parisNord,
-        days: [
-          domain.DayOfWeek.monday,
-          domain.DayOfWeek.tuesday,
-          domain.DayOfWeek.wednesday,
-          domain.DayOfWeek.thursday,
-          domain.DayOfWeek.friday
-        ],
+        day: domain.DayOfWeek.monday,
         time: const domain.TimeOfDay(hour: 18, minute: 30),
-        isActive: true,
-        notificationsEnabled: true,
         createdAt: DateTime.now().subtract(const Duration(days: 20)),
       ),
     ];
   }
 
-  static List<Train> getMockTrains() {
-    final now = DateTime.now();
-    final parisNord = Station(
+  static List<Train> getMockTrains([DateTime? now]) {
+    now ??= DateTime(2025, 1, 6, 7, 0);
+    const parisNord = Station(
       id: 'stop_point:SNCF:87384008',
       name: 'Paris Nord',
       latitude: 48.8809,
       longitude: 2.3553,
     );
 
-    final lilleEurope = Station(
+    const lilleEurope = Station(
       id: 'stop_point:SNCF:87286025',
       name: 'Lille Europe',
       latitude: 50.6394,
@@ -140,7 +120,6 @@ class MockData {
         arrivalTime: now.add(const Duration(hours: 1, minutes: 5)),
         baseArrivalTime: now.add(const Duration(hours: 1, minutes: 5)),
         status: TrainStatus.onTime,
-        delayMinutes: null,
         station: parisNord,
         additionalInfo: [],
       ),
@@ -152,7 +131,6 @@ class MockData {
         arrivalTime: now.add(const Duration(hours: 1, minutes: 35)),
         baseArrivalTime: now.add(const Duration(hours: 1, minutes: 35)),
         status: TrainStatus.onTime,
-        delayMinutes: null,
         station: parisNord,
         additionalInfo: [],
       ),
@@ -168,6 +146,8 @@ class MockData {
         delayMinutes: 2,
         station: parisNord,
         additionalInfo: [],
+        departurePlatform: '12',
+        arrivalPlatform: 'H',
       ),
       Train(
         id: 'mock_train_4',
@@ -177,21 +157,24 @@ class MockData {
         arrivalTime: now.add(const Duration(hours: 2, minutes: 43)),
         baseArrivalTime: now.add(const Duration(hours: 2, minutes: 43)),
         status: TrainStatus.onTime,
-        delayMinutes: null,
         station: parisNord,
         additionalInfo: [],
+        departurePlatform: '14',
+        arrivalPlatform: 'J',
       ),
       Train(
         id: 'mock_train_5',
         direction: 'Lyon Part-Dieu',
         departureTime: now.add(const Duration(hours: 2, minutes: 5)),
-        baseDepartureTime: now.add(const Duration(hours: 2, minutes: 0)),
+        baseDepartureTime: now.add(const Duration(hours: 2)),
         arrivalTime: now.add(const Duration(hours: 3, minutes: 33)),
         baseArrivalTime: now.add(const Duration(hours: 3, minutes: 28)),
         status: TrainStatus.delayed,
         delayMinutes: 5,
         station: parisNord,
         additionalInfo: [],
+        departurePlatform: '6',
+        arrivalPlatform: 'K',
       ),
       // Train depuis Lille vers Paris (pour le trajet 5)
       Train(
@@ -202,7 +185,6 @@ class MockData {
         arrivalTime: now.add(const Duration(hours: 4, minutes: 10)),
         baseArrivalTime: now.add(const Duration(hours: 4, minutes: 10)),
         status: TrainStatus.onTime,
-        delayMinutes: null,
         station: lilleEurope,
         additionalInfo: [],
       ),
@@ -210,12 +192,9 @@ class MockData {
       Train(
         id: 'mock_train_7',
         direction: 'Lyon Part-Dieu',
-        departureTime: now.add(const Duration(hours: 3, minutes: 0)),
-        baseDepartureTime: now.add(const Duration(hours: 3, minutes: 0)),
-        arrivalTime: null,
-        baseArrivalTime: null,
+        departureTime: now.add(const Duration(hours: 3)),
+        baseDepartureTime: now.add(const Duration(hours: 3)),
         status: TrainStatus.cancelled,
-        delayMinutes: null,
         station: parisNord,
         additionalInfo: ['Train annulé'],
       ),
@@ -228,7 +207,6 @@ class MockData {
         arrivalTime: now.add(const Duration(minutes: 35)), // Arrivée dans 35 min
         baseArrivalTime: now.add(const Duration(minutes: 35)),
         status: TrainStatus.onTime,
-        delayMinutes: null,
         station: parisNord,
         additionalInfo: [],
       ),
@@ -256,35 +234,35 @@ class MockData {
   /// Retourne les stations intermédiaires pour un trajet (mock)
   static List<Station> getIntermediateStationsForTrip(domain.Trip trip) {
     // Définir les stations intermédiaires selon le trajet
-    final parisNord = Station(
+    const parisNord = Station(
       id: 'stop_point:SNCF:87384008',
       name: 'Paris Nord',
       latitude: 48.8809,
       longitude: 2.3553,
     );
 
-    final lilleEurope = Station(
+    const lilleEurope = Station(
       id: 'stop_point:SNCF:87286025',
       name: 'Lille Europe',
       latitude: 50.6394,
       longitude: 3.0758,
     );
 
-    final lyonPartDieu = Station(
+    const lyonPartDieu = Station(
       id: 'stop_point:SNCF:87751008',
       name: 'Lyon Part-Dieu',
       latitude: 45.7606,
       longitude: 4.8604,
     );
 
-    final marseilleStCharles = Station(
+    const marseilleStCharles = Station(
       id: 'stop_point:SNCF:87751000',
       name: 'Marseille St-Charles',
       latitude: 43.3032,
       longitude: 5.3842,
     );
 
-    final bordeauxStJean = Station(
+    const bordeauxStJean = Station(
       id: 'stop_point:SNCF:87581009',
       name: 'Bordeaux St-Jean',
       latitude: 44.8258,
@@ -292,49 +270,49 @@ class MockData {
     );
 
     // Stations intermédiaires réalistes
-    final arras = Station(
+    const arras = Station(
       id: 'stop_point:SNCF:87286000',
       name: 'Arras',
       latitude: 50.2914,
       longitude: 2.7811,
     );
 
-    final creil = Station(
+    const creil = Station(
       id: 'stop_point:SNCF:87276004',
       name: 'Creil',
       latitude: 49.2578,
       longitude: 2.4697,
     );
 
-    final macon = Station(
+    const macon = Station(
       id: 'stop_point:SNCF:87724000',
       name: 'Mâcon-Ville',
       latitude: 46.3078,
       longitude: 4.8322,
     );
 
-    final valence = Station(
+    const valence = Station(
       id: 'stop_point:SNCF:87760000',
       name: 'Valence TGV',
       latitude: 44.9908,
       longitude: 4.9431,
     );
 
-    final avignon = Station(
+    const avignon = Station(
       id: 'stop_point:SNCF:87751000',
       name: 'Avignon TGV',
       latitude: 43.9214,
       longitude: 4.7858,
     );
 
-    final tours = Station(
+    const tours = Station(
       id: 'stop_point:SNCF:87571000',
       name: 'Tours',
       latitude: 47.3925,
       longitude: 0.6944,
     );
 
-    final poitiers = Station(
+    const poitiers = Station(
       id: 'stop_point:SNCF:87585000',
       name: 'Poitiers',
       latitude: 46.5808,

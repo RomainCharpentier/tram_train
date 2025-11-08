@@ -1,24 +1,42 @@
 import '../../../domain/models/train.dart';
 import '../../../domain/models/station.dart';
 import '../../../domain/services/train_service.dart';
+import '../../dependency_injection.dart';
 import 'data/mock_data.dart';
 
-/// Implémentation mock de TrainGateway avec méthodes supplémentaires pour compatibilité SncfGateway
 class MockTrainGateway implements TrainGateway {
-  final List<Train> _mockTrains;
+  List<Train>? _mockTrains;
+  DateTime? _lastNow;
 
-  MockTrainGateway() : _mockTrains = MockData.getMockTrains();
+  MockTrainGateway();
+
+  List<Train> get _trains {
+    final now = _getNow();
+    if (_mockTrains == null || _lastNow != now) {
+      _mockTrains = MockData.getMockTrains(now);
+      _lastNow = now;
+    }
+    return _mockTrains!;
+  }
+
+  DateTime _getNow() {
+    // Toujours utiliser DependencyInjection.instance.clockService pour garantir la bonne date
+    return DependencyInjection.instance.clockService.now();
+  }
+
+  void resetCache() {
+    _mockTrains = null;
+    _lastNow = null;
+  }
 
   @override
   Future<List<Train>> getDepartures(Station station) async {
-    // Retourner les trains mock filtrés par station
-    return _mockTrains.where((train) => train.station.id == station.id).toList();
+    return _trains.where((train) => train.station.id == station.id).toList();
   }
 
   @override
   Future<List<Train>> getDeparturesAt(Station station, DateTime dateTime) async {
-    // Retourner les trains mock filtrés par station et proches de l'heure
-    return _mockTrains.where((train) {
+    return _trains.where((train) {
       if (train.station.id != station.id) return false;
       // Retourner les trains dans les 2 heures autour de l'heure demandée
       final timeDiff = (train.departureTime.difference(dateTime).inMinutes).abs();
@@ -39,8 +57,7 @@ class MockTrainGateway implements TrainGateway {
       return [];
     }
 
-    // Retourner des trains mock qui matchent le trajet
-    final matchingTrains = _mockTrains.where((train) {
+    final matchingTrains = _trains.where((train) {
       // Le train doit partir de la station de départ
       // Vérifier si c'est une station parisienne (toutes les gares parisiennes sont acceptées)
       final fromMatches = _stationMatches(train.station, fromStation) ||
@@ -90,11 +107,11 @@ class MockTrainGateway implements TrainGateway {
 
     if (baseTrains.isEmpty) return [];
 
-    final now = DateTime.now();
+    final now = _getNow();
     final trains = <Train>[];
 
     // Vérifier si on a un train en cours dans les mocks qui correspond
-    final allMockTrains = MockData.getMockTrains();
+    final allMockTrains = MockData.getMockTrains(now);
     final inProgressTrain = allMockTrains.firstWhere(
       (t) =>
           t.id == 'mock_train_in_progress' &&
@@ -188,6 +205,8 @@ class MockTrainGateway implements TrainGateway {
       delayMinutes: template.delayMinutes,
       station: template.station,
       additionalInfo: template.additionalInfo,
+      departurePlatform: template.departurePlatform,
+      arrivalPlatform: template.arrivalPlatform,
     );
   }
 
@@ -243,10 +262,8 @@ class MockTrainGateway implements TrainGateway {
     return allStations.where((station) => station.name.toLowerCase().contains(queryLower)).toList();
   }
 
-  /// Récupère tous les trajets passant par une gare (mock)
   Future<List<Train>> getTrainsPassingThrough(Station station) async {
-    // Retourner tous les trains qui passent par cette station
-    return _mockTrains.where((train) => train.station.id == station.id).toList();
+    return _trains.where((train) => train.station.id == station.id).toList();
   }
 
   /// Récupère les informations d'une gare (mock)
@@ -256,7 +273,7 @@ class MockTrainGateway implements TrainGateway {
       'name': station.name,
       'latitude': station.latitude,
       'longitude': station.longitude,
-      'departures_count': _mockTrains.where((t) => t.station.id == station.id).length,
+      'departures_count': _trains.where((t) => t.station.id == station.id).length,
       'is_active': true,
     };
   }
@@ -270,8 +287,8 @@ class MockTrainGateway implements TrainGateway {
         'severity': 'delay',
         'message': 'Retards sur certaines lignes',
         'affected_lines': ['TGV', 'TER'],
-        'start_time': DateTime.now().toIso8601String(),
-        'end_time': DateTime.now().add(const Duration(hours: 2)).toIso8601String(),
+        'start_time': _getNow().toIso8601String(),
+        'end_time': _getNow().add(const Duration(hours: 2)).toIso8601String(),
       },
     ];
   }
@@ -318,8 +335,7 @@ class MockTrainGateway implements TrainGateway {
 
   /// Récupère les horaires d'une ligne (mock)
   Future<List<Map<String, dynamic>>> getLineSchedules(String lineId, DateTime dateTime) async {
-    // Retourner quelques horaires mock
-    final now = DateTime.now();
+    final now = _getNow();
     return [
       {
         'line_id': lineId,
@@ -336,10 +352,8 @@ class MockTrainGateway implements TrainGateway {
     ];
   }
 
-  /// Récupère les prochains passages d'une ligne à une gare (mock)
   Future<List<Train>> getNextArrivalsForLine(Station station, String lineId) async {
-    // Retourner les trains qui arrivent à cette station
-    return _mockTrains.where((train) => train.station.id == station.id).toList();
+    return _trains.where((train) => train.station.id == station.id).toList();
   }
 
   /// Récupère les rapports de trafic (mock)
@@ -349,7 +363,7 @@ class MockTrainGateway implements TrainGateway {
         'id': 'mock_traffic_1',
         'severity': 'normal',
         'message': 'Trafic normal',
-        'timestamp': DateTime.now().toIso8601String(),
+        'timestamp': _getNow().toIso8601String(),
       },
     ];
   }

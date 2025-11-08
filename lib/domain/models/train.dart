@@ -8,6 +8,13 @@ enum TrainStatus {
   unknown,
 }
 
+enum TrainJourneyState {
+  upcoming,
+  inProgress,
+  completed,
+  cancelled,
+}
+
 class Train {
   final String id;
   final String direction;
@@ -19,6 +26,8 @@ class Train {
   final int? delayMinutes;
   final List<String> additionalInfo;
   final Station station;
+  final String? departurePlatform;
+  final String? arrivalPlatform;
 
   const Train({
     required this.id,
@@ -31,6 +40,8 @@ class Train {
     this.delayMinutes,
     this.additionalInfo = const [],
     required this.station,
+    this.departurePlatform,
+    this.arrivalPlatform,
   });
 
   factory Train.fromTimes({
@@ -42,6 +53,8 @@ class Train {
     DateTime? baseArrivalTime,
     required Station station,
     List<String> additionalInfo = const [],
+    String? departurePlatform,
+    String? arrivalPlatform,
   }) {
     final difference = departureTime.difference(baseDepartureTime).inMinutes;
 
@@ -69,6 +82,8 @@ class Train {
       delayMinutes: delayMinutes,
       additionalInfo: additionalInfo,
       station: station,
+      departurePlatform: departurePlatform,
+      arrivalPlatform: arrivalPlatform,
     );
   }
 
@@ -77,9 +92,9 @@ class Train {
       case TrainStatus.onTime:
         return 'À l\'heure';
       case TrainStatus.delayed:
-        return 'En retard (+$delayMinutes min)';
+        return delayMinutes != null ? 'En retard (+$delayMinutes min)' : 'En retard';
       case TrainStatus.early:
-        return 'En avance ($delayMinutes min)';
+        return delayMinutes != null ? 'En avance ($delayMinutes min)' : 'En avance';
       case TrainStatus.cancelled:
         return 'Annulé';
       case TrainStatus.unknown:
@@ -87,14 +102,12 @@ class Train {
     }
   }
 
-  /// Retourne l'heure de départ formatée
   String get departureTimeFormatted {
     final hour = departureTime.hour.toString().padLeft(2, '0');
     final minute = departureTime.minute.toString().padLeft(2, '0');
     return '$hour:$minute';
   }
 
-  /// Retourne l'heure d'arrivée formatée si disponible
   String? get arrivalTimeFormatted {
     if (arrivalTime == null) return null;
     final hour = arrivalTime!.hour.toString().padLeft(2, '0');
@@ -102,21 +115,16 @@ class Train {
     return '$hour:$minute';
   }
 
-  /// Vérifie si le train est en retard
   bool get isDelayed => status == TrainStatus.delayed;
 
-  /// Vérifie si le trajet est direct (sans correspondances)
   bool get isDirect {
-    // Chercher dans additionalInfo s'il y a une indication de correspondances
     final connectionInfo = additionalInfo.firstWhere(
       (info) => info.startsWith('Type:'),
       orElse: () => '',
     );
 
-    // Si pas d'info, considérer comme direct par défaut
     if (connectionInfo.isEmpty) return true;
 
-    // Si "Type: Direct" alors c'est direct, sinon c'est avec correspondances
     return connectionInfo == 'Type: Direct';
   }
 
@@ -130,4 +138,17 @@ class Train {
 
   @override
   String toString() => 'Train(id: $id, direction: $direction, status: $status)';
+
+  TrainJourneyState journeyState(DateTime now) {
+    if (status == TrainStatus.cancelled) {
+      return TrainJourneyState.cancelled;
+    }
+    if (departureTime.isAfter(now)) {
+      return TrainJourneyState.upcoming;
+    }
+    if (arrivalTime != null && arrivalTime!.isBefore(now)) {
+      return TrainJourneyState.completed;
+    }
+    return TrainJourneyState.inProgress;
+  }
 }
