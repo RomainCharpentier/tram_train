@@ -6,7 +6,7 @@ import 'package:workmanager/workmanager.dart';
 import 'package:train_qil/env_config.dart';
 import 'package:train_qil/infrastructure/background/trip_status_worker.dart';
 import 'package:train_qil/infrastructure/dependency_injection.dart';
-import 'package:train_qil/view/pages/home_page.dart';
+import 'package:train_qil/view/pages/root_navigation_page.dart';
 
 void main() async {
   try {
@@ -69,7 +69,7 @@ class MyApp extends StatelessWidget {
           theme: themeService.lightTheme,
           darkTheme: themeService.darkTheme,
           themeMode: themeService.themeMode,
-          home: const HomePage(),
+          home: const RootNavigationPage(),
         );
       },
     );

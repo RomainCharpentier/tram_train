@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../theme/theme_x.dart';
 import '../../domain/models/trip.dart' as domain;
 import '../../domain/models/station.dart';
@@ -7,67 +8,163 @@ import '../../infrastructure/dependency_injection.dart';
 import 'add_trip_page.dart';
 import 'edit_trip_page.dart';
 import 'notification_pause_page.dart';
+import 'notification_test_page.dart';
 import 'station_search_page.dart';
 import '../widgets/trip_card.dart';
-import 'notification_test_page.dart';
 
-class ProfilePage extends StatefulWidget {
+class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
 
+  Future<void> _open(BuildContext context, Widget page) {
+    return Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => page),
+    );
+  }
+
   @override
-  State<ProfilePage> createState() => _ProfilePageState();
+  Widget build(BuildContext context) {
+    final themeService = DependencyInjection.instance.themeService;
+
+    return SafeArea(
+      child: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          Text(
+            'Profil',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: context.theme.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 24),
+          Card(
+            child: Column(
+              children: [
+                ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: context.theme.primary.withOpacity(0.12),
+                    child: Icon(Icons.route, color: context.theme.primary),
+                  ),
+                  title: const Text('Mes trajets enregistrés'),
+                  subtitle: const Text(
+                      'Modifier, dupliquer ou supprimer vos trajets'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => _open(context, const ProfileTripsPage()),
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: context.theme.primary.withOpacity(0.12),
+                    child:
+                        Icon(Icons.pause_circle, color: context.theme.primary),
+                  ),
+                  title: const Text('Pauses de notifications'),
+                  subtitle: const Text('Programmer des périodes sans alertes'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => _open(context, const NotificationPausePage()),
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: context.theme.primary.withOpacity(0.12),
+                    child: Icon(Icons.star, color: context.theme.primary),
+                  ),
+                  title: const Text('Stations favorites'),
+                  subtitle: const Text('Gérer vos gares préférées'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => _open(context, const FavoriteStationsPage()),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+          Card(
+            child: Column(
+              children: [
+                ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: context.theme.primary.withOpacity(0.12),
+                    child: Icon(Icons.notifications_active,
+                        color: context.theme.primary),
+                  ),
+                  title: const Text('Tester les notifications'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => _open(context, const NotificationTestPage()),
+                ),
+                AnimatedBuilder(
+                  animation: themeService,
+                  builder: (context, child) {
+                    return SwitchListTile(
+                      secondary: CircleAvatar(
+                        backgroundColor:
+                            context.theme.primary.withOpacity(0.12),
+                        child: Icon(
+                          themeService.isDarkMode
+                              ? Icons.dark_mode
+                              : Icons.light_mode,
+                          color: context.theme.primary,
+                        ),
+                      ),
+                      title: const Text('Mode sombre'),
+                      value: themeService.isDarkMode,
+                      onChanged: (_) => themeService.toggleTheme(),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'Raccourcis utiles',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: context.theme.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: [
+              _ChipButton(
+                icon: Icons.add,
+                label: 'Ajouter un trajet',
+                onTap: () => _open(context, const AddTripPage()),
+              ),
+              _ChipButton(
+                icon: Icons.search,
+                label: 'Rechercher une station',
+                onTap: () => _open(context, const StationSearchPage()),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 }
 
-class _ProfilePageState extends State<ProfilePage>
-    with TickerProviderStateMixin {
-  late TabController _tabController;
+class ProfileTripsPage extends StatefulWidget {
+  const ProfileTripsPage({super.key});
+
+  @override
+  State<ProfileTripsPage> createState() => _ProfileTripsPageState();
+}
+
+class _ProfileTripsPageState extends State<ProfileTripsPage> {
   List<domain.Trip> _trips = [];
   bool _isLoading = false;
   String? _error;
   bool _changed = false;
-  List<Station> _favoriteStations = [];
-  bool _isLoadingFavorites = false;
-  final FavoriteStationService _favoriteStationService =
-      DependencyInjection.instance.favoriteStationService;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
-    _tabController.addListener(_onTabChanged);
     _loadTrips();
-    _loadFavoriteStations();
-  }
-
-  void _onTabChanged() {
-    if (_tabController.index == 2 && !_tabController.indexIsChanging) {
-      _loadFavoriteStations();
-    }
-  }
-
-  @override
-  void dispose() {
-    _tabController.removeListener(_onTabChanged);
-    _tabController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _loadFavoriteStations() async {
-    setState(() {
-      _isLoadingFavorites = true;
-    });
-
-    try {
-      final favorites = await _favoriteStationService.getAllFavoriteStations();
-      setState(() {
-        _favoriteStations = favorites;
-        _isLoadingFavorites = false;
-      });
-    } catch (e) {
-      setState(() {
-        _isLoadingFavorites = false;
-      });
-    }
   }
 
   Future<void> _loadTrips() async {
@@ -93,10 +190,29 @@ class _ProfilePageState extends State<ProfilePage>
 
   @override
   Widget build(BuildContext context) {
-    return _buildScaffold();
+    return WillPopScope(
+      onWillPop: () async {
+        Navigator.pop(context, _changed);
+        return false;
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => Navigator.pop(context, _changed),
+          ),
+          title: const Text('Mes trajets'),
+        ),
+        body: _buildBody(),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () => _navigateToAddTrip(context),
+          child: const Icon(Icons.add),
+        ),
+      ),
+    );
   }
 
-  Widget _buildTripsTab() {
+  Widget _buildBody() {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -109,7 +225,17 @@ class _ProfilePageState extends State<ProfilePage>
       return _buildEmptyTripsState();
     }
 
-    return _buildTripsList();
+    return RefreshIndicator(
+      onRefresh: _loadTrips,
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: _trips.length,
+        itemBuilder: (context, index) {
+          final trip = _trips[index];
+          return _buildDismissibleTrip(trip);
+        },
+      ),
+    );
   }
 
   Widget _buildErrorState() {
@@ -162,28 +288,6 @@ class _ProfilePageState extends State<ProfilePage>
     );
   }
 
-  Widget _buildTripsList() {
-    return RefreshIndicator(
-      onRefresh: _loadTrips,
-      child: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: _trips.length,
-        itemBuilder: (context, index) {
-          final trip = _trips[index];
-          return _buildDismissibleTrip(trip);
-        },
-      ),
-    );
-  }
-
-  Widget _buildTripCard(domain.Trip trip) {
-    return TripCard(
-      trip: trip,
-      onAction: (action, t) => _handleTripAction(action, t),
-      showStatusIndicator: false,
-    );
-  }
-
   Widget _buildDismissibleTrip(domain.Trip trip) {
     return Dismissible(
       key: ValueKey(trip.id),
@@ -191,152 +295,44 @@ class _ProfilePageState extends State<ProfilePage>
       background: _buildDismissibleBackground(),
       confirmDismiss: (dir) => _confirmTripDeletion(trip),
       onDismissed: (_) => _deleteTrip(trip),
-      child: _buildTripCard(trip),
+      child: Card(
+        margin: const EdgeInsets.only(bottom: 12),
+        child: TripCard(
+          trip: trip,
+          onAction: (action, t) => _handleTripAction(action, t),
+          onTap: () => _editTrip(trip),
+          showStatusIndicator: false,
+        ),
+      ),
     );
   }
 
   Widget _buildDismissibleBackground() {
     return Container(
       alignment: Alignment.centerRight,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      color: context.theme.error,
-      child: const Icon(Icons.delete, color: Colors.white),
-    );
-  }
-
-  Future<bool> _confirmTripDeletion(domain.Trip trip) async {
-    return await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Supprimer le trajet'),
-            content: Text('Supprimer "${trip.description}" ?'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Annuler'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: Text(
-                  'Supprimer',
-                  style: TextStyle(color: context.theme.error),
-                ),
-              ),
-            ],
-          ),
-        ) ??
-        false;
-  }
-
-  void _handleTripAction(String action, domain.Trip trip) async {
-    switch (action) {
-      case 'edit':
-        await _navigateToEditTrip(context, trip);
-        break;
-      case 'duplicate':
-        await _duplicateTrip(trip);
-        break;
-      case 'toggle':
-        await _toggleTrip(trip);
-        break;
-      case 'delete':
-        await _deleteTrip(trip);
-        break;
-    }
-  }
-
-  Future<void> _navigateToEditTrip(
-      BuildContext context, domain.Trip trip) async {
-    final result = await Navigator.push<bool>(
-      context,
-      MaterialPageRoute(
-        builder: (context) => EditTripPage(trip: trip),
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      decoration: BoxDecoration(
+        color: Colors.red.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: const [
+          Icon(Icons.delete_outline, color: Colors.red),
+          SizedBox(width: 8),
+          Text('Supprimer', style: TextStyle(color: Colors.red)),
+        ],
       ),
     );
-
-    if (result == true) {
-      _changed = true;
-      _loadTrips();
-    }
   }
 
-  Future<void> _duplicateTrip(domain.Trip trip) async {
-    try {
-      final newTrip = trip.copyWith(
-        id: domain.Trip.generateId(),
-        createdAt: DateTime.now(),
-      );
-
-      await DependencyInjection.instance.tripService.saveTrip(newTrip);
-      await DependencyInjection.instance.tripReminderService.refreshSchedules();
-
-      if (mounted) {
-        _changed = true;
-        _showSnackBar('Trajet dupliqué avec succès', context.theme.success);
-        _loadTrips();
-      }
-    } catch (e) {
-      if (mounted) {
-        _showSnackBar('Erreur lors de la duplication: $e', context.theme.error);
-      }
-    }
-  }
-
-  Future<void> _toggleTrip(domain.Trip trip) async {
-    try {
-      final updatedTrip = trip.copyWith(isActive: !trip.isActive);
-      await DependencyInjection.instance.tripService.saveTrip(updatedTrip);
-      await DependencyInjection.instance.tripReminderService.refreshSchedules();
-
-      if (mounted) {
-        _changed = true;
-        _showSnackBar(
-          updatedTrip.isActive ? 'Trajet activé' : 'Trajet désactivé',
-          context.theme.success,
-        );
-        _loadTrips();
-      }
-    } catch (e) {
-      if (mounted) {
-        _showSnackBar(
-            'Erreur lors de la modification: $e', context.theme.error);
-      }
-    }
-  }
-
-  Future<void> _deleteTrip(domain.Trip trip) async {
-    final confirmed = await _showDeleteTripDialog(trip);
-
-    if (confirmed == true) {
-      try {
-        await DependencyInjection.instance.tripService
-            .deleteTripAndSimilar(trip);
-        await DependencyInjection.instance.tripReminderService
-            .refreshSchedules();
-
-        if (mounted) {
-          _changed = true;
-          _showSnackBar(
-              'Trajet supprimé (doublons inclus)', context.theme.success);
-          _loadTrips();
-        }
-      } catch (e) {
-        if (mounted) {
-          _showSnackBar(
-              'Erreur lors de la suppression: $e', context.theme.error);
-        }
-      }
-    }
-  }
-
-  Future<bool?> _showDeleteTripDialog(domain.Trip trip) {
+  Future<bool?> _confirmTripDeletion(domain.Trip trip) {
     return showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Supprimer le trajet'),
-        content: Text(
-          'Êtes-vous sûr de vouloir supprimer le trajet "${trip.description}" ?',
-        ),
+        content:
+            Text('Êtes-vous sûr de vouloir supprimer ${trip.description} ?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -344,116 +340,149 @@ class _ProfilePageState extends State<ProfilePage>
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: context.theme.error),
-            child: const Text('Supprimer'),
+            child: const Text('Supprimer', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
     );
   }
 
-  void _showSnackBar(String message, Color backgroundColor) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: backgroundColor,
-      ),
-    );
-  }
-
-  void _navigateToAddTrip(BuildContext context) async {
+  Future<void> _navigateToAddTrip(BuildContext context) async {
     final result = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
         builder: (context) => const AddTripPage(),
       ),
     );
-
     if (result == true) {
+      await _loadTrips();
       _changed = true;
-      _loadTrips();
     }
   }
 
-  Widget _buildScaffold() {
-    return WillPopScope(
-      onWillPop: () async {
-        Navigator.pop(context, _changed);
-        return false;
-      },
-      child: Scaffold(
-        appBar: _buildAppBar(),
-        body: TabBarView(
-          controller: _tabController,
-          children: [
-            _buildTripsTab(),
-            const NotificationPausePage(),
-            _buildFavoritesTab(),
-          ],
-        ),
+  void _editTrip(domain.Trip trip) async {
+    final result = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EditTripPage(trip: trip),
       ),
     );
+    if (result == true) {
+      await _loadTrips();
+      _changed = true;
+    }
   }
 
-  PreferredSizeWidget _buildAppBar() {
-    final themeService = DependencyInjection.instance.themeService;
-
-    return AppBar(
-      title: const Text('Profil'),
-      backgroundColor: context.theme.primary,
-      foregroundColor: Colors.white,
-      actions: [
-        IconButton(
-          icon: const Icon(Icons.bug_report, color: Colors.white),
-          onPressed: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const NotificationTestPage(),
-            ),
-          ),
-          tooltip: 'Tester les notifications',
-        ),
-        _buildThemeToggleButton(themeService),
-        IconButton(
-          icon: const Icon(Icons.close, color: Colors.white),
-          onPressed: () => Navigator.pop(context, _changed),
-          tooltip: 'Fermer',
-        ),
-      ],
-      bottom: TabBar(
-        controller: _tabController,
-        labelColor: Colors.white,
-        unselectedLabelColor: Colors.white70,
-        indicatorColor: Colors.white,
-        labelStyle: const TextStyle(fontWeight: FontWeight.w600),
-        tabs: const [
-          Tab(icon: Icon(Icons.route), text: 'Mes Trajets'),
-          Tab(icon: Icon(Icons.pause_circle), text: 'Pauses'),
-          Tab(icon: Icon(Icons.star), text: 'Favoris'),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildThemeToggleButton(themeService) {
-    return AnimatedBuilder(
-      animation: themeService,
-      builder: (context, child) {
-        return IconButton(
-          icon: Icon(
-            themeService.isDarkMode ? Icons.light_mode : Icons.dark_mode,
-            color: Colors.white,
-          ),
-          onPressed: () => themeService.toggleTheme(),
-          tooltip: themeService.isDarkMode ? 'Mode clair' : 'Mode sombre',
+  void _handleTripAction(String action, domain.Trip trip) async {
+    switch (action) {
+      case 'edit':
+        _editTrip(trip);
+        break;
+      case 'duplicate':
+        final duplicatedTrip = trip.copyWith(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          createdAt: DateTime.now(),
         );
-      },
+        await DependencyInjection.instance.tripService.saveTrip(duplicatedTrip);
+        await DependencyInjection.instance.tripReminderService
+            .refreshSchedules();
+        await _loadTrips();
+        _showSnackBar('Trajet dupliqué', context.theme.success);
+        _changed = true;
+        break;
+      case 'toggle':
+        final updatedTrip = trip.copyWith(isActive: !trip.isActive);
+        await DependencyInjection.instance.tripService.saveTrip(updatedTrip);
+        await DependencyInjection.instance.tripReminderService
+            .refreshSchedules();
+        await _loadTrips();
+        _showSnackBar(
+          'Trajet ${updatedTrip.isActive ? 'activé' : 'désactivé'}',
+          context.theme.success,
+        );
+        _changed = true;
+        break;
+      case 'delete':
+        final confirmed = await _confirmTripDeletion(trip);
+        if (confirmed == true) {
+          await _deleteTrip(trip);
+        }
+        break;
+    }
+  }
+
+  Future<void> _deleteTrip(domain.Trip trip) async {
+    await DependencyInjection.instance.tripService.deleteTripAndSimilar(trip);
+    await DependencyInjection.instance.tripReminderService.refreshSchedules();
+    await _loadTrips();
+    _showSnackBar('Trajet supprimé (doublons inclus)', context.theme.success);
+    _changed = true;
+  }
+
+  void _showSnackBar(String message, Color color) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: color,
+      ),
+    );
+  }
+}
+
+class FavoriteStationsPage extends StatefulWidget {
+  const FavoriteStationsPage({super.key});
+
+  @override
+  State<FavoriteStationsPage> createState() => _FavoriteStationsPageState();
+}
+
+class _FavoriteStationsPageState extends State<FavoriteStationsPage> {
+  final FavoriteStationService _favoriteStationService =
+      DependencyInjection.instance.favoriteStationService;
+  List<Station> _favoriteStations = [];
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFavoriteStations();
+  }
+
+  Future<void> _loadFavoriteStations() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final favorites = await _favoriteStationService.getAllFavoriteStations();
+      setState(() {
+        _favoriteStations = favorites;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Stations favorites'),
+      ),
+      body: _buildBody(),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _navigateToSearch,
+        child: const Icon(Icons.add),
+        tooltip: 'Ajouter une station favorite',
+      ),
     );
   }
 
-  Widget _buildFavoritesTab() {
-    if (_isLoadingFavorites) {
+  Widget _buildBody() {
+    if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
 
@@ -461,7 +490,37 @@ class _ProfilePageState extends State<ProfilePage>
       return _buildEmptyFavoritesState();
     }
 
-    return _buildFavoritesList();
+    return RefreshIndicator(
+      onRefresh: _loadFavoriteStations,
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: _favoriteStations.length,
+        itemBuilder: (context, index) {
+          final station = _favoriteStations[index];
+          return Card(
+            margin: const EdgeInsets.only(bottom: 8),
+            child: ListTile(
+              leading: CircleAvatar(
+                backgroundColor: context.theme.surface,
+                child: Icon(Icons.train, color: context.theme.primary),
+              ),
+              title: Text(
+                station.name,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              subtitle: station.description != null
+                  ? Text(station.description!)
+                  : null,
+              trailing: IconButton(
+                icon: const Icon(Icons.delete_outline),
+                onPressed: () => _removeFavorite(station),
+                tooltip: 'Retirer des favoris',
+              ),
+            ),
+          );
+        },
+      ),
+    );
   }
 
   Widget _buildEmptyFavoritesState() {
@@ -483,65 +542,12 @@ class _ProfilePageState extends State<ProfilePage>
           ),
           const SizedBox(height: 24),
           ElevatedButton.icon(
-            onPressed: () => _navigateToSearch(),
+            onPressed: _navigateToSearch,
             icon: const Icon(Icons.search),
             label: const Text('Rechercher une station'),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildFavoritesList() {
-    return Stack(
-      children: [
-        RefreshIndicator(
-          onRefresh: _loadFavoriteStations,
-          child: ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: _favoriteStations.length,
-            itemBuilder: (context, index) {
-              final station = _favoriteStations[index];
-              return Card(
-                margin: const EdgeInsets.only(bottom: 8),
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: context.theme.surface,
-                    child: Icon(Icons.train, color: context.theme.primary),
-                  ),
-                  title: Text(
-                    station.name,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  subtitle: station.description != null
-                      ? Text(station.description!)
-                      : null,
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.delete_outline),
-                        onPressed: () => _removeFavorite(station),
-                        tooltip: 'Retirer des favoris',
-                      ),
-                    ],
-                  ),
-                  onTap: () => _selectFavoriteStation(station),
-                ),
-              );
-            },
-          ),
-        ),
-        Positioned(
-          bottom: 16,
-          right: 16,
-          child: FloatingActionButton(
-            onPressed: () => _navigateToSearch(),
-            child: const Icon(Icons.add),
-            tooltip: 'Ajouter une station favorite',
-          ),
-        ),
-      ],
     );
   }
 
@@ -558,66 +564,13 @@ class _ProfilePageState extends State<ProfilePage>
     }
   }
 
-  void _selectFavoriteStation(Station station) async {
-    final action = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(station.name),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (station.description != null) Text(station.description!),
-            const SizedBox(height: 16),
-            const Text('Que souhaitez-vous faire avec cette station ?'),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, 'remove'),
-            child: Text(
-              'Retirer des favoris',
-              style: TextStyle(color: context.theme.error),
-            ),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Annuler'),
-          ),
-        ],
-      ),
-    );
-
-    if (action == 'remove') {
-      await _removeFavorite(station);
-    }
-  }
-
   Future<void> _removeFavorite(Station station) async {
-    final confirmed = await _showRemoveFavoriteDialog(station);
-
-    if (confirmed == true) {
-      try {
-        await _favoriteStationService.removeFavoriteStation(station.id);
-        if (mounted) {
-          _showSnackBar(
-              '${station.name} retirée des favoris', context.theme.success);
-          _loadFavoriteStations();
-        }
-      } catch (e) {
-        if (mounted) {
-          _showSnackBar(
-              'Erreur lors de la suppression: $e', context.theme.error);
-        }
-      }
-    }
-  }
-
-  Future<bool?> _showRemoveFavoriteDialog(Station station) {
-    return showDialog<bool>(
+    final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Retirer des favoris'),
-        content: Text('Retirer "${station.name}" des favoris ?'),
+        title: const Text('Retirer la station'),
+        content: Text(
+            'Êtes-vous sûr de vouloir retirer ${station.name} de vos favoris ?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -625,9 +578,74 @@ class _ProfilePageState extends State<ProfilePage>
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Retirer'),
+            child: const Text('Retirer', style: TextStyle(color: Colors.red)),
           ),
         ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        await _favoriteStationService.removeFavoriteStation(station.id);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${station.name} retirée des favoris'),
+              backgroundColor: context.theme.success,
+            ),
+          );
+          _loadFavoriteStations();
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Erreur lors de la suppression: $e'),
+              backgroundColor: context.theme.error,
+            ),
+          );
+        }
+      }
+    }
+  }
+}
+
+class _ChipButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _ChipButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: context.theme.primary.withOpacity(0.1),
+      borderRadius: BorderRadius.circular(24),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(24),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, color: context.theme.primary, size: 18),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: TextStyle(
+                  color: context.theme.primary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

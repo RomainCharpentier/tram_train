@@ -580,13 +580,16 @@ class _StationSearchPageState extends State<StationSearchPage> {
   }
 
   PreferredSizeWidget _buildAppBar() {
+    final canPop = Navigator.of(context).canPop();
     return AppBar(
       title: const Text('Recherche de Gares'),
       backgroundColor: context.theme.primary,
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back, color: Colors.white),
-        onPressed: () => Navigator.of(context).pop(),
-      ),
+      leading: canPop
+          ? IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              onPressed: () => Navigator.of(context).maybePop(),
+            )
+          : null,
       actions: [
         IconButton(
           icon: Icon(

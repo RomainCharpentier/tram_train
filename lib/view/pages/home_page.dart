@@ -3,7 +3,6 @@ import 'package:intl/intl.dart';
 import '../../domain/models/trip.dart' as domain;
 import '../../domain/models/train.dart';
 import '../../infrastructure/dependency_injection.dart';
-import 'profile_page.dart';
 import 'add_trip_page.dart';
 import 'edit_trip_page.dart';
 import 'trip_progress_page.dart';
@@ -43,8 +42,7 @@ class _HomePageState extends State<HomePage> {
     });
 
     try {
-      final trips =
-          await DependencyInjection.instance.tripService.getAllTrips();
+      final trips = await DependencyInjection.instance.tripService.getAllTrips();
 
       setState(() {
         _allTrips = trips;
@@ -106,8 +104,7 @@ class _HomePageState extends State<HomePage> {
         ? now.subtract(const Duration(hours: 2))
         : todayDeparture.subtract(const Duration(minutes: 30));
 
-    final trains = await DependencyInjection.instance.trainService
-        .findJourneysWithDepartureTime(
+    final trains = await DependencyInjection.instance.trainService.findJourneysWithDepartureTime(
       trip.departureStation,
       trip.arrivalStation,
       searchTime,
@@ -146,8 +143,7 @@ class _HomePageState extends State<HomePage> {
           train.arrivalTime!.isAfter(now);
 
       if (isInProgress) {
-        if (inProgressTrain == null ||
-            train.departureTime.isAfter(inProgressTrain.departureTime)) {
+        if (inProgressTrain == null || train.departureTime.isAfter(inProgressTrain.departureTime)) {
           inProgressTrain = train;
         }
       }
@@ -172,8 +168,7 @@ class _HomePageState extends State<HomePage> {
         ? now.subtract(const Duration(hours: 1))
         : departureDateTime.subtract(const Duration(minutes: 30));
 
-    final trains = await DependencyInjection.instance.trainService
-        .findJourneysWithDepartureTime(
+    final trains = await DependencyInjection.instance.trainService.findJourneysWithDepartureTime(
       trip.departureStation,
       trip.arrivalStation,
       searchTime,
@@ -189,8 +184,7 @@ class _HomePageState extends State<HomePage> {
 
       if (timeDiff > 30) continue;
 
-      if (train.departureTime
-          .isAfter(now.subtract(const Duration(minutes: 5)))) {
+      if (train.departureTime.isAfter(now.subtract(const Duration(minutes: 5)))) {
         return train;
       }
     }
@@ -243,13 +237,11 @@ class _HomePageState extends State<HomePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error,
-                size: 64, color: Theme.of(context).colorScheme.error),
+            Icon(Icons.error, size: 64, color: Theme.of(context).colorScheme.error),
             const SizedBox(height: 16),
             Text(
               _error!,
-              style: TextStyle(
-                  fontSize: 16, color: Theme.of(context).colorScheme.error),
+              style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.error),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
@@ -306,8 +298,7 @@ class _HomePageState extends State<HomePage> {
       const useMockData = bool.fromEnvironment('USE_MOCK_DATA');
       now = useMockData ? DateTime(2025, 1, 6, 7, 0) : DateTime.now();
     }
-    final formattedNow =
-        DateFormat("EEEE d MMMM yyyy 'à' HH:mm", 'fr_FR').format(now);
+    final formattedNow = DateFormat("EEEE d MMMM yyyy 'à' HH:mm", 'fr_FR').format(now);
 
     // Trier les trajets par heure du prochain train (du plus proche au plus éloigné)
     final sortedTrips = _allTrips.where((trip) => trip.isActive).toList()
@@ -365,8 +356,7 @@ class _HomePageState extends State<HomePage> {
           children: [
             Icon(Icons.info, color: context.theme.warning),
             const SizedBox(height: 8),
-            const Text('Aucun trajet actif',
-                style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text('Aucun trajet actif', style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 4),
             Text('Utilisez le bouton + pour ajouter un trajet',
                 style: TextStyle(color: context.theme.muted)),
@@ -386,18 +376,6 @@ class _HomePageState extends State<HomePage> {
       onTap: () => _showTripDetails(trip),
       showActions: false,
     );
-  }
-
-  Future<void> _navigateToProfile(BuildContext context) async {
-    final result = await Navigator.push<bool>(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const ProfilePage(),
-      ),
-    );
-    if (result == true) {
-      _loadActiveTrips();
-    }
   }
 
   Future<void> _navigateToAddTrip(BuildContext context) async {
@@ -428,8 +406,7 @@ class _HomePageState extends State<HomePage> {
           createdAt: DateTime.now(),
         );
         await DependencyInjection.instance.tripService.saveTrip(duplicatedTrip);
-        await DependencyInjection.instance.tripReminderService
-            .refreshSchedules();
+        await DependencyInjection.instance.tripReminderService.refreshSchedules();
         _loadActiveTrips();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Trajet dupliqué')),
@@ -438,13 +415,10 @@ class _HomePageState extends State<HomePage> {
       case 'toggle':
         final updatedTrip = trip.copyWith(isActive: !trip.isActive);
         await DependencyInjection.instance.tripService.saveTrip(updatedTrip);
-        await DependencyInjection.instance.tripReminderService
-            .refreshSchedules();
+        await DependencyInjection.instance.tripReminderService.refreshSchedules();
         _loadActiveTrips();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(
-                  'Trajet ${updatedTrip.isActive ? 'activé' : 'désactivé'}')),
+          SnackBar(content: Text('Trajet ${updatedTrip.isActive ? 'activé' : 'désactivé'}')),
         );
         break;
       case 'delete':
@@ -452,8 +426,7 @@ class _HomePageState extends State<HomePage> {
           context: context,
           builder: (context) => AlertDialog(
             title: const Text('Supprimer le trajet'),
-            content:
-                const Text('Êtes-vous sûr de vouloir supprimer ce trajet ?'),
+            content: const Text('Êtes-vous sûr de vouloir supprimer ce trajet ?'),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
@@ -461,17 +434,14 @@ class _HomePageState extends State<HomePage> {
               ),
               TextButton(
                 onPressed: () => Navigator.pop(context, true),
-                child: const Text('Supprimer',
-                    style: TextStyle(color: Colors.red)),
+                child: const Text('Supprimer', style: TextStyle(color: Colors.red)),
               ),
             ],
           ),
         );
         if (confirmed == true) {
-          await DependencyInjection.instance.tripService
-              .deleteTripAndSimilar(trip);
-          await DependencyInjection.instance.tripReminderService
-              .refreshSchedules();
+          await DependencyInjection.instance.tripService.deleteTripAndSimilar(trip);
+          await DependencyInjection.instance.tripReminderService.refreshSchedules();
           _loadActiveTrips();
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Trajet supprimé (doublons inclus)')),
@@ -496,41 +466,7 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildScaffold() {
     return Scaffold(
-      appBar: AppBar(
-        title: const Row(
-          children: [
-            LogoWidget(size: 40, showText: false),
-            SizedBox(width: 12),
-            Text("Train'Qil"),
-          ],
-        ),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        actions: [
-          AnimatedBuilder(
-            animation: DependencyInjection.instance.themeService,
-            builder: (context, child) {
-              return IconButton(
-                icon: Icon(
-                  DependencyInjection.instance.themeService.isDarkMode
-                      ? Icons.light_mode
-                      : Icons.dark_mode,
-                  color: Colors.white,
-                ),
-                onPressed: () =>
-                    DependencyInjection.instance.themeService.toggleTheme(),
-                tooltip: DependencyInjection.instance.themeService.isDarkMode
-                    ? 'Mode clair'
-                    : 'Mode sombre',
-              );
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.person, color: Colors.white),
-            onPressed: () => _navigateToProfile(context),
-          ),
-        ],
-      ),
-      body: _buildBody(),
+      body: SafeArea(child: _buildBody()),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _navigateToAddTrip(context),
         child: const Icon(Icons.add),
