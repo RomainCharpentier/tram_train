@@ -61,17 +61,6 @@ class TrainCard extends StatelessWidget {
                 ),
               ),
             ],
-            if (train.departurePlatform != null && train.departurePlatform!.isNotEmpty) ...[
-              const SizedBox(height: 2),
-              Text(
-                'Voie: ${train.departurePlatform}',
-                style: TextStyle(
-                  fontSize: 11,
-                  color: context.theme.textSecondary,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
           ],
         ),
         trailing: _buildTrailing(context),
@@ -106,5 +95,4 @@ class TrainCard extends StatelessWidget {
     }
     return null;
   }
-
 }

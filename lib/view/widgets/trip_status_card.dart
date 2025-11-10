@@ -19,7 +19,8 @@ class TripStatusCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final presentation = train != null ? TrainStatusColors.buildPresentation(train!) : null;
+    final presentation =
+        train != null ? TrainStatusColors.buildPresentation(train!) : null;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -50,9 +51,10 @@ class TripStatusCard extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 14,
                           color: presentation.primaryColor,
-                          fontWeight: presentation.state == TrainJourneyState.cancelled
-                              ? FontWeight.w600
-                              : FontWeight.normal,
+                          fontWeight:
+                              presentation.state == TrainJourneyState.cancelled
+                                  ? FontWeight.w600
+                                  : FontWeight.normal,
                         ),
                       ),
                       if (presentation.scheduleText != null &&
@@ -60,19 +62,6 @@ class TripStatusCard extends StatelessWidget {
                           presentation.scheduleIcon != null) ...[
                         const SizedBox(height: 4),
                         _buildScheduleBadge(presentation),
-                      ],
-                      if (train != null &&
-                          train!.departurePlatform != null &&
-                          train!.departurePlatform!.isNotEmpty) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          'Voie: ${train!.departurePlatform}',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: context.theme.textSecondary,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
                       ],
                     ] else ...[
                       Text(
@@ -119,6 +108,4 @@ class TripStatusCard extends StatelessWidget {
       ),
     );
   }
-
 }
-

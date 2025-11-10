@@ -1,12 +1,28 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:workmanager/workmanager.dart';
+
 import 'package:train_qil/env_config.dart';
+import 'package:train_qil/infrastructure/background/trip_status_worker.dart';
 import 'package:train_qil/infrastructure/dependency_injection.dart';
 import 'package:train_qil/view/pages/home_page.dart';
 
 void main() async {
   try {
+    WidgetsFlutterBinding.ensureInitialized();
     await EnvConfig.load();
+    final bool isMobilePlatform = !kIsWeb &&
+        (defaultTargetPlatform == TargetPlatform.android ||
+            defaultTargetPlatform == TargetPlatform.iOS);
+    if (isMobilePlatform) {
+      await Workmanager().initialize(
+        tripStatusCallbackDispatcher,
+        isInDebugMode: kDebugMode,
+      );
+    }
     await DependencyInjection.initialize();
+    await initializeDateFormatting('fr_FR');
     runApp(const MyApp());
   } catch (e) {
     runApp(MaterialApp(

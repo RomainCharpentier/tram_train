@@ -4,10 +4,10 @@ import '../../domain/models/train.dart';
 import '../../domain/models/trip.dart' as domain;
 import '../../domain/models/journey_stop.dart';
 import '../../infrastructure/gateways/mocks/data/mock_data.dart';
+import '../../infrastructure/dependency_injection.dart';
 import '../utils/train_status_colors.dart';
 import '../widgets/trip_status_card.dart';
 
-/// Page pour afficher le plan d'un trajet avec progression en temps réel
 class TripProgressPage extends StatefulWidget {
   final domain.Trip trip;
   final Train? currentTrain;
@@ -32,7 +32,6 @@ class _TripProgressPageState extends State<TripProgressPage> {
     _loadJourneyStops();
   }
 
-  /// Charge les stations du trajet (avec stations intermédiaires)
   Future<void> _loadJourneyStops() async {
     if (widget.currentTrain == null) return;
 
@@ -41,12 +40,9 @@ class _TripProgressPageState extends State<TripProgressPage> {
     });
 
     try {
-      // Pour l'instant, on génère des stations intermédiaires mock
-      // TODO: Récupérer les vraies stations depuis l'API SNCF
       final stops = _generateJourneyStops(widget.trip, widget.currentTrain!);
 
-      // Mettre à jour le statut des stations selon l'heure actuelle
-      final now = DateTime.now();
+      final now = _now();
       final updatedStops = <JourneyStop>[];
 
       for (int i = 0; i < stops.length; i++) {
@@ -55,7 +51,6 @@ class _TripProgressPageState extends State<TripProgressPage> {
         bool isCurrent = false;
         bool isUpcoming = false;
 
-        // Pour la station de départ
         if (i == 0 && stop.departureTime != null) {
           if (stop.departureTime!.isBefore(now.subtract(const Duration(minutes: 2)))) {
             isPassed = true;
@@ -64,24 +59,19 @@ class _TripProgressPageState extends State<TripProgressPage> {
           } else {
             isUpcoming = true;
           }
-        }
-        // Pour les stations intermédiaires
-        else if (i > 0 && i < stops.length - 1) {
+        } else if (i > 0 && i < stops.length - 1) {
           if (stop.arrivalTime != null && stop.departureTime != null) {
             if (stop.departureTime!.isBefore(now.subtract(const Duration(minutes: 2)))) {
               isPassed = true;
             } else if (stop.arrivalTime!.isBefore(now) && stop.departureTime!.isAfter(now)) {
               isCurrent = true;
             } else if (stop.arrivalTime!.isBefore(now.subtract(const Duration(minutes: 2)))) {
-              // Si le train est déjà parti de cette station
               isPassed = true;
             } else {
               isUpcoming = true;
             }
           }
-        }
-        // Pour la station d'arrivée
-        else if (i == stops.length - 1 && stop.arrivalTime != null) {
+        } else if (i == stops.length - 1 && stop.arrivalTime != null) {
           if (stop.arrivalTime!.isBefore(now.subtract(const Duration(minutes: 2)))) {
             isPassed = true;
           } else if (stop.arrivalTime!.isBefore(now.add(const Duration(minutes: 5)))) {
@@ -109,21 +99,17 @@ class _TripProgressPageState extends State<TripProgressPage> {
     }
   }
 
-  /// Génère des stations intermédiaires pour le trajet
   List<JourneyStop> _generateJourneyStops(domain.Trip trip, Train train) {
     final stops = <JourneyStop>[];
 
-    // Station de départ
     stops.add(JourneyStop(
       station: trip.departureStation,
       departureTime: train.departureTime,
       baseDepartureTime: train.baseDepartureTime ?? train.departureTime,
     ));
 
-    // Récupérer les stations intermédiaires depuis les mocks
     final intermediateStations = MockData.getIntermediateStationsForTrip(trip);
 
-    // Ajouter les stations intermédiaires avec leurs horaires
     if (train.arrivalTime != null && intermediateStations.isNotEmpty) {
       final totalDuration = train.arrivalTime!.difference(train.departureTime);
 
@@ -145,7 +131,6 @@ class _TripProgressPageState extends State<TripProgressPage> {
       }
     }
 
-    // Station d'arrivée
     stops.add(JourneyStop(
       station: trip.arrivalStation,
       arrivalTime: train.arrivalTime,
@@ -172,7 +157,7 @@ class _TripProgressPageState extends State<TripProgressPage> {
     }
 
     final train = widget.currentTrain!;
-    final now = DateTime.now();
+    final now = _now();
     final isInProgress = _isTrainInProgress(train, now);
     final progress = _calculateProgress(train, now);
 
@@ -181,15 +166,10 @@ class _TripProgressPageState extends State<TripProgressPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Statut du train
           _buildStatusCard(train, isInProgress),
           const SizedBox(height: 16),
-
-          // Plan du trajet avec progression
           _buildJourneyPlan(train, isInProgress, progress),
           const SizedBox(height: 16),
-
-          // Détails des horaires
           _buildScheduleDetails(train),
         ],
       ),
@@ -238,7 +218,6 @@ class _TripProgressPageState extends State<TripProgressPage> {
   }
 
   Widget _buildStatusCard(Train train, bool isInProgress) {
-    // Utiliser le widget réutilisable pour avoir exactement le même affichage que TripCard
     return TripStatusCard(
       trip: widget.trip,
       train: train,
@@ -255,12 +234,10 @@ class _TripProgressPageState extends State<TripProgressPage> {
       );
     }
 
-    // Si on a des stations chargées, les afficher toutes
     if (_journeyStops.isNotEmpty) {
       return _buildFullJourneyPlan(train, isInProgress, progress);
     }
 
-    // Sinon, afficher version simple (départ/arrivée uniquement)
     return _buildSimpleJourneyPlan(train, isInProgress, progress);
   }
 
@@ -279,7 +256,6 @@ class _TripProgressPageState extends State<TripProgressPage> {
               ),
             ),
             const SizedBox(height: 16),
-            // Afficher toutes les stations
             ..._journeyStops.asMap().entries.map((entry) {
               final index = entry.key;
               final stop = entry.value;
@@ -291,29 +267,7 @@ class _TripProgressPageState extends State<TripProgressPage> {
                   if (!isLast) _buildStopConnection(stop, index, progress),
                 ],
               );
-            }).toList(),
-
-            // Indicateur de progression en texte
-            if (isInProgress && progress > 0 && progress < 100) ...[
-              const SizedBox(height: 16),
-              Center(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: _getProgressColor(train.status).withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    '${progress.toStringAsFixed(0)}% du trajet effectué',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: _getProgressColor(train.status),
-                    ),
-                  ),
-                ),
-              ),
-            ],
+            }),
           ],
         ),
       ),
@@ -321,20 +275,14 @@ class _TripProgressPageState extends State<TripProgressPage> {
   }
 
   Widget _buildStopRow(JourneyStop stop, Train train) {
+    final presentation = TrainStatusColors.buildPresentation(train);
     Color dotColor;
     IconData? dotIcon;
     final isPassed = stop.isPassed;
     final isCurrent = stop.isCurrent;
 
     if (isCurrent) {
-      // Vérifier si le train est en cours
-      final now = DateTime.now();
-      final trainInProgress = widget.currentTrain != null &&
-          widget.currentTrain!.departureTime.isBefore(now) &&
-          widget.currentTrain!.arrivalTime != null &&
-          widget.currentTrain!.arrivalTime!.isAfter(now);
-
-      dotColor = _getProgressColor(train.status, isInProgress: trainInProgress);
+      dotColor = presentation.primaryColor;
       dotIcon = Icons.train;
     } else if (isPassed) {
       dotColor = TrainStatusColors.onTimeColor;
@@ -344,19 +292,10 @@ class _TripProgressPageState extends State<TripProgressPage> {
       dotIcon = null;
     }
 
-    // Griser les stations passées
     final stationOpacity = isPassed ? 0.5 : 1.0;
-    final now = DateTime.now();
-    final trainInProgress = widget.currentTrain != null &&
-        widget.currentTrain!.departureTime.isBefore(now) &&
-        widget.currentTrain!.arrivalTime != null &&
-        widget.currentTrain!.arrivalTime!.isAfter(now);
-
     final textColor = isPassed
         ? context.theme.textSecondary.withValues(alpha: stationOpacity)
-        : (isCurrent
-            ? _getProgressColor(train.status, isInProgress: trainInProgress)
-            : context.theme.textPrimary);
+        : (isCurrent ? presentation.primaryColor : context.theme.textPrimary);
 
     return Opacity(
       opacity: stationOpacity,
@@ -400,16 +339,17 @@ class _TripProgressPageState extends State<TripProgressPage> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: _getProgressColor(train.status, isInProgress: true)
-                              .withValues(alpha: 0.15),
+                          color: presentation.primaryColor.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
-                          'En cours',
+                          presentation.state == TrainJourneyState.inProgress
+                              ? 'En cours'
+                              : 'À venir',
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
-                            color: _getProgressColor(train.status, isInProgress: true),
+                            color: presentation.primaryColor,
                           ),
                         ),
                       ),
@@ -443,7 +383,6 @@ class _TripProgressPageState extends State<TripProgressPage> {
   }
 
   Widget _buildStopConnection(JourneyStop stop, int index, double overallProgress) {
-    // Calculer la progression pour cette section
     final previousStopProgress = index / _journeyStops.length;
     final currentStopProgress = (index + 1) / _journeyStops.length;
 
@@ -451,7 +390,6 @@ class _TripProgressPageState extends State<TripProgressPage> {
     final isSectionCurrent =
         overallProgress >= previousStopProgress && overallProgress < currentStopProgress;
 
-    // Calculer la hauteur de la section colorée si elle est en cours
     double coloredHeight = 0;
     double greyHeight = 40;
     if (isSectionCurrent) {
@@ -464,13 +402,16 @@ class _TripProgressPageState extends State<TripProgressPage> {
       greyHeight = 0;
     }
 
+    final journeyColor = widget.currentTrain != null
+        ? TrainStatusColors.getJourneyStateColor(widget.currentTrain!)
+        : TrainStatusColors.unknownColor;
+
     return Padding(
       padding: const EdgeInsets.only(left: 15, top: 4, bottom: 4),
       child: SizedBox(
         height: 40,
         child: Stack(
           children: [
-            // Ligne grise (fond)
             if (greyHeight > 0) ...[
               Positioned(
                 bottom: 0,
@@ -485,7 +426,6 @@ class _TripProgressPageState extends State<TripProgressPage> {
                 ),
               ),
             ],
-            // Ligne colorée (progression)
             if (coloredHeight > 0) ...[
               Positioned(
                 bottom: 0,
@@ -494,15 +434,11 @@ class _TripProgressPageState extends State<TripProgressPage> {
                   width: 3,
                   height: coloredHeight,
                   decoration: BoxDecoration(
-                    color: _getProgressColor(widget.currentTrain!.status,
-                        isInProgress: _isTrainInProgress(widget.currentTrain!, DateTime.now())),
+                    color: journeyColor,
                     borderRadius: BorderRadius.circular(1.5),
                     boxShadow: [
                       BoxShadow(
-                        color: _getProgressColor(widget.currentTrain!.status,
-                                isInProgress:
-                                    _isTrainInProgress(widget.currentTrain!, DateTime.now()))
-                            .withValues(alpha: 0.3),
+                        color: journeyColor.withValues(alpha: 0.3),
                         blurRadius: 4,
                         spreadRadius: 1,
                       ),
@@ -524,7 +460,6 @@ class _TripProgressPageState extends State<TripProgressPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Station de départ
             Row(
               children: [
                 _buildStationDot(TrainStatusColors.onTimeColor, true),
@@ -553,13 +488,10 @@ class _TripProgressPageState extends State<TripProgressPage> {
                 ),
               ],
             ),
-
-            // Ligne de progression
             Padding(
               padding: const EdgeInsets.only(left: 7, top: 8, bottom: 8),
               child: Column(
                 children: [
-                  // Ligne de fond (gris)
                   Container(
                     height: 4,
                     decoration: BoxDecoration(
@@ -567,7 +499,6 @@ class _TripProgressPageState extends State<TripProgressPage> {
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
-                  // Ligne de progression (colorée)
                   if (isInProgress && progress > 0) ...[
                     const SizedBox(height: 4),
                     Align(
@@ -576,13 +507,12 @@ class _TripProgressPageState extends State<TripProgressPage> {
                         height: 4,
                         width: MediaQuery.of(context).size.width * 0.8 * (progress / 100),
                         decoration: BoxDecoration(
-                          color: _getProgressColor(train.status, isInProgress: isInProgress),
+                          color: TrainStatusColors.getJourneyStateColor(train),
                           borderRadius: BorderRadius.circular(2),
                         ),
                       ),
                     ),
                   ],
-                  // Indicateur de position du train
                   if (isInProgress && progress > 0 && progress < 100) ...[
                     const SizedBox(height: 4),
                     Align(
@@ -596,11 +526,11 @@ class _TripProgressPageState extends State<TripProgressPage> {
                           width: 16,
                           height: 16,
                           decoration: BoxDecoration(
-                            color: _getProgressColor(train.status, isInProgress: isInProgress),
+                            color: TrainStatusColors.getJourneyStateColor(train),
                             shape: BoxShape.circle,
                             border: Border.all(color: Colors.white, width: 2),
                           ),
-                          child: Icon(
+                          child: const Icon(
                             Icons.train,
                             size: 10,
                             color: Colors.white,
@@ -612,8 +542,6 @@ class _TripProgressPageState extends State<TripProgressPage> {
                 ],
               ),
             ),
-
-            // Station d'arrivée
             Row(
               children: [
                 _buildStationDot(
@@ -657,16 +585,13 @@ class _TripProgressPageState extends State<TripProgressPage> {
                 ),
               ],
             ),
-
-            // Indicateur de progression en texte
             if (isInProgress && progress > 0 && progress < 100) ...[
               const SizedBox(height: 16),
               Center(
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: _getProgressColor(train.status, isInProgress: isInProgress)
-                        .withValues(alpha: 0.1),
+                    color: TrainStatusColors.getJourneyStateColor(train).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -674,7 +599,7 @@ class _TripProgressPageState extends State<TripProgressPage> {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
-                      color: _getProgressColor(train.status, isInProgress: isInProgress),
+                      color: TrainStatusColors.getJourneyStateColor(train),
                     ),
                   ),
                 ),
@@ -720,18 +645,14 @@ class _TripProgressPageState extends State<TripProgressPage> {
             _buildScheduleRow(
               'Départ',
               train.departureTimeFormatted,
-              train.baseDepartureTime != null
-                  ? '${train.baseDepartureTime!.hour.toString().padLeft(2, '0')}:${train.baseDepartureTime!.minute.toString().padLeft(2, '0')}'
-                  : null,
+              _formatOptionalTime(TrainStatusColors.getScheduledDepartureTime(train)),
             ),
             if (train.arrivalTimeFormatted != null) ...[
               const SizedBox(height: 8),
               _buildScheduleRow(
                 'Arrivée',
                 train.arrivalTimeFormatted!,
-                train.baseArrivalTime != null
-                    ? '${train.baseArrivalTime!.hour.toString().padLeft(2, '0')}:${train.baseArrivalTime!.minute.toString().padLeft(2, '0')}'
-                    : null,
+                _formatOptionalTime(TrainStatusColors.getScheduledArrivalTime(train)),
               ),
             ],
             if (train.delayMinutes != null && train.delayMinutes! > 0) ...[
@@ -796,14 +717,26 @@ class _TripProgressPageState extends State<TripProgressPage> {
     );
   }
 
-  /// Vérifie si le train est en cours
+  String? _formatOptionalTime(DateTime? time) {
+    if (time == null) return null;
+    return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+  }
+
+  DateTime _now() {
+    try {
+      return DependencyInjection.instance.clockService.now();
+    } catch (e) {
+      const useMockData = bool.fromEnvironment('USE_MOCK_DATA');
+      return useMockData ? DateTime(2025, 1, 6, 7, 0) : DateTime.now();
+    }
+  }
+
   bool _isTrainInProgress(Train train, DateTime now) {
     if (train.departureTime.isAfter(now)) return false;
     if (train.arrivalTime != null && train.arrivalTime!.isBefore(now)) return false;
     return true;
   }
 
-  /// Calcule le pourcentage de progression (0-100)
   double _calculateProgress(Train train, DateTime now) {
     if (!_isTrainInProgress(train, now)) return 0;
 
@@ -817,10 +750,5 @@ class _TripProgressPageState extends State<TripProgressPage> {
 
     final progress = (elapsed.inSeconds / totalDuration.inSeconds) * 100;
     return progress.clamp(0.0, 100.0);
-  }
-
-  /// Retourne la couleur de progression selon le statut
-  Color _getProgressColor(TrainStatus status, {bool isInProgress = false}) {
-    return TrainStatusColors.getStatusColor(status, isInProgress: isInProgress);
   }
 }

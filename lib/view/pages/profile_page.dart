@@ -180,6 +180,7 @@ class _ProfilePageState extends State<ProfilePage>
     return TripCard(
       trip: trip,
       onAction: (action, t) => _handleTripAction(action, t),
+      showStatusIndicator: false,
     );
   }
 
@@ -267,6 +268,7 @@ class _ProfilePageState extends State<ProfilePage>
       );
 
       await DependencyInjection.instance.tripService.saveTrip(newTrip);
+      await DependencyInjection.instance.tripReminderService.refreshSchedules();
 
       if (mounted) {
         _changed = true;
@@ -284,6 +286,7 @@ class _ProfilePageState extends State<ProfilePage>
     try {
       final updatedTrip = trip.copyWith(isActive: !trip.isActive);
       await DependencyInjection.instance.tripService.saveTrip(updatedTrip);
+      await DependencyInjection.instance.tripReminderService.refreshSchedules();
 
       if (mounted) {
         _changed = true;
@@ -308,6 +311,8 @@ class _ProfilePageState extends State<ProfilePage>
       try {
         await DependencyInjection.instance.tripService
             .deleteTripAndSimilar(trip);
+        await DependencyInjection.instance.tripReminderService
+            .refreshSchedules();
 
         if (mounted) {
           _changed = true;
@@ -397,13 +402,8 @@ class _ProfilePageState extends State<ProfilePage>
     return AppBar(
       title: const Text('Profil'),
       backgroundColor: context.theme.primary,
+      foregroundColor: Colors.white,
       actions: [
-        _buildThemeToggleButton(themeService),
-        IconButton(
-          icon: const Icon(Icons.close, color: Colors.white),
-          onPressed: () => Navigator.pop(context, _changed),
-          tooltip: 'Fermer',
-        ),
         IconButton(
           icon: const Icon(Icons.bug_report, color: Colors.white),
           onPressed: () => Navigator.push(
@@ -414,10 +414,19 @@ class _ProfilePageState extends State<ProfilePage>
           ),
           tooltip: 'Tester les notifications',
         ),
-        _buildMenuButton(),
+        _buildThemeToggleButton(themeService),
+        IconButton(
+          icon: const Icon(Icons.close, color: Colors.white),
+          onPressed: () => Navigator.pop(context, _changed),
+          tooltip: 'Fermer',
+        ),
       ],
       bottom: TabBar(
         controller: _tabController,
+        labelColor: Colors.white,
+        unselectedLabelColor: Colors.white70,
+        indicatorColor: Colors.white,
+        labelStyle: const TextStyle(fontWeight: FontWeight.w600),
         tabs: const [
           Tab(icon: Icon(Icons.route), text: 'Mes Trajets'),
           Tab(icon: Icon(Icons.pause_circle), text: 'Pauses'),
@@ -441,34 +450,6 @@ class _ProfilePageState extends State<ProfilePage>
         );
       },
     );
-  }
-
-  Widget _buildMenuButton() {
-    return PopupMenuButton<String>(
-      onSelected: (value) async {
-        if (value == 'reset') {
-          await _resetTrips();
-        }
-      },
-      itemBuilder: (context) => const [
-        PopupMenuItem(
-          value: 'reset',
-          child: ListTile(
-            leading: Icon(Icons.delete_sweep),
-            title: Text('Réinitialiser les trajets'),
-            contentPadding: EdgeInsets.zero,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Future<void> _resetTrips() async {
-    await DependencyInjection.instance.tripService.clearAllTrips();
-    if (mounted) {
-      _showSnackBar('Données trajets réinitialisées', Colors.green);
-      _loadTrips();
-    }
   }
 
   Widget _buildFavoritesTab() {

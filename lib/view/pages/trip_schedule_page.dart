@@ -114,21 +114,12 @@ class _TripSchedulePageState extends State<TripSchedulePage> {
       trip.time.minute,
     );
 
-    if (trip.days.isEmpty) {
-      return baseToday.isBefore(now)
-          ? baseToday.add(const Duration(days: 7))
-          : baseToday;
+    final targetWeekday = trip.day.index + 1; // 1 = Lundi ... 7 = Dimanche
+    int delta = (targetWeekday - baseToday.weekday) % 7;
+    if (delta == 0 && baseToday.isBefore(now)) {
+      delta = 7; // même jour mais heure passée -> semaine suivante
     }
-
-    int bestDelta = 8; // > 7 pour initialiser
-    for (final d in trip.days) {
-      final targetWeekday = d.index + 1; // 1 = Lundi ... 7 = Dimanche
-      int delta = (targetWeekday - baseToday.weekday) % 7;
-      if (delta == 0 && baseToday.isBefore(now)) {
-        delta = 7; // même jour mais heure passée -> semaine suivante
-      }
-      if (delta < bestDelta) bestDelta = delta;
-    }
+    final bestDelta = delta;
 
     return baseToday.add(Duration(days: bestDelta % 7));
   }
@@ -296,7 +287,7 @@ class _TripSchedulePageState extends State<TripSchedulePage> {
             ? 'Aucun train trouvé pour "${_searchController.text}"'
             : 'Aucun train trouvé pour cette destination',
         subtitle: _searchController.text.isNotEmpty
-            ? 'Essayez avec d\'autres mots-clés'
+            ? "Essayez avec d'autres mots-clés"
             : 'Vérifiez que la gare de destination est correcte',
       );
     }

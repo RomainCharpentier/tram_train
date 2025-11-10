@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:train_qil/view/theme/theme_x.dart';
 
-/// Widget pour afficher le logo Train'Qil
 class LogoWidget extends StatelessWidget {
   final double size;
   final bool showText;
@@ -19,7 +18,6 @@ class LogoWidget extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Logo avec l'image icon.png
         ClipOval(
           child: Image.asset(
             'assets/icon.png',
@@ -29,7 +27,6 @@ class LogoWidget extends StatelessWidget {
             filterQuality: FilterQuality.high,
             isAntiAlias: true,
             errorBuilder: (context, error, stackTrace) {
-              // Fallback si l'image n'est pas trouvée
               return Container(
                 width: size,
                 height: size,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../../domain/models/trip.dart' as domain;
 import '../../domain/models/train.dart';
 import '../../infrastructure/dependency_injection.dart';
@@ -32,11 +33,9 @@ class _HomePageState extends State<HomePage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Recharger les données quand on revient sur la page
     _loadActiveTrips();
   }
 
-  /// Charge tous les trajets et récupère le prochain train pour chacun
   Future<void> _loadActiveTrips() async {
     setState(() {
       _isLoading = true;
@@ -44,15 +43,14 @@ class _HomePageState extends State<HomePage> {
     });
 
     try {
-      // Récupérer tous les trajets
-      final trips = await DependencyInjection.instance.tripService.getAllTrips();
+      final trips =
+          await DependencyInjection.instance.tripService.getAllTrips();
 
       setState(() {
         _allTrips = trips;
         _tripNextTrains = {};
       });
 
-      // Charger le prochain train pour chaque trajet actif
       await _loadNextTrainsForTrips();
     } catch (e) {
       setState(() {
@@ -62,46 +60,27 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  /// Charge le prochain train pour chaque trajet actif
   Future<void> _loadNextTrainsForTrips() async {
     final tripNextTrains = <String, Train?>{};
-    final now = DateTime.now();
+    DateTime now;
+    try {
+      now = DependencyInjection.instance.clockService.now();
+    } catch (e) {
+      const useMockData = bool.fromEnvironment('USE_MOCK_DATA');
+      now = useMockData ? DateTime(2025, 1, 6, 7) : DateTime.now();
+    }
 
     for (final trip in _allTrips.where((t) => t.isActive)) {
       try {
-        // Calculer la date/heure de référence pour ce trajet
-        final refDateTime = _computeReferenceDateTime(trip, now);
+        final Train? currentTrain = await _findCurrentTrain(trip, now);
 
-        // Chercher le prochain train pour ce trajet
-        final trains =
-            await DependencyInjection.instance.trainService.findJourneysWithDepartureTime(
-          trip.departureStation,
-          trip.arrivalStation,
-          refDateTime,
-        );
-
-        // Filtrer les trains qui vont vers la destination et prendre le premier futur ou en cours
-        Train? nextTrain;
-        for (final train in trains) {
-          if (train.direction.contains(trip.arrivalStation.name)) {
-            // Prendre le train s'il :
-            // - est en cours (départ dans le passé mais arrivée dans le futur)
-            // - ou est futur (départ après maintenant)
-            final isInProgress = train.departureTime.isBefore(now) &&
-                train.arrivalTime != null &&
-                train.arrivalTime!.isAfter(now);
-            final isFuture = train.departureTime.isAfter(now.subtract(const Duration(minutes: 5)));
-
-            if (isInProgress || isFuture) {
-              nextTrain = train;
-              break;
-            }
-          }
+        if (currentTrain != null) {
+          tripNextTrains[trip.id] = currentTrain;
+        } else {
+          final nextTrain = await _findNextScheduledTrain(trip, now);
+          tripNextTrains[trip.id] = nextTrain;
         }
-
-        tripNextTrains[trip.id] = nextTrain;
       } catch (e) {
-        // Si erreur, pas de train disponible
         tripNextTrains[trip.id] = null;
       }
     }
@@ -112,28 +91,141 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  /// Calcule la date/heure de référence pour un trajet
-  DateTime _computeReferenceDateTime(domain.Trip trip, DateTime now) {
-    // Calculer la date de base avec l'heure du trajet
-    final today = DateTime(now.year, now.month, now.day, trip.time.hour, trip.time.minute);
+  Future<Train?> _findCurrentTrain(domain.Trip trip, DateTime now) async {
+    if (!trip.isForToday(now)) return null;
 
-    // Si l'heure est passée aujourd'hui, prendre demain (ou le prochain jour du trajet)
-    if (today.isBefore(now)) {
-      // Trouver le prochain jour où ce trajet est actif
-      for (int i = 1; i <= 7; i++) {
-        final nextDay = today.add(Duration(days: i));
-        final weekday = nextDay.weekday;
-        final dayOfWeek = domain.DayOfWeek.values.firstWhere(
-          (d) => d.index + 1 == weekday,
-          orElse: () => domain.DayOfWeek.monday,
-        );
-        if (trip.days.contains(dayOfWeek)) {
-          return nextDay;
+    final todayDeparture = DateTime(
+      now.year,
+      now.month,
+      now.day,
+      trip.time.hour,
+      trip.time.minute,
+    );
+
+    final searchTime = todayDeparture.isBefore(now)
+        ? now.subtract(const Duration(hours: 2))
+        : todayDeparture.subtract(const Duration(minutes: 30));
+
+    final trains = await DependencyInjection.instance.trainService
+        .findJourneysWithDepartureTime(
+      trip.departureStation,
+      trip.arrivalStation,
+      searchTime,
+    );
+
+    Train? inProgressTrain;
+    for (final train in trains) {
+      if (!train.direction.contains(trip.arrivalStation.name)) continue;
+
+      final isInProgress = train.departureTime.isBefore(now) &&
+          train.arrivalTime != null &&
+          train.arrivalTime!.isAfter(now);
+
+      if (isInProgress) {
+        final timeDiff = (train.baseDepartureTime ?? train.departureTime)
+            .difference(todayDeparture)
+            .abs()
+            .inHours;
+
+        if (timeDiff <= 2) {
+          inProgressTrain = train;
+          break;
         }
       }
     }
 
-    return today;
+    if (inProgressTrain != null) {
+      return inProgressTrain;
+    }
+
+    for (final train in trains) {
+      if (!train.direction.contains(trip.arrivalStation.name)) continue;
+
+      final isInProgress = train.departureTime.isBefore(now) &&
+          train.arrivalTime != null &&
+          train.arrivalTime!.isAfter(now);
+
+      if (isInProgress) {
+        if (inProgressTrain == null ||
+            train.departureTime.isAfter(inProgressTrain.departureTime)) {
+          inProgressTrain = train;
+        }
+      }
+    }
+
+    return inProgressTrain;
+  }
+
+  Future<Train?> _findNextScheduledTrain(domain.Trip trip, DateTime now) async {
+    final nextActiveDate = _findNextActiveDate(trip, now);
+    if (nextActiveDate == null) return null;
+
+    final departureDateTime = DateTime(
+      nextActiveDate.year,
+      nextActiveDate.month,
+      nextActiveDate.day,
+      trip.time.hour,
+      trip.time.minute,
+    );
+
+    final searchTime = departureDateTime.isBefore(now)
+        ? now.subtract(const Duration(hours: 1))
+        : departureDateTime.subtract(const Duration(minutes: 30));
+
+    final trains = await DependencyInjection.instance.trainService
+        .findJourneysWithDepartureTime(
+      trip.departureStation,
+      trip.arrivalStation,
+      searchTime,
+    );
+
+    for (final train in trains) {
+      if (!train.direction.contains(trip.arrivalStation.name)) continue;
+
+      final timeDiff = (train.baseDepartureTime ?? train.departureTime)
+          .difference(departureDateTime)
+          .abs()
+          .inMinutes;
+
+      if (timeDiff > 30) continue;
+
+      if (train.departureTime
+          .isAfter(now.subtract(const Duration(minutes: 5)))) {
+        return train;
+      }
+    }
+
+    return null;
+  }
+
+  DateTime? _findNextActiveDate(domain.Trip trip, DateTime now) {
+    for (int i = 0; i <= 7; i++) {
+      final date = now.add(Duration(days: i));
+      final weekday = date.weekday;
+      final dayOfWeek = domain.DayOfWeek.values.firstWhere(
+        (d) => d.index + 1 == weekday,
+        orElse: () => domain.DayOfWeek.monday,
+      );
+
+      if (trip.day == dayOfWeek) {
+        if (i == 0) {
+          final todayDeparture = DateTime(
+            now.year,
+            now.month,
+            now.day,
+            trip.time.hour,
+            trip.time.minute,
+          );
+          if (todayDeparture.isAfter(now)) {
+            return date;
+          }
+        } else {
+          return date;
+        }
+      }
+    }
+
+    return null;
   }
 
   @override
@@ -151,11 +243,13 @@ class _HomePageState extends State<HomePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error, size: 64, color: Theme.of(context).colorScheme.error),
+            Icon(Icons.error,
+                size: 64, color: Theme.of(context).colorScheme.error),
             const SizedBox(height: 16),
             Text(
               _error!,
-              style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.error),
+              style: TextStyle(
+                  fontSize: 16, color: Theme.of(context).colorScheme.error),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
@@ -205,6 +299,16 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildDashboard() {
+    DateTime now;
+    try {
+      now = DependencyInjection.instance.clockService.now();
+    } catch (e) {
+      const useMockData = bool.fromEnvironment('USE_MOCK_DATA');
+      now = useMockData ? DateTime(2025, 1, 6, 7, 0) : DateTime.now();
+    }
+    final formattedNow =
+        DateFormat("EEEE d MMMM yyyy 'à' HH:mm", 'fr_FR').format(now);
+
     // Trier les trajets par heure du prochain train (du plus proche au plus éloigné)
     final sortedTrips = _allTrips.where((trip) => trip.isActive).toList()
       ..sort((a, b) {
@@ -225,6 +329,24 @@ class _HomePageState extends State<HomePage> {
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  const Icon(Icons.access_time),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Heure actuelle (mock) : ${formattedNow[0].toUpperCase()}${formattedNow.substring(1)}',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
           if (sortedTrips.isEmpty) ...[
             _buildEmptyTripsMessage(),
           ] else ...[
@@ -243,7 +365,8 @@ class _HomePageState extends State<HomePage> {
           children: [
             Icon(Icons.info, color: context.theme.warning),
             const SizedBox(height: 8),
-            const Text('Aucun trajet actif', style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text('Aucun trajet actif',
+                style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 4),
             Text('Utilisez le bouton + pour ajouter un trajet',
                 style: TextStyle(color: context.theme.muted)),
@@ -255,15 +378,17 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildTripCard(domain.Trip trip) {
     final nextTrain = _tripNextTrains[trip.id];
+
     return TripCard(
       trip: trip,
       nextTrain: nextTrain,
       onAction: (action, t) => _handleTripAction(action, t),
       onTap: () => _showTripDetails(trip),
+      showActions: false,
     );
   }
 
-  void _navigateToProfile(BuildContext context) async {
+  Future<void> _navigateToProfile(BuildContext context) async {
     final result = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
@@ -275,7 +400,7 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  void _navigateToAddTrip(BuildContext context) async {
+  Future<void> _navigateToAddTrip(BuildContext context) async {
     final result = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
@@ -287,7 +412,7 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  void _handleTripAction(String action, domain.Trip trip) async {
+  Future<void> _handleTripAction(String action, domain.Trip trip) async {
     switch (action) {
       case 'edit':
         Navigator.push(
@@ -303,6 +428,8 @@ class _HomePageState extends State<HomePage> {
           createdAt: DateTime.now(),
         );
         await DependencyInjection.instance.tripService.saveTrip(duplicatedTrip);
+        await DependencyInjection.instance.tripReminderService
+            .refreshSchedules();
         _loadActiveTrips();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Trajet dupliqué')),
@@ -311,9 +438,13 @@ class _HomePageState extends State<HomePage> {
       case 'toggle':
         final updatedTrip = trip.copyWith(isActive: !trip.isActive);
         await DependencyInjection.instance.tripService.saveTrip(updatedTrip);
+        await DependencyInjection.instance.tripReminderService
+            .refreshSchedules();
         _loadActiveTrips();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Trajet ${updatedTrip.isActive ? 'activé' : 'désactivé'}')),
+          SnackBar(
+              content: Text(
+                  'Trajet ${updatedTrip.isActive ? 'activé' : 'désactivé'}')),
         );
         break;
       case 'delete':
@@ -321,7 +452,8 @@ class _HomePageState extends State<HomePage> {
           context: context,
           builder: (context) => AlertDialog(
             title: const Text('Supprimer le trajet'),
-            content: const Text('Êtes-vous sûr de vouloir supprimer ce trajet ?'),
+            content:
+                const Text('Êtes-vous sûr de vouloir supprimer ce trajet ?'),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
@@ -329,13 +461,17 @@ class _HomePageState extends State<HomePage> {
               ),
               TextButton(
                 onPressed: () => Navigator.pop(context, true),
-                child: const Text('Supprimer', style: TextStyle(color: Colors.red)),
+                child: const Text('Supprimer',
+                    style: TextStyle(color: Colors.red)),
               ),
             ],
           ),
         );
         if (confirmed == true) {
-          await DependencyInjection.instance.tripService.deleteTripAndSimilar(trip);
+          await DependencyInjection.instance.tripService
+              .deleteTripAndSimilar(trip);
+          await DependencyInjection.instance.tripReminderService
+              .refreshSchedules();
           _loadActiveTrips();
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Trajet supprimé (doublons inclus)')),
@@ -365,7 +501,7 @@ class _HomePageState extends State<HomePage> {
           children: [
             LogoWidget(size: 40, showText: false),
             SizedBox(width: 12),
-            Text('Train\'Qil'),
+            Text("Train'Qil"),
           ],
         ),
         backgroundColor: Theme.of(context).colorScheme.primary,
@@ -380,7 +516,8 @@ class _HomePageState extends State<HomePage> {
                       : Icons.dark_mode,
                   color: Colors.white,
                 ),
-                onPressed: () => DependencyInjection.instance.themeService.toggleTheme(),
+                onPressed: () =>
+                    DependencyInjection.instance.themeService.toggleTheme(),
                 tooltip: DependencyInjection.instance.themeService.isDarkMode
                     ? 'Mode clair'
                     : 'Mode sombre',

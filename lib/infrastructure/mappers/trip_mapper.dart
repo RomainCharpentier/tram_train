@@ -11,7 +11,7 @@ class TripMapper {
       'departureStationName': trip.departureStation.name,
       'arrivalStationId': trip.arrivalStation.id,
       'arrivalStationName': trip.arrivalStation.name,
-      'days': trip.days.map((d) => d.name).toList(),
+      'day': trip.day.name,
       'timeHour': trip.time.hour,
       'timeMinute': trip.time.minute,
       'isActive': trip.isActive,
@@ -32,13 +32,17 @@ class TripMapper {
         id: json['arrivalStationId'] as String,
         name: json['arrivalStationName'] as String,
       ),
-      days: (json['days'] as List<dynamic>?)
-              ?.map((d) => DayOfWeek.values.firstWhere(
-                    (day) => day.name == d,
-                    orElse: () => DayOfWeek.monday,
-                  ))
-              .toList() ??
-          [DayOfWeek.monday],
+      day: json['day'] != null
+          ? DayOfWeek.values.firstWhere(
+              (d) => d.name == json['day'] as String,
+              orElse: () => DayOfWeek.monday,
+            )
+          : (json['days'] as List<dynamic>?)?.isNotEmpty == true
+              ? DayOfWeek.values.firstWhere(
+                  (d) => d.name == (json['days'] as List<dynamic>).first,
+                  orElse: () => DayOfWeek.monday,
+                )
+              : DayOfWeek.monday,
       time: TimeOfDay(
         hour: json['timeHour'] as int,
         minute: json['timeMinute'] as int,

@@ -62,7 +62,7 @@ class _NotificationTestPageState extends State<NotificationTestPage> {
 
       setState(() {
         _statusMessage =
-            '✅ Notification envoyée ! Vérifiez la barre de notifications de Chrome (icône cadenas dans la barre d\'adresse).';
+            "✅ Notification envoyée ! Vérifiez la barre de notifications de Chrome (icône cadenas dans la barre d'adresse).";
       });
     } catch (e) {
       setState(() {
@@ -97,7 +97,7 @@ class _NotificationTestPageState extends State<NotificationTestPage> {
       await service.notifyCancellation(_createTestTrip());
 
       setState(() {
-        _statusMessage = '✅ Notification d\'annulation envoyée !';
+        _statusMessage = "✅ Notification d'annulation envoyée !";
       });
     } catch (e) {
       setState(() {
@@ -112,8 +112,7 @@ class _NotificationTestPageState extends State<NotificationTestPage> {
     setState(() {
       _isCountdownActive = true;
       _countdownSeconds = delaySeconds;
-      _statusMessage =
-          '⏱️ Notification programmée dans $delaySeconds secondes...';
+      _statusMessage = '⏱️ Notification programmée dans $delaySeconds secondes...';
     });
 
     final service = DependencyInjection.instance.notificationService;
@@ -125,8 +124,7 @@ class _NotificationTestPageState extends State<NotificationTestPage> {
       setState(() {
         _countdownSeconds = i;
         if (i > 0) {
-          _statusMessage =
-              '⏱️ Notification dans $i seconde${i > 1 ? 's' : ''}...';
+          _statusMessage = '⏱️ Notification dans $i seconde${i > 1 ? 's' : ''}...';
         }
       });
     }
@@ -146,20 +144,18 @@ class _NotificationTestPageState extends State<NotificationTestPage> {
   domain.Trip _createTestTrip() {
     return domain.Trip(
       id: 'test_trip_${DateTime.now().millisecondsSinceEpoch}',
-      departureStation: Station(
+      departureStation: const Station(
         id: 'test_dep',
         name: 'Gare de Test Départ',
         description: 'Station de test',
       ),
-      arrivalStation: Station(
+      arrivalStation: const Station(
         id: 'test_arr',
         name: 'Gare de Test Arrivée',
         description: 'Station de test',
       ),
-      days: [],
-      time: domain.TimeOfDay(hour: 10, minute: 30),
-      isActive: true,
-      notificationsEnabled: true,
+      day: domain.DayOfWeek.monday,
+      time: const domain.TimeOfDay(hour: 10, minute: 30),
       createdAt: DateTime.now(),
     );
   }
@@ -203,9 +199,7 @@ class _NotificationTestPageState extends State<NotificationTestPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            _statusMessage.isEmpty
-                                ? 'Prêt à tester'
-                                : _statusMessage,
+                            _statusMessage.isEmpty ? 'Prêt à tester' : _statusMessage,
                             style: TextStyle(
                               color: _statusMessage.startsWith('✅')
                                   ? context.theme.success
@@ -242,11 +236,8 @@ class _NotificationTestPageState extends State<NotificationTestPage> {
               ),
             ),
             ElevatedButton.icon(
-              onPressed: _isCountdownActive
-                  ? null
-                  : () => _testNotificationWithTimer(5),
-              icon:
-                  Icon(_isCountdownActive ? Icons.timer : Icons.timer_outlined),
+              onPressed: _isCountdownActive ? null : () => _testNotificationWithTimer(5),
+              icon: Icon(_isCountdownActive ? Icons.timer : Icons.timer_outlined),
               label: Text(_isCountdownActive
                   ? 'Notification dans $_countdownSeconds s...'
                   : 'Tester avec timer (5 secondes)'),
@@ -283,10 +274,9 @@ class _NotificationTestPageState extends State<NotificationTestPage> {
             ),
             const SizedBox(height: 12),
             ElevatedButton.icon(
-              onPressed:
-                  _isCountdownActive ? null : _testCancellationNotification,
+              onPressed: _isCountdownActive ? null : _testCancellationNotification,
               icon: const Icon(Icons.cancel),
-              label: const Text('Tester notification d\'annulation'),
+              label: const Text("Tester notification d'annulation"),
               style: ElevatedButton.styleFrom(
                 backgroundColor: context.theme.error,
                 foregroundColor: Colors.white,
@@ -317,7 +307,7 @@ class _NotificationTestPageState extends State<NotificationTestPage> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      '1. Assurez-vous d\'avoir accordé les permissions de notification\n'
+                      "1. Assurez-vous d'avoir accordé les permissions de notification\n"
                       '2. Cliquez sur un bouton de test\n'
                       '3. Une notification devrait apparaître dans quelques secondes\n'
                       '4. Si rien ne se passe, vérifiez les paramètres de notification de votre appareil',

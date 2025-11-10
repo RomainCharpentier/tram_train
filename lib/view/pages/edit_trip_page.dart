@@ -32,7 +32,7 @@ class _EditTripPageState extends State<EditTripPage> {
     super.initState();
     _departureStation = widget.trip.departureStation;
     _arrivalStation = widget.trip.arrivalStation;
-    _selectedDays = List.from(widget.trip.days);
+    _selectedDays = [widget.trip.day];
     _selectedTime = flutter.TimeOfDay(
       hour: widget.trip.time.hour,
       minute: widget.trip.time.minute,
@@ -137,7 +137,7 @@ class _EditTripPageState extends State<EditTripPage> {
       final updatedTrip = widget.trip.copyWith(
         departureStation: _departureStation,
         arrivalStation: _arrivalStation,
-        days: _selectedDays,
+        day: _selectedDays.first,
         time: domain.TimeOfDay(
           hour: _selectedTime.hour,
           minute: _selectedTime.minute,
@@ -147,6 +147,7 @@ class _EditTripPageState extends State<EditTripPage> {
       );
 
       await DependencyInjection.instance.tripService.saveTrip(updatedTrip);
+      await DependencyInjection.instance.tripReminderService.refreshSchedules();
 
       if (mounted) {
         Navigator.pop(context, true);

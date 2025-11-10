@@ -10,35 +10,17 @@ DateTime computeReferenceDateTimeForTrip(Trip trip, DateTime now) {
     trip.time.minute,
   );
 
-  if (trip.days.isEmpty) {
-    return baseToday.isBefore(now)
-        ? baseToday.add(const Duration(days: 7))
-        : baseToday;
+  final targetWeekday = trip.day.index + 1;
+  int delta = (targetWeekday - baseToday.weekday) % 7;
+  if (delta == 0 && baseToday.isBefore(now)) {
+    delta = 7;
   }
 
-  int bestDelta = 8; // > 7 pour initialiser
-  for (final d in trip.days) {
-    final targetWeekday = d.index + 1; // 1 = Lundi ... 7 = Dimanche
-    int delta = (targetWeekday - baseToday.weekday) % 7;
-    if (delta == 0 && baseToday.isBefore(now)) {
-      delta = 7; // même jour mais heure passée -> semaine suivante
-    }
-    if (delta < bestDelta) bestDelta = delta;
-  }
-
-  return baseToday.add(Duration(days: bestDelta % 7));
+  return baseToday.add(Duration(days: delta % 7));
 }
 
 String formatRefLabel(DateTime dt) {
-  const names = [
-    'Lundi',
-    'Mardi',
-    'Mercredi',
-    'Jeudi',
-    'Vendredi',
-    'Samedi',
-    'Dimanche'
-  ];
+  const names = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
   final dayName = names[(dt.weekday - 1).clamp(0, 6)];
   final dd = dt.day.toString().padLeft(2, '0');
   final mm = dt.month.toString().padLeft(2, '0');
@@ -49,16 +31,16 @@ String formatRefLabel(DateTime dt) {
 
 void main() {
   // Simule: aujourd'hui = Samedi 01/11/2025 20:00
-  final simulatedNow = DateTime(2025, 11, 1, 20, 0, 0);
+  final simulatedNow = DateTime(2025, 11, 1, 20, 0);
 
-  final from = Station(id: 'SNCF:87590349', name: 'Babinière');
-  final to = Station(id: 'SNCF:87481002', name: 'Nantes');
+  const from = Station(id: 'SNCF:87590349', name: 'Babinière');
+  const to = Station(id: 'SNCF:87481002', name: 'Nantes');
 
   final trip = Trip(
     id: 'debug',
     departureStation: from,
     arrivalStation: to,
-    days: const [DayOfWeek.monday],
+    day: DayOfWeek.monday,
     time: const TimeOfDay(hour: 8, minute: 0),
     createdAt: simulatedNow,
   );

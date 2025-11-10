@@ -6,6 +6,8 @@ import 'package:train_qil/domain/services/notification_pause_service.dart';
 import 'package:train_qil/domain/services/theme_service.dart';
 import 'package:train_qil/domain/services/notification_service.dart';
 import 'package:train_qil/domain/services/favorite_station_service.dart';
+import 'package:train_qil/domain/services/trip_reminder_service.dart';
+import 'package:train_qil/domain/services/clock_service.dart';
 import 'package:train_qil/infrastructure/gateways/local_storage_gateway.dart';
 import 'package:train_qil/infrastructure/gateways/sncf_gateway.dart';
 import 'package:train_qil/infrastructure/gateways/sncf_search_gateway.dart';
@@ -27,7 +29,20 @@ class DependencyInjection {
 
   static DependencyInjection get instance => _instance;
 
+  static ClockService? _staticClockService;
+
+  static ClockService get _getClockServiceInstance {
+    const useMockData = bool.fromEnvironment('USE_MOCK_DATA');
+    if (_staticClockService == null) {
+      _staticClockService =
+          useMockData ? MockClockService(DateTime(2025, 1, 6, 7, 0)) : SystemClockService();
+    }
+    return _staticClockService!;
+  }
+
   // Services
+  ClockService get clockService => _getClockServiceInstance;
+
   late final TripService tripService;
   late final TrainService trainService;
   late final StationSearchService stationSearchService;
@@ -35,6 +50,7 @@ class DependencyInjection {
   late final ThemeService themeService;
   late final NotificationService notificationService;
   late final FavoriteStationService favoriteStationService;
+  late final TripReminderService tripReminderService;
 
   // Gateways (utiliser les interfaces pour permettre le mocking)
   late final LocalStorageGateway localStorageGateway;
@@ -57,27 +73,25 @@ class DependencyInjection {
   // HTTP Client
   late final http.Client httpClient;
 
-  /// Initialise toutes les dépendances
   static Future<void> initialize() async {
     final instance = DependencyInjection.instance;
-    final useMockData = const bool.fromEnvironment('USE_MOCK_DATA', defaultValue: false);
+    const useMockData = bool.fromEnvironment('USE_MOCK_DATA');
 
-    // Initialisation des mappers
+    // Toujours réinitialiser _staticClockService pour garantir la bonne valeur
+    final mockNow = DateTime(2025, 1, 6, 7, 0);
+    _staticClockService = useMockData ? MockClockService(mockNow) : SystemClockService();
+
     instance.tripMapper = TripMapper();
     instance.sncfMapper = SncfMapper();
 
-    // Initialisation du client HTTP (seulement si pas de mocks)
     if (!useMockData) {
       instance.httpClient = http.Client();
     }
 
-    // Initialisation des gateways (mock ou réel selon la configuration)
     if (useMockData) {
-      // Utiliser les gateways mock
       instance.localStorageGateway = LocalStorageGateway(
         mapper: instance.tripMapper,
       );
-      // Remplacer le TripStorage par le mock
       final mockTripStorage = MockTripStorage();
       instance.tripService = TripService(mockTripStorage);
 
@@ -97,7 +111,6 @@ class DependencyInjection {
         historyGateway: mockHistoryGateway,
       );
     } else {
-      // Utiliser les vraies gateways
       instance.localStorageGateway = LocalStorageGateway(mapper: instance.tripMapper);
       instance._sncfGateway = SncfGateway(
         httpClient: instance.httpClient,
@@ -130,9 +143,14 @@ class DependencyInjection {
         FavoriteStationService(instance.favoriteStationStorageGateway);
     instance.themeService = ThemeService();
     instance.notificationService = NotificationService();
+    instance.tripReminderService = TripReminderService(
+      tripService: instance.tripService,
+      clockService: instance.clockService,
+    );
 
     // Initialisation des services
     await instance.themeService.initialize();
     await instance.notificationService.initialize();
+    await instance.tripReminderService.refreshSchedules();
   }
 }

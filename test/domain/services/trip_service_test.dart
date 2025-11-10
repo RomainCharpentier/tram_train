@@ -50,7 +50,7 @@ void main() {
         id: 'trip_1',
         departureStation: station1,
         arrivalStation: station2,
-        days: [DayOfWeek.monday, DayOfWeek.friday],
+        day: DayOfWeek.monday,
         time: const TimeOfDay(hour: 8, minute: 30),
         createdAt: DateTime.now(),
       );
@@ -72,7 +72,7 @@ void main() {
         id: 'trip_1',
         departureStation: station1,
         arrivalStation: station2,
-        days: [DayOfWeek.monday],
+        day: DayOfWeek.monday,
         time: const TimeOfDay(hour: 8, minute: 30),
         createdAt: DateTime.now(),
       );
@@ -80,7 +80,7 @@ void main() {
         id: 'trip_2',
         departureStation: station2,
         arrivalStation: station1,
-        days: [DayOfWeek.friday],
+        day: DayOfWeek.friday,
         time: const TimeOfDay(hour: 17, minute: 0),
         createdAt: DateTime.now(),
       );
@@ -103,7 +103,7 @@ void main() {
         id: 'trip_1',
         departureStation: station1,
         arrivalStation: station2,
-        days: [DayOfWeek.monday],
+        day: DayOfWeek.monday,
         time: const TimeOfDay(hour: 8, minute: 30),
         createdAt: DateTime.now(),
       );
@@ -125,7 +125,7 @@ void main() {
         id: 'trip_1',
         departureStation: station1,
         arrivalStation: station2,
-        days: [DayOfWeek.monday],
+        day: DayOfWeek.monday,
         time: const TimeOfDay(hour: 8, minute: 30),
         createdAt: DateTime.now(),
       );
@@ -133,7 +133,7 @@ void main() {
         id: 'trip_2',
         departureStation: station2,
         arrivalStation: station1,
-        days: [DayOfWeek.friday],
+        day: DayOfWeek.friday,
         time: const TimeOfDay(hour: 17, minute: 0),
         createdAt: DateTime.now(),
       );
@@ -158,16 +158,15 @@ void main() {
         id: 'trip_1',
         departureStation: station1,
         arrivalStation: station2,
-        days: [DayOfWeek.monday],
+        day: DayOfWeek.monday,
         time: const TimeOfDay(hour: 8, minute: 30),
-        isActive: true,
         createdAt: DateTime.now(),
       );
       final inactiveTrip = Trip(
         id: 'trip_2',
         departureStation: station2,
         arrivalStation: station1,
-        days: [DayOfWeek.friday],
+        day: DayOfWeek.friday,
         time: const TimeOfDay(hour: 17, minute: 0),
         isActive: false,
         createdAt: DateTime.now(),

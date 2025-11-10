@@ -1,5 +1,6 @@
 import '../models/trip.dart';
 import '../models/station.dart';
+import '../../infrastructure/dependency_injection.dart';
 
 abstract class TripStorage {
   Future<void> saveTrip(Trip trip);
@@ -55,7 +56,7 @@ class TripService {
 
   /// Récupère les trajets pour un jour spécifique
   List<Trip> getTripsByDay(List<Trip> trips, DayOfWeek day) {
-    return trips.where((trip) => trip.days.contains(day)).toList();
+    return trips.where((trip) => trip.day == day).toList();
   }
 
   /// Récupère les trajets pour une gare de départ
@@ -75,13 +76,25 @@ class TripService {
     return trips.where((trip) => trip.isActive).toList();
   }
 
-  /// Récupère les trajets pour aujourd'hui
   List<Trip> getTodayTrips(List<Trip> trips) {
-    return trips.where((trip) => trip.isForToday).toList();
+    DateTime now;
+    try {
+      now = DependencyInjection.instance.clockService.now();
+    } catch (e) {
+      const useMockData = bool.fromEnvironment('USE_MOCK_DATA');
+      now = useMockData ? DateTime(2025, 1, 6, 7, 0) : DateTime.now();
+    }
+    return trips.where((trip) => trip.isForToday(now)).toList();
   }
 
-  /// Récupère les trajets actifs pour aujourd'hui
   List<Trip> getActiveTodayTrips(List<Trip> trips) {
-    return trips.where((trip) => trip.isActiveToday).toList();
+    DateTime now;
+    try {
+      now = DependencyInjection.instance.clockService.now();
+    } catch (e) {
+      const useMockData = bool.fromEnvironment('USE_MOCK_DATA');
+      now = useMockData ? DateTime(2025, 1, 6, 7, 0) : DateTime.now();
+    }
+    return trips.where((trip) => trip.isActiveToday(now)).toList();
   }
 }

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../../domain/models/train.dart';
 import '../utils/train_status_colors.dart';
 
-/// Widget réutilisable pour afficher l'indicateur de statut d'un train
 class TrainStatusIndicator extends StatelessWidget {
   final Train? train;
   final double size;
@@ -22,26 +21,18 @@ class TrainStatusIndicator extends StatelessWidget {
     if (train == null) {
       return _buildIndicator(
         color: TrainStatusColors.unknownColor,
-        icon: TrainStatusColors.getStatusIcon(TrainStatus.unknown),
+        icon: Icons.help_outline,
         size: size,
         iconSize: iconSize,
         borderWidth: borderWidth,
       );
     }
 
-    final isInProgress = TrainStatusColors.isTrainInProgress(train!);
-    final color = TrainStatusColors.getStatusColor(
-      train!.status,
-      isInProgress: isInProgress,
-    );
-    final icon = TrainStatusColors.getStatusIcon(
-      train!.status,
-      isInProgress: isInProgress,
-    );
+    final presentation = TrainStatusColors.buildPresentation(train!);
 
     return _buildIndicator(
-      color: color,
-      icon: icon,
+      color: presentation.primaryColor,
+      icon: presentation.primaryIcon,
       size: size,
       iconSize: iconSize,
       borderWidth: borderWidth,

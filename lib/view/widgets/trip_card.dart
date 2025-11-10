@@ -10,6 +10,8 @@ class TripCard extends StatelessWidget {
   final Train? nextTrain;
   final void Function(String action, domain.Trip trip) onAction;
   final VoidCallback? onTap;
+  final bool showStatusIndicator;
+  final bool showActions;
 
   const TripCard({
     super.key,
@@ -17,11 +19,15 @@ class TripCard extends StatelessWidget {
     this.nextTrain,
     required this.onAction,
     this.onTap,
+    this.showStatusIndicator = true,
+    this.showActions = true,
   });
 
   @override
   Widget build(BuildContext context) {
-    final presentation = nextTrain != null ? TrainStatusColors.buildPresentation(nextTrain!) : null;
+    final presentation = nextTrain != null
+        ? TrainStatusColors.buildPresentation(nextTrain!)
+        : null;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -35,8 +41,13 @@ class TripCard extends StatelessWidget {
               Expanded(
                 child: Row(
                   children: [
-                    TrainStatusIndicator(train: nextTrain),
-                    const SizedBox(width: 16),
+                    if (showStatusIndicator) ...[
+                      TrainStatusIndicator(train: nextTrain),
+                      const SizedBox(width: 16),
+                    ] else ...[
+                      Icon(Icons.calendar_today, color: context.theme.muted),
+                      const SizedBox(width: 16),
+                    ],
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -55,7 +66,8 @@ class TripCard extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: 14,
                                 color: presentation.primaryColor,
-                                fontWeight: presentation.state == TrainJourneyState.cancelled
+                                fontWeight: presentation.state ==
+                                        TrainJourneyState.cancelled
                                     ? FontWeight.w600
                                     : FontWeight.normal,
                               ),
@@ -65,19 +77,6 @@ class TripCard extends StatelessWidget {
                                 presentation.scheduleIcon != null) ...[
                               const SizedBox(height: 4),
                               _buildScheduleBadge(presentation),
-                            ],
-                            if (nextTrain != null &&
-                                nextTrain!.departurePlatform != null &&
-                                nextTrain!.departurePlatform!.isNotEmpty) ...[
-                              const SizedBox(height: 4),
-                              Text(
-                                'Voie: ${nextTrain!.departurePlatform}',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: context.theme.textSecondary,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
                             ],
                           ] else ...[
                             Text(
@@ -94,43 +93,47 @@ class TripCard extends StatelessWidget {
                   ],
                 ),
               ),
-              PopupMenuButton<String>(
-                onSelected: (value) => onAction(value, trip),
-                itemBuilder: (context) => const [
-                  PopupMenuItem(
-                    value: 'edit',
-                    child: ListTile(
-                      leading: Icon(Icons.edit),
-                      title: Text('Modifier'),
-                      contentPadding: EdgeInsets.zero,
+              if (showActions)
+                PopupMenuButton<String>(
+                  onSelected: (value) => onAction(value, trip),
+                  itemBuilder: (context) => const [
+                    PopupMenuItem(
+                      value: 'edit',
+                      child: ListTile(
+                        leading: Icon(Icons.edit),
+                        title: Text('Modifier'),
+                        contentPadding: EdgeInsets.zero,
+                      ),
                     ),
-                  ),
-                  PopupMenuItem(
-                    value: 'duplicate',
-                    child: ListTile(
-                      leading: Icon(Icons.copy),
-                      title: Text('Dupliquer'),
-                      contentPadding: EdgeInsets.zero,
+                    PopupMenuItem(
+                      value: 'duplicate',
+                      child: ListTile(
+                        leading: Icon(Icons.copy),
+                        title: Text('Dupliquer'),
+                        contentPadding: EdgeInsets.zero,
+                      ),
                     ),
-                  ),
-                  PopupMenuItem(
-                    value: 'toggle',
-                    child: ListTile(
-                      leading: Icon(Icons.play_arrow),
-                      title: Text('Activer/Désactiver'),
-                      contentPadding: EdgeInsets.zero,
+                    PopupMenuItem(
+                      value: 'toggle',
+                      child: ListTile(
+                        leading: Icon(Icons.play_arrow),
+                        title: Text('Activer/Désactiver'),
+                        contentPadding: EdgeInsets.zero,
+                      ),
                     ),
-                  ),
-                  PopupMenuItem(
-                    value: 'delete',
-                    child: ListTile(
-                      leading: Icon(Icons.delete, color: Colors.red),
-                      title: Text('Supprimer', style: TextStyle(color: Colors.red)),
-                      contentPadding: EdgeInsets.zero,
+                    PopupMenuItem(
+                      value: 'delete',
+                      child: ListTile(
+                        leading: Icon(Icons.delete, color: Colors.red),
+                        title: Text(
+                          'Supprimer',
+                          style: TextStyle(color: Colors.red),
+                        ),
+                        contentPadding: EdgeInsets.zero,
+                      ),
                     ),
-                  ),
-                ],
-              ),
+                  ],
+                ),
             ],
           ),
         ),

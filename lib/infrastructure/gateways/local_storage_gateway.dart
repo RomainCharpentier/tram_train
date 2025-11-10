@@ -15,8 +15,8 @@ class LocalStorageGateway implements TripStorage {
   }) : _mapper = mapper;
 
   /// Sauvegarde un trajet
+  @override
   Future<void> saveTrip(Trip trip) async {
-    final prefs = await SharedPreferences.getInstance();
     final existingTrips = await getAllTrips();
 
     final existingIndex = existingTrips.indexWhere((t) => t.id == trip.id);
@@ -31,12 +31,12 @@ class LocalStorageGateway implements TripStorage {
 
   Future<void> _saveTrips(List<Trip> trips) async {
     final prefs = await SharedPreferences.getInstance();
-    final tripsJson =
-        trips.map((trip) => json.encode(_mapper.toJson(trip))).toList();
+    final tripsJson = trips.map((trip) => json.encode(_mapper.toJson(trip))).toList();
     await prefs.setStringList(_tripsKey, tripsJson);
   }
 
   /// Récupère tous les trajets
+  @override
   Future<List<Trip>> getAllTrips() async {
     final prefs = await SharedPreferences.getInstance();
     final tripsJson = prefs.getStringList(_tripsKey) ?? [];
@@ -48,7 +48,7 @@ class LocalStorageGateway implements TripStorage {
         final trip = _mapper.fromJson(decoded);
         validTrips.add(trip);
       } catch (e) {
-        debugPrint('Erreur lors du décodage d\'un trajet: $e');
+        debugPrint("Erreur lors du décodage d'un trajet: $e");
       }
     }
 
@@ -60,8 +60,8 @@ class LocalStorageGateway implements TripStorage {
   }
 
   /// Supprime un trajet
+  @override
   Future<void> deleteTrip(String tripId) async {
-    final prefs = await SharedPreferences.getInstance();
     final existingTrips = await getAllTrips();
 
     existingTrips.removeWhere((trip) => trip.id == tripId);
@@ -70,6 +70,7 @@ class LocalStorageGateway implements TripStorage {
   }
 
   /// Supprime tous les trajets
+  @override
   Future<void> clearAllTrips() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_tripsKey);

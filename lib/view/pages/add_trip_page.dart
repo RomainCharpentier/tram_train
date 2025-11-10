@@ -78,8 +78,7 @@ class _AddTripPageState extends State<AddTripPage> {
                       : context.theme.primary,
                 ),
                 title: Text(
-                  _departureStation?.name ??
-                      'Sélectionner la station de départ',
+                  _departureStation?.name ?? 'Sélectionner la station de départ',
                   style: TextStyle(
                       color: _connectionError != null
                           ? (_connectionError!.startsWith('✅')
@@ -154,20 +153,16 @@ class _AddTripPageState extends State<AddTripPage> {
                       ? (_connectionError!.startsWith('✅')
                           ? context.theme.success
                           : context.theme.error)
-                      : (_departureStation != null
-                          ? context.theme.secondary
-                          : context.theme.muted),
+                      : (_departureStation != null ? context.theme.secondary : context.theme.muted),
                 ),
                 title: Text(
-                  _arrivalStation?.name ?? 'Sélectionner la station d\'arrivée',
+                  _arrivalStation?.name ?? "Sélectionner la station d'arrivée",
                   style: TextStyle(
                     color: _connectionError != null
                         ? (_connectionError!.startsWith('✅')
                             ? context.theme.success
                             : context.theme.error)
-                        : (_departureStation != null
-                            ? null
-                            : context.theme.muted),
+                        : (_departureStation != null ? null : context.theme.muted),
                   ),
                 ),
                 subtitle: _arrivalStation != null
@@ -182,16 +177,14 @@ class _AddTripPageState extends State<AddTripPage> {
                       )
                     : Text(
                         _departureStation != null
-                            ? 'Choisissez votre station d\'arrivée'
-                            : 'Sélectionnez d\'abord la station de départ',
+                            ? "Choisissez votre station d'arrivée"
+                            : "Sélectionnez d'abord la station de départ",
                         style: TextStyle(
                           color: _connectionError != null
                               ? (_connectionError!.startsWith('✅')
                                   ? context.theme.success
                                   : context.theme.error)
-                              : (_departureStation != null
-                                  ? null
-                                  : context.theme.muted),
+                              : (_departureStation != null ? null : context.theme.muted),
                         ),
                       ),
                 trailing: Icon(
@@ -200,17 +193,15 @@ class _AddTripPageState extends State<AddTripPage> {
                       ? (_connectionError!.startsWith('✅')
                           ? context.theme.success
                           : context.theme.error)
-                      : (_departureStation != null
-                          ? null
-                          : context.theme.muted),
+                      : (_departureStation != null ? null : context.theme.muted),
                 ),
                 onTap: _departureStation != null
                     ? () => _selectStation(false)
                     : () {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text(
-                                'Veuillez d\'abord sélectionner la station de départ'),
+                            content:
+                                const Text("Veuillez d'abord sélectionner la station de départ"),
                             backgroundColor: context.theme.warning,
                           ),
                         );
@@ -235,10 +226,7 @@ class _AddTripPageState extends State<AddTripPage> {
                 ),
                 child: Row(
                   children: [
-                    Icon(
-                        _connectionError!.startsWith('✅')
-                            ? Icons.check_circle
-                            : Icons.warning,
+                    Icon(_connectionError!.startsWith('✅') ? Icons.check_circle : Icons.warning,
                         color: _connectionError!.startsWith('✅')
                             ? context.theme.success
                             : context.theme.error),
@@ -300,10 +288,10 @@ class _AddTripPageState extends State<AddTripPage> {
                   _timeMode == TimeConstraintMode.departure
                       ? (_selectedTime != null
                           ? 'Départ vers ${_selectedTime!.format(context)}'
-                          : 'Sélectionner l\'heure de départ')
+                          : "Sélectionner l'heure de départ")
                       : (_selectedTime != null
                           ? 'Arrivée vers ${_selectedTime!.format(context)}'
-                          : 'Sélectionner l\'heure d\'arrivée'),
+                          : "Sélectionner l'heure d'arrivée"),
                 ),
                 trailing: const Icon(Icons.arrow_forward_ios),
                 onTap: _selectTime,
@@ -314,8 +302,7 @@ class _AddTripPageState extends State<AddTripPage> {
 
             Card(
               child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+                padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
                 child: Center(
                   child: ToggleButtons(
                     isSelected: [
@@ -323,18 +310,14 @@ class _AddTripPageState extends State<AddTripPage> {
                       _timeMode == TimeConstraintMode.arrival,
                     ],
                     onPressed: (i) {
-                      setState(() => _timeMode = i == 0
-                          ? TimeConstraintMode.departure
-                          : TimeConstraintMode.arrival);
+                      setState(() => _timeMode =
+                          i == 0 ? TimeConstraintMode.departure : TimeConstraintMode.arrival);
                       _maybeAutoSearch();
                     },
                     children: const [
+                      Padding(padding: EdgeInsets.symmetric(horizontal: 12), child: Text('Départ')),
                       Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 12),
-                          child: Text('Départ')),
-                      Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 12),
-                          child: Text('Arrivée')),
+                          padding: EdgeInsets.symmetric(horizontal: 12), child: Text('Arrivée')),
                     ],
                   ),
                 ),
@@ -356,10 +339,8 @@ class _AddTripPageState extends State<AddTripPage> {
                   child: Row(
                     children: [
                       Icon(Icons.info_outline, color: context.theme.warning),
-                      SizedBox(width: 8),
-                      Expanded(
-                          child: Text(
-                              'Aucun train trouvé autour de l\'horaire choisi.')),
+                      const SizedBox(width: 8),
+                      const Expanded(child: Text("Aucun train trouvé autour de l'horaire choisi.")),
                     ],
                   ),
                 ),
@@ -378,16 +359,13 @@ class _AddTripPageState extends State<AddTripPage> {
                         child: ListView.separated(
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
-                          itemCount: _candidateTrains.length > 2
-                              ? 2
-                              : _candidateTrains.length,
+                          itemCount: _candidateTrains.length > 2 ? 2 : _candidateTrains.length,
                           separatorBuilder: (_, __) => const Divider(height: 1),
                           itemBuilder: (context, index) {
                             final t = _candidateTrains[index];
                             final arr = t.arrivalTime;
                             final depStr = _formatHHmm(t.departureTime);
-                            final arrStr =
-                                arr != null ? _formatHHmm(arr) : '??:??';
+                            final arrStr = arr != null ? _formatHHmm(arr) : '??:??';
                             final key = _candidateKey(t);
                             final already = _isAlreadySavedTrain(t);
                             return RadioListTile<String>(
@@ -409,15 +387,13 @@ class _AddTripPageState extends State<AddTripPage> {
                                 children: [
                                   const Icon(Icons.schedule),
                                   if (already) const SizedBox(width: 8),
-                                  if (already)
-                                    const Chip(label: Text('Déjà enregistré')),
+                                  if (already) const Chip(label: Text('Déjà enregistré')),
                                 ],
                               ),
                               title: Text('$depStr → $arrStr'),
                               subtitle: Text(
                                 '${_formatDayLabel(t.departureTime)} • ${t.direction} • ${t.statusText}',
-                                style: TextStyle(
-                                    color: context.theme.textSecondary),
+                                style: TextStyle(color: context.theme.textSecondary),
                               ),
                             );
                           },
@@ -459,9 +435,7 @@ class _AddTripPageState extends State<AddTripPage> {
 
             const SizedBox(height: 8),
 
-            if (_departureStation != null &&
-                _arrivalStation != null &&
-                _selectedTime != null) ...[
+            if (_departureStation != null && _arrivalStation != null && _selectedTime != null) ...[
               Card(
                 elevation: 0,
                 color: context.theme.bgCard,
@@ -477,8 +451,7 @@ class _AddTripPageState extends State<AddTripPage> {
                           Expanded(
                             child: Text(
                               '${_departureStation!.name} → ${_arrivalStation!.name}',
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.bold),
+                              style: const TextStyle(fontWeight: FontWeight.bold),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
@@ -497,28 +470,20 @@ class _AddTripPageState extends State<AddTripPage> {
                             Chip(
                               avatar: const Icon(Icons.event, size: 16),
                               label: Text(
-                                _selectedDays.length ==
-                                        domain.DayOfWeek.values.length
+                                _selectedDays.length == domain.DayOfWeek.values.length
                                     ? 'Tous les jours'
-                                    : _selectedDays
-                                        .map((d) => d.displayName)
-                                        .join(', '),
+                                    : _selectedDays.map((d) => d.displayName).join(', '),
                               ),
                             ),
                           Chip(
-                            avatar:
-                                const Icon(Icons.directions_railway, size: 16),
-                            label: Text(_directTrainsOnly
-                                ? 'Direct uniquement'
-                                : 'Avec correspondances'),
+                            avatar: const Icon(Icons.directions_railway, size: 16),
+                            label: Text(
+                                _directTrainsOnly ? 'Direct uniquement' : 'Avec correspondances'),
                           ),
                           Chip(
-                            avatar: const Icon(
-                                Icons.notifications_active_outlined,
-                                size: 16),
-                            label: Text(_notificationsEnabled
-                                ? 'Notifications ON'
-                                : 'Notifications OFF'),
+                            avatar: const Icon(Icons.notifications_active_outlined, size: 16),
+                            label: Text(
+                                _notificationsEnabled ? 'Notifications ON' : 'Notifications OFF'),
                           ),
                         ],
                       ),
@@ -580,11 +545,9 @@ class _AddTripPageState extends State<AddTripPage> {
     if (_departureStation == null || _arrivalStation == null) return;
 
     // Vérifier que les stations ne sont pas temporaires
-    if (_departureStation!.id.startsWith('TEMP_') ||
-        _arrivalStation!.id.startsWith('TEMP_')) {
+    if (_departureStation!.id.startsWith('TEMP_') || _arrivalStation!.id.startsWith('TEMP_')) {
       setState(() {
-        _connectionError =
-            '⚠️ Station(s) invalide(s). Veuillez re-sélectionner les stations.';
+        _connectionError = '⚠️ Station(s) invalide(s). Veuillez re-sélectionner les stations.';
       });
       return;
     }
@@ -691,12 +654,12 @@ class _AddTripPageState extends State<AddTripPage> {
       final sameStations = trip.departureStation.id == _departureStation!.id &&
           trip.arrivalStation.id == _arrivalStation!.id;
       if (!sameStations) return false;
-      final sameTime = trip.time.hour == t.departureTime.hour &&
-          trip.time.minute == t.departureTime.minute;
+      final sameTime =
+          trip.time.hour == t.departureTime.hour && trip.time.minute == t.departureTime.minute;
       if (!sameTime) return false;
       if (_selectedDays.isNotEmpty) {
         final d = _selectedDays.first;
-        if (!trip.days.contains(d)) return false;
+        if (trip.day != d) return false;
       }
       return true;
     });
@@ -707,8 +670,7 @@ class _AddTripPageState extends State<AddTripPage> {
     final result = <domain_train.Train>[];
     for (final t in trains) {
       final key = '${t.id}-${t.departureTime.toIso8601String()}';
-      final timeKey =
-          '${t.departureTime.hour}:${t.departureTime.minute}-${t.direction}';
+      final timeKey = '${t.departureTime.hour}:${t.departureTime.minute}-${t.direction}';
       if (!seen.contains(key) && !seen.contains(timeKey)) {
         seen.add(key);
         seen.add(timeKey);
@@ -722,17 +684,15 @@ class _AddTripPageState extends State<AddTripPage> {
     if (_departureStation == null || _arrivalStation == null) return;
 
     // Vérifier que les stations ne sont pas temporaires
-    if (_departureStation!.id.startsWith('TEMP_') ||
-        _arrivalStation!.id.startsWith('TEMP_')) {
+    if (_departureStation!.id.startsWith('TEMP_') || _arrivalStation!.id.startsWith('TEMP_')) {
       setState(() {
         _isLoadingCandidates = false;
         _hasSearchedCandidates = false;
       });
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-              'Erreur: Station(s) invalide(s). Veuillez re-sélectionner les stations.'),
+        const SnackBar(
+          content: Text('Erreur: Station(s) invalide(s). Veuillez re-sélectionner les stations.'),
           backgroundColor: Colors.red,
         ),
       );
@@ -754,8 +714,8 @@ class _AddTripPageState extends State<AddTripPage> {
           trains = await service.findJourneysWithDepartureTime(
               _departureStation!, _arrivalStation!, ref);
         } else {
-          trains = await service.findJourneysWithArrivalTime(
-              _departureStation!, _arrivalStation!, ref);
+          trains =
+              await service.findJourneysWithArrivalTime(_departureStation!, _arrivalStation!, ref);
         }
         if (_directTrainsOnly) {
           trains = trains.where((t) => t.isDirect).toList();
@@ -800,8 +760,8 @@ class _AddTripPageState extends State<AddTripPage> {
 
         if (after == null) {
           try {
-            final byNext = await service.findJourneyJustAfter(
-                _departureStation!, _arrivalStation!, targetRef);
+            final byNext =
+                await service.findJourneyJustAfter(_departureStation!, _arrivalStation!, targetRef);
             if (byNext != null) {
               after = byNext;
               subset = _deduplicateTrains([...subset, byNext]);
@@ -817,16 +777,13 @@ class _AddTripPageState extends State<AddTripPage> {
           final sameDay = ttBefore.year == targetRef.year &&
               ttBefore.month == targetRef.month &&
               ttBefore.day == targetRef.day;
-          final within3h =
-              targetRef.difference(ttBefore) <= const Duration(hours: 3);
+          final within3h = targetRef.difference(ttBefore) <= const Duration(hours: 3);
           if (sameDay || within3h) {
             result.add(before);
           }
         }
         if (after != null &&
-            (before == null ||
-                after.id != before.id ||
-                getRefTime(after) != getRefTime(before))) {
+            (before == null || after.id != before.id || getRefTime(after) != getRefTime(before))) {
           result.add(after);
         }
 
@@ -870,9 +827,7 @@ class _AddTripPageState extends State<AddTripPage> {
   }
 
   Future<void> _saveTrip() async {
-    if (_departureStation == null ||
-        _arrivalStation == null ||
-        _selectedTime == null) {
+    if (_departureStation == null || _arrivalStation == null || _selectedTime == null) {
       return;
     }
 
@@ -902,7 +857,7 @@ class _AddTripPageState extends State<AddTripPage> {
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         departureStation: _departureStation!,
         arrivalStation: _arrivalStation!,
-        days: _selectedDays,
+        day: _selectedDays.first,
         time: domain.TimeOfDay(
           hour: _selectedTime!.hour,
           minute: _selectedTime!.minute,
@@ -913,6 +868,7 @@ class _AddTripPageState extends State<AddTripPage> {
       );
 
       await DependencyInjection.instance.tripService.saveTrip(trip);
+      await DependencyInjection.instance.tripReminderService.refreshSchedules();
 
       if (mounted) {
         Navigator.pop(context, true);
@@ -927,7 +883,7 @@ class _AddTripPageState extends State<AddTripPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erreur lors de l\'enregistrement : $e'),
+            content: Text("Erreur lors de l'enregistrement : $e"),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
