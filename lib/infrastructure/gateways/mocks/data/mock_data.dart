@@ -110,6 +110,11 @@ class MockData {
       longitude: 3.0758,
     );
 
+    String buildExternalUrl(String trainNumber, Station departureStation) {
+      final code = departureStation.id.split(':').last;
+      return 'https://www.sncf-connect.com/journeyTimelineDetails?number=$trainNumber&departureCode=$code';
+    }
+
     return [
       // Trains depuis Paris Nord vers Lille (pour le trajet 1)
       Train(
@@ -122,6 +127,7 @@ class MockData {
         status: TrainStatus.onTime,
         station: parisNord,
         additionalInfo: [],
+        externalUrl: buildExternalUrl('5300', parisNord),
       ),
       Train(
         id: 'mock_train_2',
@@ -133,6 +139,7 @@ class MockData {
         status: TrainStatus.onTime,
         station: parisNord,
         additionalInfo: [],
+        externalUrl: buildExternalUrl('5302', parisNord),
       ),
       // Trains depuis Paris Nord vers Lyon (pour le trajet 2)
       Train(
@@ -148,6 +155,7 @@ class MockData {
         additionalInfo: [],
         departurePlatform: '12',
         arrivalPlatform: 'H',
+        externalUrl: buildExternalUrl('6612', parisNord),
       ),
       Train(
         id: 'mock_train_4',
@@ -161,6 +169,7 @@ class MockData {
         additionalInfo: [],
         departurePlatform: '14',
         arrivalPlatform: 'J',
+        externalUrl: buildExternalUrl('6614', parisNord),
       ),
       Train(
         id: 'mock_train_5',
@@ -175,6 +184,7 @@ class MockData {
         additionalInfo: [],
         departurePlatform: '6',
         arrivalPlatform: 'K',
+        externalUrl: buildExternalUrl('6616', parisNord),
       ),
       // Train depuis Lille vers Paris (pour le trajet 5)
       Train(
@@ -187,6 +197,7 @@ class MockData {
         status: TrainStatus.onTime,
         station: lilleEurope,
         additionalInfo: [],
+        externalUrl: buildExternalUrl('7910', lilleEurope),
       ),
       // Train annulé pour tester ce cas
       Train(
@@ -197,18 +208,22 @@ class MockData {
         status: TrainStatus.cancelled,
         station: parisNord,
         additionalInfo: ['Train annulé'],
+        externalUrl: buildExternalUrl('6620', parisNord),
       ),
       // Train en cours (départ dans le passé, arrivée dans le futur) - Paris → Lille
       Train(
         id: 'mock_train_in_progress',
         direction: 'Lille Europe',
-        departureTime: now.subtract(const Duration(minutes: 30)), // Départ il y a 30 min
+        departureTime:
+            now.subtract(const Duration(minutes: 30)), // Départ il y a 30 min
         baseDepartureTime: now.subtract(const Duration(minutes: 30)),
-        arrivalTime: now.add(const Duration(minutes: 35)), // Arrivée dans 35 min
+        arrivalTime:
+            now.add(const Duration(minutes: 35)), // Arrivée dans 35 min
         baseArrivalTime: now.add(const Duration(minutes: 35)),
         status: TrainStatus.onTime,
         station: parisNord,
         additionalInfo: [],
+        externalUrl: buildExternalUrl('5308', parisNord),
       ),
     ];
   }
@@ -320,7 +335,8 @@ class MockData {
     );
 
     // Retourner les stations intermédiaires selon le trajet
-    if (trip.departureStation.id == parisNord.id && trip.arrivalStation.id == lilleEurope.id) {
+    if (trip.departureStation.id == parisNord.id &&
+        trip.arrivalStation.id == lilleEurope.id) {
       // Paris → Lille : Arras, Creil
       return [arras, creil];
     } else if (trip.departureStation.id == parisNord.id &&

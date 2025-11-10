@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
+
 import '../theme/theme_x.dart';
 import '../../domain/models/trip.dart' as domain;
 import '../../domain/models/train.dart';
@@ -28,6 +30,61 @@ class TripCard extends StatelessWidget {
     final presentation = nextTrain != null
         ? TrainStatusColors.buildPresentation(nextTrain!)
         : null;
+
+    final trailingWidgets = <Widget>[];
+    if (nextTrain?.externalUrl != null && nextTrain!.externalUrl!.isNotEmpty) {
+      trailingWidgets.add(
+        IconButton(
+          tooltip: 'Ouvrir sur SNCF.com',
+          icon: const Icon(Icons.open_in_new),
+          onPressed: () => _openExternalUrl(context, nextTrain!.externalUrl!),
+        ),
+      );
+    }
+    if (showActions) {
+      trailingWidgets.add(
+        PopupMenuButton<String>(
+          onSelected: (value) => onAction(value, trip),
+          itemBuilder: (context) => const [
+            PopupMenuItem(
+              value: 'edit',
+              child: ListTile(
+                leading: Icon(Icons.edit),
+                title: Text('Modifier'),
+                contentPadding: EdgeInsets.zero,
+              ),
+            ),
+            PopupMenuItem(
+              value: 'duplicate',
+              child: ListTile(
+                leading: Icon(Icons.copy),
+                title: Text('Dupliquer'),
+                contentPadding: EdgeInsets.zero,
+              ),
+            ),
+            PopupMenuItem(
+              value: 'toggle',
+              child: ListTile(
+                leading: Icon(Icons.play_arrow),
+                title: Text('Activer/Désactiver'),
+                contentPadding: EdgeInsets.zero,
+              ),
+            ),
+            PopupMenuItem(
+              value: 'delete',
+              child: ListTile(
+                leading: Icon(Icons.delete, color: Colors.red),
+                title: Text(
+                  'Supprimer',
+                  style: TextStyle(color: Colors.red),
+                ),
+                contentPadding: EdgeInsets.zero,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -93,46 +150,10 @@ class TripCard extends StatelessWidget {
                   ],
                 ),
               ),
-              if (showActions)
-                PopupMenuButton<String>(
-                  onSelected: (value) => onAction(value, trip),
-                  itemBuilder: (context) => const [
-                    PopupMenuItem(
-                      value: 'edit',
-                      child: ListTile(
-                        leading: Icon(Icons.edit),
-                        title: Text('Modifier'),
-                        contentPadding: EdgeInsets.zero,
-                      ),
-                    ),
-                    PopupMenuItem(
-                      value: 'duplicate',
-                      child: ListTile(
-                        leading: Icon(Icons.copy),
-                        title: Text('Dupliquer'),
-                        contentPadding: EdgeInsets.zero,
-                      ),
-                    ),
-                    PopupMenuItem(
-                      value: 'toggle',
-                      child: ListTile(
-                        leading: Icon(Icons.play_arrow),
-                        title: Text('Activer/Désactiver'),
-                        contentPadding: EdgeInsets.zero,
-                      ),
-                    ),
-                    PopupMenuItem(
-                      value: 'delete',
-                      child: ListTile(
-                        leading: Icon(Icons.delete, color: Colors.red),
-                        title: Text(
-                          'Supprimer',
-                          style: TextStyle(color: Colors.red),
-                        ),
-                        contentPadding: EdgeInsets.zero,
-                      ),
-                    ),
-                  ],
+              if (trailingWidgets.isNotEmpty)
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: trailingWidgets,
                 ),
             ],
           ),
@@ -166,5 +187,21 @@ class TripCard extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _openExternalUrl(BuildContext context, String url) async {
+    final uri = Uri.tryParse(url);
+    if (uri == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Lien inexploitable')),
+      );
+      return;
+    }
+    final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!launched) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Impossible d\'ouvrir le lien SNCF')),
+      );
+    }
   }
 }

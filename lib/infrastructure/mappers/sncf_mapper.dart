@@ -58,7 +58,22 @@ class SncfMapper {
     return null;
   }
 
-  List<Train> mapDeparturesToTrains(Map<String, dynamic> response, Station station) {
+  String? _extractLinkHref(List<dynamic> links, {String? type}) {
+    for (final link in links) {
+      if (link is Map<String, dynamic>) {
+        if (type == null || link['type'] == type) {
+          final href = link['href'];
+          if (href is String && href.isNotEmpty) {
+            return href;
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  List<Train> mapDeparturesToTrains(
+      Map<String, dynamic> response, Station station) {
     final departures = (response['departures'] as List<dynamic>?)
             ?.map((departure) => _mapDepartureToTrain(departure, station))
             .toList() ??
@@ -69,25 +84,32 @@ class SncfMapper {
 
   Train _mapDepartureToTrain(Map<String, dynamic> departure, Station station) {
     final stopDateTime = departure['stop_date_time'] as Map<String, dynamic>;
-    final displayInfo = departure['display_informations'] as Map<String, dynamic>;
+    final displayInfo =
+        departure['display_informations'] as Map<String, dynamic>;
     final departurePlatform = stopDateTime['departure_platform'] as String?;
     final arrivalPlatform = stopDateTime['arrival_platform'] as String?;
 
-    final departureTime = _parseSncfDateTime(stopDateTime['departure_date_time'] as String);
-    final baseDepartureTime =
-        _tryParseSncfDateTime(stopDateTime['base_departure_date_time'] as String?) ??
-            departureTime;
-    final arrivalTime = _tryParseSncfDateTime(stopDateTime['arrival_date_time'] as String?);
-    final baseArrivalTime =
-        _tryParseSncfDateTime(stopDateTime['base_arrival_date_time'] as String?) ?? arrivalTime;
+    final departureTime =
+        _parseSncfDateTime(stopDateTime['departure_date_time'] as String);
+    final baseDepartureTime = _tryParseSncfDateTime(
+            stopDateTime['base_departure_date_time'] as String?) ??
+        departureTime;
+    final arrivalTime =
+        _tryParseSncfDateTime(stopDateTime['arrival_date_time'] as String?);
+    final baseArrivalTime = _tryParseSncfDateTime(
+            stopDateTime['base_arrival_date_time'] as String?) ??
+        arrivalTime;
 
     final departureStatusRaw = stopDateTime['departure_status'] as String?;
     final arrivalStatusRaw = stopDateTime['arrival_status'] as String?;
-    var statusHint = _mapSncfStatus(departureStatusRaw) ?? _mapSncfStatus(arrivalStatusRaw);
+    var statusHint =
+        _mapSncfStatus(departureStatusRaw) ?? _mapSncfStatus(arrivalStatusRaw);
 
-    final delayMinutesSigned = _parseDelayMinutes(stopDateTime['departure_delay']) ??
-        _parseDelayMinutes(stopDateTime['arrival_delay']);
-    int? delayMinutes = delayMinutesSigned != null ? delayMinutesSigned.abs() : null;
+    final delayMinutesSigned =
+        _parseDelayMinutes(stopDateTime['departure_delay']) ??
+            _parseDelayMinutes(stopDateTime['arrival_delay']);
+    int? delayMinutes =
+        delayMinutesSigned != null ? delayMinutesSigned.abs() : null;
 
     var computedStatus = statusHint ?? TrainStatus.unknown;
     if (computedStatus != TrainStatus.cancelled) {
@@ -100,7 +122,8 @@ class SncfMapper {
         }
       }
       if (signedDelay != null && signedDelay != 0) {
-        computedStatus = signedDelay > 0 ? TrainStatus.delayed : TrainStatus.early;
+        computedStatus =
+            signedDelay > 0 ? TrainStatus.delayed : TrainStatus.early;
       } else if (computedStatus == TrainStatus.unknown) {
         computedStatus = TrainStatus.onTime;
       }
@@ -108,10 +131,12 @@ class SncfMapper {
 
     final links = departure['links'] as List<dynamic>? ?? [];
     final vehicleJourneyLink = links.firstWhere(
-      (link) => link['type'] == 'vehicle_journey',
+      (link) => link is Map && link['type'] == 'vehicle_journey',
       orElse: () => {'id': 'unknown'},
-    );
+    ) as Map<String, dynamic>;
     final id = vehicleJourneyLink['id'] as String? ?? 'unknown';
+    final externalUrl = _extractLinkHref(links, type: 'vehicle_journey') ??
+        _extractLinkHref(links);
 
     final additionalInfo = <String>[
       'Ligne: ${displayInfo['label'] ?? ''}',
@@ -133,18 +158,21 @@ class SncfMapper {
       arrivalTime: arrivalTime,
       baseArrivalTime: baseArrivalTime,
       status: computedStatus,
-      delayMinutes: computedStatus == TrainStatus.cancelled ? null : delayMinutes,
+      delayMinutes:
+          computedStatus == TrainStatus.cancelled ? null : delayMinutes,
       additionalInfo: additionalInfo,
       station: station,
       departurePlatform: departurePlatform,
       arrivalPlatform: arrivalPlatform,
+      externalUrl: externalUrl,
     );
   }
 
   List<Station> mapPlacesToStations(Map<String, dynamic> response) {
-    final places =
-        (response['places'] as List<dynamic>?)?.map((place) => mapPlaceToStation(place)).toList() ??
-            [];
+    final places = (response['places'] as List<dynamic>?)
+            ?.map((place) => mapPlaceToStation(place))
+            .toList() ??
+        [];
 
     return places;
   }
@@ -160,23 +188,28 @@ class SncfMapper {
     );
   }
 
-  List<Train> mapRouteSchedulesToTrains(Map<String, dynamic> response, Station station) {
-    final routeSchedules = (response['route_schedules'] as List<dynamic>?)?.expand((routeSchedule) {
-          final displayInfo = routeSchedule['display_informations'] as Map<String, dynamic>;
+  List<Train> mapRouteSchedulesToTrains(
+      Map<String, dynamic> response, Station station) {
+    final routeSchedules = (response['route_schedules'] as List<dynamic>?)
+            ?.expand((routeSchedule) {
+          final displayInfo =
+              routeSchedule['display_informations'] as Map<String, dynamic>;
           final table = routeSchedule['table'] as Map<String, dynamic>;
           final rows = table['rows'] as List<dynamic>? ?? [];
 
-          return rows.map((row) => _mapRouteScheduleRowToTrain(row, displayInfo, station));
+          return rows.map(
+              (row) => _mapRouteScheduleRowToTrain(row, displayInfo, station));
         }).toList() ??
         [];
 
     return routeSchedules;
   }
 
-  Train _mapRouteScheduleRowToTrain(
-      Map<String, dynamic> row, Map<String, dynamic> displayInfo, Station station) {
+  Train _mapRouteScheduleRowToTrain(Map<String, dynamic> row,
+      Map<String, dynamic> displayInfo, Station station) {
     final stopTimes = row['stop_times'] as List<dynamic>? ?? [];
-    final firstStopTime = stopTimes.isNotEmpty ? stopTimes.first as Map<String, dynamic> : {};
+    final firstStopTime =
+        stopTimes.isNotEmpty ? stopTimes.first as Map<String, dynamic> : {};
 
     final departureTime = firstStopTime['departure_date_time'] != null
         ? _parseSncfDateTime(firstStopTime['departure_date_time'] as String)
@@ -196,17 +229,21 @@ class SncfMapper {
   List<Train> mapJourneysToTrains(
       Map<String, dynamic> response, Station fromStation, Station toStation) {
     final journeys = (response['journeys'] as List<dynamic>?)
-            ?.map((journey) => _mapJourneyToTrain(journey, fromStation, toStation))
+            ?.map((journey) =>
+                _mapJourneyToTrain(journey, fromStation, toStation))
             .toList() ??
         [];
 
     return journeys;
   }
 
-  Train _mapJourneyToTrain(Map<String, dynamic> journey, Station fromStation, Station toStation) {
+  Train _mapJourneyToTrain(
+      Map<String, dynamic> journey, Station fromStation, Station toStation) {
     final sections = journey['sections'] as List<dynamic>? ?? [];
-    final firstSection = sections.isNotEmpty ? sections.first as Map<String, dynamic> : {};
-    final lastSection = sections.isNotEmpty ? sections.last as Map<String, dynamic> : {};
+    final firstSection =
+        sections.isNotEmpty ? sections.first as Map<String, dynamic> : {};
+    final lastSection =
+        sections.isNotEmpty ? sections.last as Map<String, dynamic> : {};
 
     final from = firstSection['from'] as Map<String, dynamic>? ?? {};
     final to = lastSection['to'] as Map<String, dynamic>? ?? {};
@@ -231,36 +268,48 @@ class SncfMapper {
       }
     }
 
-    final departureTime = depRaw != null ? _parseSncfDateTime(depRaw) : DateTime.now();
-    final arrivalTime = arrRaw != null ? _parseSncfDateTime(arrRaw) : DateTime.now();
+    final departureTime =
+        depRaw != null ? _parseSncfDateTime(depRaw) : DateTime.now();
+    final arrivalTime =
+        arrRaw != null ? _parseSncfDateTime(arrRaw) : DateTime.now();
 
     DateTime baseDepartureTime = departureTime;
     DateTime? baseArrivalTime = arrivalTime;
 
-    final firstStopTimes = firstSection['stop_date_times'] as List<dynamic>? ?? [];
-    final firstStop = firstStopTimes.isNotEmpty ? firstStopTimes.first as Map<String, dynamic> : {};
-    final lastStopTimes = lastSection['stop_date_times'] as List<dynamic>? ?? [];
-    final lastStop = lastStopTimes.isNotEmpty ? lastStopTimes.last as Map<String, dynamic> : {};
+    final firstStopTimes =
+        firstSection['stop_date_times'] as List<dynamic>? ?? [];
+    final firstStop = firstStopTimes.isNotEmpty
+        ? firstStopTimes.first as Map<String, dynamic>
+        : {};
+    final lastStopTimes =
+        lastSection['stop_date_times'] as List<dynamic>? ?? [];
+    final lastStop = lastStopTimes.isNotEmpty
+        ? lastStopTimes.last as Map<String, dynamic>
+        : {};
 
-    baseDepartureTime =
-        _tryParseSncfDateTime(firstSection['base_departure_date_time'] as String?) ??
-            _tryParseSncfDateTime(firstStop['base_departure_date_time'] as String?) ??
-            departureTime;
-    baseArrivalTime =
-        _tryParseSncfDateTime(lastSection['base_arrival_date_time'] as String?) ??
-            _tryParseSncfDateTime(lastStop['base_arrival_date_time'] as String?) ??
-            arrivalTime;
+    baseDepartureTime = _tryParseSncfDateTime(
+            firstSection['base_departure_date_time'] as String?) ??
+        _tryParseSncfDateTime(
+            firstStop['base_departure_date_time'] as String?) ??
+        departureTime;
+    baseArrivalTime = _tryParseSncfDateTime(
+            lastSection['base_arrival_date_time'] as String?) ??
+        _tryParseSncfDateTime(lastStop['base_arrival_date_time'] as String?) ??
+        arrivalTime;
 
-    final departureStatusRaw =
-        firstSection['departure_status'] as String? ?? firstStop['departure_status'] as String?;
-    final arrivalStatusRaw =
-        lastSection['arrival_status'] as String? ?? lastStop['arrival_status'] as String?;
+    final departureStatusRaw = firstSection['departure_status'] as String? ??
+        firstStop['departure_status'] as String?;
+    final arrivalStatusRaw = lastSection['arrival_status'] as String? ??
+        lastStop['arrival_status'] as String?;
 
-    var statusHint = _mapSncfStatus(departureStatusRaw) ?? _mapSncfStatus(arrivalStatusRaw);
+    var statusHint =
+        _mapSncfStatus(departureStatusRaw) ?? _mapSncfStatus(arrivalStatusRaw);
 
     int? delayMinutesSigned =
-        _parseDelayMinutes(firstStop['departure_delay']) ?? _parseDelayMinutes(lastStop['arrival_delay']);
-    int? delayMinutes = delayMinutesSigned != null ? delayMinutesSigned.abs() : null;
+        _parseDelayMinutes(firstStop['departure_delay']) ??
+            _parseDelayMinutes(lastStop['arrival_delay']);
+    int? delayMinutes =
+        delayMinutesSigned != null ? delayMinutesSigned.abs() : null;
 
     var computedStatus = statusHint ?? TrainStatus.unknown;
     if (computedStatus != TrainStatus.cancelled) {
@@ -273,7 +322,8 @@ class SncfMapper {
         }
       }
       if (signedDelay != null && signedDelay != 0) {
-        computedStatus = signedDelay > 0 ? TrainStatus.delayed : TrainStatus.early;
+        computedStatus =
+            signedDelay > 0 ? TrainStatus.delayed : TrainStatus.early;
       } else if (computedStatus == TrainStatus.unknown) {
         computedStatus = TrainStatus.onTime;
       }
@@ -282,10 +332,14 @@ class SncfMapper {
     final hasConnections = _hasRealConnections(sections);
     final connectionCount = _countRealConnections(sections);
 
-    final departurePlatform =
-        firstStop['departure_platform'] as String? ?? firstSection['departure_platform'] as String?;
-    final arrivalPlatform =
-        lastStop['arrival_platform'] as String? ?? lastSection['arrival_platform'] as String?;
+    final departurePlatform = firstStop['departure_platform'] as String? ??
+        firstSection['departure_platform'] as String?;
+    final arrivalPlatform = lastStop['arrival_platform'] as String? ??
+        lastSection['arrival_platform'] as String?;
+
+    final links = journey['links'] as List<dynamic>? ?? [];
+    final externalUrl =
+        _extractLinkHref(links, type: 'journey') ?? _extractLinkHref(links);
 
     return Train(
       id: journey['id'] as String? ?? '',
@@ -295,7 +349,8 @@ class SncfMapper {
       arrivalTime: arrivalTime,
       baseArrivalTime: baseArrivalTime,
       status: computedStatus,
-      delayMinutes: computedStatus == TrainStatus.cancelled ? null : delayMinutes,
+      delayMinutes:
+          computedStatus == TrainStatus.cancelled ? null : delayMinutes,
       station: fromStation,
       additionalInfo: [
         'Durée: ${_calculateDuration(departureTime, arrivalTime)}',
@@ -304,6 +359,7 @@ class SncfMapper {
       ],
       departurePlatform: departurePlatform,
       arrivalPlatform: arrivalPlatform,
+      externalUrl: externalUrl,
     );
   }
 
@@ -322,7 +378,8 @@ class SncfMapper {
     for (int i = 0; i < sections.length; i++) {
       final section = sections[i];
       final sectionData = section as Map<String, dynamic>;
-      final displayInfo = sectionData['display_informations'] as Map<String, dynamic>? ?? {};
+      final displayInfo =
+          sectionData['display_informations'] as Map<String, dynamic>? ?? {};
 
       final currentMode = displayInfo['physical_mode'] as String?;
       final currentLine = displayInfo['commercial_mode'] as String?;
@@ -369,7 +426,8 @@ class SncfMapper {
     for (int i = 0; i < sections.length; i++) {
       final section = sections[i];
       final sectionData = section as Map<String, dynamic>;
-      final displayInfo = sectionData['display_informations'] as Map<String, dynamic>? ?? {};
+      final displayInfo =
+          sectionData['display_informations'] as Map<String, dynamic>? ?? {};
 
       final currentMode = displayInfo['physical_mode'] as String?;
       final currentLine = displayInfo['commercial_mode'] as String?;
@@ -407,9 +465,11 @@ class SncfMapper {
 
   Map<String, dynamic> mapStationInfo(Map<String, dynamic> response) {
     final stopSchedules = response['stop_schedules'] as List<dynamic>? ?? [];
-    final firstSchedule =
-        stopSchedules.isNotEmpty ? stopSchedules.first as Map<String, dynamic> : {};
-    final displayInfo = firstSchedule['display_informations'] as Map<String, dynamic>? ?? {};
+    final firstSchedule = stopSchedules.isNotEmpty
+        ? stopSchedules.first as Map<String, dynamic>
+        : {};
+    final displayInfo =
+        firstSchedule['display_informations'] as Map<String, dynamic>? ?? {};
 
     return {
       'name': displayInfo['name'] ?? '',
@@ -499,7 +559,8 @@ class SncfMapper {
     };
   }
 
-  List<Train> mapArrivalsToTrains(Map<String, dynamic> response, Station station) {
+  List<Train> mapArrivalsToTrains(
+      Map<String, dynamic> response, Station station) {
     final arrivals = (response['arrivals'] as List<dynamic>?)
             ?.map((arrival) => _mapArrivalToTrain(arrival, station))
             .toList() ??
@@ -509,29 +570,37 @@ class SncfMapper {
   }
 
   Train _mapArrivalToTrain(Map<String, dynamic> arrival, Station station) {
-    final stopDateTime = arrival['stop_date_time'] as Map<String, dynamic>? ?? {};
-    final displayInfo = arrival['display_informations'] as Map<String, dynamic>? ?? {};
+    final stopDateTime =
+        arrival['stop_date_time'] as Map<String, dynamic>? ?? {};
+    final displayInfo =
+        arrival['display_informations'] as Map<String, dynamic>? ?? {};
     final departurePlatform = stopDateTime['departure_platform'] as String?;
     final arrivalPlatform = stopDateTime['arrival_platform'] as String?;
 
-    final arrivalTime = _tryParseSncfDateTime(stopDateTime['arrival_date_time'] as String?) ??
-        DateTime.now();
-    final baseArrivalTime =
-        _tryParseSncfDateTime(stopDateTime['base_arrival_date_time'] as String?) ?? arrivalTime;
+    final arrivalTime =
+        _tryParseSncfDateTime(stopDateTime['arrival_date_time'] as String?) ??
+            DateTime.now();
+    final baseArrivalTime = _tryParseSncfDateTime(
+            stopDateTime['base_arrival_date_time'] as String?) ??
+        arrivalTime;
     final departureTime =
-        _tryParseSncfDateTime(stopDateTime['departure_date_time'] as String?) ?? arrivalTime;
-    final baseDepartureTime =
-        _tryParseSncfDateTime(stopDateTime['base_departure_date_time'] as String?) ??
-            departureTime;
+        _tryParseSncfDateTime(stopDateTime['departure_date_time'] as String?) ??
+            arrivalTime;
+    final baseDepartureTime = _tryParseSncfDateTime(
+            stopDateTime['base_departure_date_time'] as String?) ??
+        departureTime;
 
     final arrivalStatusRaw = stopDateTime['arrival_status'] as String?;
     final departureStatusRaw = stopDateTime['departure_status'] as String?;
 
-    var statusHint = _mapSncfStatus(arrivalStatusRaw) ?? _mapSncfStatus(departureStatusRaw);
+    var statusHint =
+        _mapSncfStatus(arrivalStatusRaw) ?? _mapSncfStatus(departureStatusRaw);
 
-    int? delayMinutesSigned = _parseDelayMinutes(stopDateTime['arrival_delay']) ??
-        _parseDelayMinutes(stopDateTime['departure_delay']);
-    int? delayMinutes = delayMinutesSigned != null ? delayMinutesSigned.abs() : null;
+    int? delayMinutesSigned =
+        _parseDelayMinutes(stopDateTime['arrival_delay']) ??
+            _parseDelayMinutes(stopDateTime['departure_delay']);
+    int? delayMinutes =
+        delayMinutesSigned != null ? delayMinutesSigned.abs() : null;
 
     var computedStatus = statusHint ?? TrainStatus.unknown;
     if (computedStatus != TrainStatus.cancelled) {
@@ -544,7 +613,8 @@ class SncfMapper {
         }
       }
       if (signedDelay != null && signedDelay != 0) {
-        computedStatus = signedDelay > 0 ? TrainStatus.delayed : TrainStatus.early;
+        computedStatus =
+            signedDelay > 0 ? TrainStatus.delayed : TrainStatus.early;
       } else if (computedStatus == TrainStatus.unknown) {
         computedStatus = TrainStatus.onTime;
       }
@@ -562,6 +632,10 @@ class SncfMapper {
       );
     }
 
+    final links = arrival['links'] as List<dynamic>? ?? [];
+    final externalUrl = _extractLinkHref(links, type: 'vehicle_journey') ??
+        _extractLinkHref(links);
+
     return Train(
       id: arrival['id'] as String? ?? '',
       direction: displayInfo['direction'] as String? ?? '',
@@ -570,11 +644,13 @@ class SncfMapper {
       arrivalTime: arrivalTime,
       baseArrivalTime: baseArrivalTime,
       status: computedStatus,
-      delayMinutes: computedStatus == TrainStatus.cancelled ? null : delayMinutes,
+      delayMinutes:
+          computedStatus == TrainStatus.cancelled ? null : delayMinutes,
       station: station,
       additionalInfo: additionalInfo,
       departurePlatform: departurePlatform,
       arrivalPlatform: arrivalPlatform,
+      externalUrl: externalUrl,
     );
   }
 

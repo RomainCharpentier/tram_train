@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
+
 import '../theme/theme_x.dart';
 import '../../domain/models/train.dart';
 import '../../domain/models/trip.dart' as domain;
@@ -218,9 +220,23 @@ class _TripProgressPageState extends State<TripProgressPage> {
   }
 
   Widget _buildStatusCard(Train train, bool isInProgress) {
-    return TripStatusCard(
-      trip: widget.trip,
-      train: train,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        TripStatusCard(
+          trip: widget.trip,
+          train: train,
+        ),
+        if (train.externalUrl != null && train.externalUrl!.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: OutlinedButton.icon(
+              onPressed: () => _openExternalUrl(train.externalUrl!),
+              icon: const Icon(Icons.open_in_new),
+              label: const Text('Voir ce trajet sur SNCF.com'),
+            ),
+          ),
+      ],
     );
   }
 
@@ -750,5 +766,22 @@ class _TripProgressPageState extends State<TripProgressPage> {
 
     final progress = (elapsed.inSeconds / totalDuration.inSeconds) * 100;
     return progress.clamp(0.0, 100.0);
+  }
+
+  Future<void> _openExternalUrl(String url) async {
+    final uri = Uri.tryParse(url);
+    if (uri == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Lien invalide')),
+      );
+      return;
+    }
+    final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!launched && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Impossible d\'ouvrir le lien SNCF')),
+      );
+    }
   }
 }

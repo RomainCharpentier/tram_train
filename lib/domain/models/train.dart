@@ -28,6 +28,7 @@ class Train {
   final Station station;
   final String? departurePlatform;
   final String? arrivalPlatform;
+  final String? externalUrl;
 
   const Train({
     required this.id,
@@ -42,6 +43,7 @@ class Train {
     required this.station,
     this.departurePlatform,
     this.arrivalPlatform,
+    this.externalUrl,
   });
 
   factory Train.fromTimes({
@@ -55,6 +57,7 @@ class Train {
     List<String> additionalInfo = const [],
     String? departurePlatform,
     String? arrivalPlatform,
+    String? externalUrl,
   }) {
     final difference = departureTime.difference(baseDepartureTime).inMinutes;
 
@@ -84,6 +87,7 @@ class Train {
       station: station,
       departurePlatform: departurePlatform,
       arrivalPlatform: arrivalPlatform,
+      externalUrl: externalUrl,
     );
   }
 
@@ -92,9 +96,13 @@ class Train {
       case TrainStatus.onTime:
         return 'À l\'heure';
       case TrainStatus.delayed:
-        return delayMinutes != null ? 'En retard (+$delayMinutes min)' : 'En retard';
+        return delayMinutes != null
+            ? 'En retard (+$delayMinutes min)'
+            : 'En retard';
       case TrainStatus.early:
-        return delayMinutes != null ? 'En avance ($delayMinutes min)' : 'En avance';
+        return delayMinutes != null
+            ? 'En avance ($delayMinutes min)'
+            : 'En avance';
       case TrainStatus.cancelled:
         return 'Annulé';
       case TrainStatus.unknown:
