@@ -6,6 +6,56 @@ import 'trip_service.dart';
 import '../models/trip.dart';
 import '../../env_config.dart';
 
+abstract class BackgroundTaskScheduler {
+  Future<void> registerOneOffTask({
+    required String uniqueName,
+    required String taskName,
+    required Duration initialDelay,
+    ExistingWorkPolicy? existingWorkPolicy,
+    Constraints? constraints,
+    BackoffPolicy? backoffPolicy,
+    Duration? backoffPolicyDelay,
+    Map<String, dynamic>? inputData,
+  });
+
+  Future<void> cancelByUniqueName(String uniqueName);
+}
+
+class WorkmanagerScheduler implements BackgroundTaskScheduler {
+  WorkmanagerScheduler({Workmanager? workmanager})
+      : _workmanager = workmanager ?? Workmanager();
+
+  final Workmanager _workmanager;
+
+  @override
+  Future<void> registerOneOffTask({
+    required String uniqueName,
+    required String taskName,
+    required Duration initialDelay,
+    ExistingWorkPolicy? existingWorkPolicy,
+    Constraints? constraints,
+    BackoffPolicy? backoffPolicy,
+    Duration? backoffPolicyDelay,
+    Map<String, dynamic>? inputData,
+  }) {
+    return _workmanager.registerOneOffTask(
+      uniqueName,
+      taskName,
+      existingWorkPolicy: existingWorkPolicy,
+      initialDelay: initialDelay,
+      constraints: constraints,
+      backoffPolicy: backoffPolicy,
+      backoffPolicyDelay: backoffPolicyDelay ?? Duration.zero,
+      inputData: inputData,
+    );
+  }
+
+  @override
+  Future<void> cancelByUniqueName(String uniqueName) {
+    return _workmanager.cancelByUniqueName(uniqueName);
+  }
+}
+
 class TripReminderService {
   static const String taskName = 'trip_status_check';
   static const String _taskPrefix = 'trip_status_';
@@ -13,15 +63,15 @@ class TripReminderService {
 
   final TripService _tripService;
   final ClockService _clockService;
-  final Workmanager _workmanager;
+  final BackgroundTaskScheduler _scheduler;
 
   TripReminderService({
     required TripService tripService,
     required ClockService clockService,
-    Workmanager? workmanager,
+    BackgroundTaskScheduler? scheduler,
   })  : _tripService = tripService,
         _clockService = clockService,
-        _workmanager = workmanager ?? Workmanager();
+        _scheduler = scheduler ?? WorkmanagerScheduler();
 
   static String uniqueName(String tripId) => '$_taskPrefix$tripId';
 
@@ -86,9 +136,9 @@ class TripReminderService {
 
     final delay = triggerTime.difference(now);
 
-    await _workmanager.registerOneOffTask(
-      uniqueName(trip.id),
-      taskName,
+    await _scheduler.registerOneOffTask(
+      uniqueName: uniqueName(trip.id),
+      taskName: taskName,
       inputData: {
         'tripId': trip.id,
         'departureStationId': trip.departureStation.id,
@@ -116,7 +166,7 @@ class TripReminderService {
     if (!_isWorkmanagerAvailable) {
       return;
     }
-    await _workmanager.cancelByUniqueName(uniqueName(tripId));
+    await _scheduler.cancelByUniqueName(uniqueName(tripId));
   }
 
   static DateTime? computeNextDeparture(Trip trip, DateTime now) {
