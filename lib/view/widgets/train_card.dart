@@ -19,22 +19,42 @@ class TrainCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final presentation = TrainStatusColors.buildPresentation(train);
+    final presentation = TrainStatusColors.buildPresentation(train, context);
 
-    return Card(
+    return Container(
       margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: context.theme.card,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: context.theme.outline, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.black.withOpacity(0.3)
+                : Colors.black.withOpacity(0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+            spreadRadius: 0,
+          ),
+        ],
+      ),
       child: ListTile(
         leading: CircleAvatar(
           backgroundColor: presentation.primaryColor,
           child: Icon(
             presentation.primaryIcon,
-            color: Colors.white,
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.black
+                : Colors.white,
             size: 16,
           ),
         ),
         title: Text(
           '${train.departureTimeFormatted} - ${train.direction}',
-          style: const TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: context.theme.textPrimary,
+          ),
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -63,6 +83,8 @@ class TrainCard extends StatelessWidget {
             ],
           ],
         ),
+        textColor: context.theme.textPrimary,
+        iconColor: context.theme.textPrimary,
         trailing: _buildTrailing(context),
         onTap: onTap,
       ),
@@ -79,8 +101,10 @@ class TrainCard extends StatelessWidget {
         ),
         child: Text(
           '+${train.delayMinutes}min',
-          style: const TextStyle(
-            color: Colors.white,
+          style: TextStyle(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.black
+                : Colors.white,
             fontSize: 12,
             fontWeight: FontWeight.bold,
           ),

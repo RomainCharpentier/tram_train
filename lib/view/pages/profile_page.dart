@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/theme_x.dart';
+import '../theme/page_theme_provider.dart';
 import '../../domain/models/trip.dart' as domain;
 import '../../domain/models/station.dart';
 import '../../infrastructure/dependency_injection.dart';
@@ -97,21 +98,72 @@ class _ProfilePageState extends State<ProfilePage> {
         onRefresh: _refreshAll,
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           children: [
-            Text(
-              'Profil',
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: context.theme.textPrimary,
-              ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Builder(
+                  builder: (context) {
+                    final pageColors = PageThemeProvider.of(context);
+                    return Row(
+                      children: [
+                        Container(
+                          width: 4,
+                          height: 28,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                pageColors.primaryDark,
+                                pageColors.primaryLight,
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        ShaderMask(
+                          shaderCallback: (bounds) => LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              pageColors.primaryDark,
+                              pageColors.primary,
+                            ],
+                          ).createShader(bounds),
+                          child: const Text(
+                            'Profil',
+                            style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                              letterSpacing: -0.5,
+                              height: 1.2,
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Gérez vos trajets enregistrés, vos stations favorites et personnalisez l\'application.',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: context.theme.textSecondary,
+                      height: 1.4,
+                    ),
+                ),
+              ],
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
             _buildTripsSection(context),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             _buildFavoritesSection(context),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             _buildSettingsSection(context),
           ],
         ),
@@ -127,19 +179,47 @@ class _ProfilePageState extends State<ProfilePage> {
     required String title,
     String? subtitle,
     required Widget child,
+    Color? iconColor,
   }) {
     final theme = Theme.of(context);
-    return Card(
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: context.theme.card,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: context.theme.outline, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.black.withOpacity(0.3)
+                : Colors.black.withOpacity(0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+            spreadRadius: 0,
+          ),
+        ],
+      ),
       child: Theme(
         data: theme.copyWith(dividerColor: Colors.transparent),
         child: ExpansionTile(
-          tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           childrenPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           initiallyExpanded: expanded,
           onExpansionChanged: onChanged,
-          leading: CircleAvatar(
-            backgroundColor: context.theme.primary.withOpacity(0.12),
-            child: Icon(icon, color: context.theme.primary),
+          leading: Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: iconColor ?? context.theme.primary,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              icon,
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.black
+                  : Colors.white,
+              size: 24,
+            ),
           ),
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -174,6 +254,7 @@ class _ProfilePageState extends State<ProfilePage> {
       icon: Icons.route,
       title: 'Mes trajets enregistrés',
       subtitle: 'Activez, modifiez ou supprimez vos trajets favoris ici.',
+      iconColor: context.theme.secondary,
       child: _buildTripsContent(context),
     );
   }
@@ -264,6 +345,7 @@ class _ProfilePageState extends State<ProfilePage> {
       icon: Icons.star,
       title: 'Stations favorites',
       subtitle: 'Enregistrez des gares pour les retrouver facilement.',
+      iconColor: context.theme.warning,
       child: _buildFavoritesContent(context),
     );
   }
@@ -320,25 +402,73 @@ class _ProfilePageState extends State<ProfilePage> {
     return Column(
       children: [
         ..._favoriteStations.map(
-          (station) => ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: CircleAvatar(
-              backgroundColor: context.theme.primary.withOpacity(0.12),
-              child: Icon(Icons.train, color: context.theme.primary),
+          (station) => Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            decoration: BoxDecoration(
+              color: context.theme.card,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: context.theme.outline, width: 1),
+              boxShadow: [
+                BoxShadow(
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Colors.black.withOpacity(0.3)
+                      : Colors.black.withOpacity(0.08),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                  spreadRadius: 0,
+                ),
+              ],
             ),
-            title: Text(
-              station.name,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            subtitle: station.description != null
-                ? Text(
-                    station.description!,
-                    style: TextStyle(color: context.theme.textSecondary),
-                  )
-                : null,
-            trailing: IconButton(
-              icon: const Icon(Icons.delete_outline),
-              onPressed: () => _removeFavorite(context, station),
+            child: Material(
+              color: Colors.transparent,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: context.theme.info.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: context.theme.info, width: 1.5),
+                      ),
+                      child: Icon(Icons.train_outlined, color: context.theme.info, size: 20),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            station.name,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: context.theme.textPrimary,
+                            ),
+                          ),
+                          if (station.description != null) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              station.description!,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: context.theme.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.delete_outline, color: context.theme.textSecondary),
+                      onPressed: () => _removeFavorite(context, station),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
         ),
@@ -358,22 +488,35 @@ class _ProfilePageState extends State<ProfilePage> {
       onChanged: (value) => setState(() => _settingsExpanded = value),
       icon: Icons.palette,
       title: 'Personnalisation',
+      iconColor: context.theme.primary,
       child: AnimatedBuilder(
         animation: _themeService,
         builder: (context, child) {
           return SwitchListTile(
-            secondary: CircleAvatar(
-              backgroundColor: context.theme.primary.withOpacity(0.12),
+            secondary: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: context.theme.info,
+                borderRadius: BorderRadius.circular(12),
+              ),
               child: Icon(
                 _themeService.isDarkMode ? Icons.dark_mode : Icons.light_mode,
-                color: context.theme.primary,
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.black
+                    : Colors.white,
+                size: 20,
               ),
             ),
-            title: const Text('Mode sombre'),
+            title: Text(
+              'Mode sombre',
+              style: TextStyle(color: context.theme.textPrimary),
+            ),
             subtitle: Text(
               _themeService.isDarkMode
                   ? 'Désactivez pour passer en mode clair.'
                   : 'Activez pour un thème sombre.',
+                style: TextStyle(color: context.theme.textSecondary),
             ),
             value: _themeService.isDarkMode,
             onChanged: (_) => _themeService.toggleTheme(),
@@ -479,18 +622,19 @@ class _ProfilePageState extends State<ProfilePage> {
     return showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Supprimer le trajet'),
+        title: Text('Supprimer le trajet', style: TextStyle(color: context.theme.textPrimary)),
         content: Text(
           'Êtes-vous sûr de vouloir supprimer ${trip.description} ?',
+          style: TextStyle(color: context.theme.textPrimary),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Annuler'),
+            child: Text('Annuler', style: TextStyle(color: context.theme.primary)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Supprimer'),
+            child: Text('Supprimer', style: TextStyle(color: context.theme.error)),
           ),
         ],
       ),
@@ -525,18 +669,19 @@ class _ProfilePageState extends State<ProfilePage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Retirer la station'),
+        title: Text('Retirer la station', style: TextStyle(color: context.theme.textPrimary)),
         content: Text(
           'Êtes-vous sûr de vouloir retirer ${station.name} de vos favoris ?',
+          style: TextStyle(color: context.theme.textPrimary),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Annuler'),
+            child: Text('Annuler', style: TextStyle(color: context.theme.primary)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Retirer'),
+            child: Text('Retirer', style: TextStyle(color: context.theme.error)),
           ),
         ],
       ),
@@ -566,3 +711,4 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 }
+

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../domain/models/train.dart';
 import '../../infrastructure/dependency_injection.dart';
+import '../theme/theme_x.dart';
 
 class TrainStatusPresentation {
   const TrainStatusPresentation({
@@ -50,14 +51,14 @@ class TrainStatusColors {
   static const Color earlyColor = Colors.green;
   static const Color unknownColor = Colors.grey;
 
-  static TrainStatusPresentation buildPresentation(Train train) {
+  static TrainStatusPresentation buildPresentation(Train train, [BuildContext? context]) {
     final state = getJourneyState(train);
-    final primaryColor = _journeyStateColor(state);
+    final primaryColor = _journeyStateColor(state, context);
     final primaryIcon = _journeyStateIcon(state);
     final primaryText = _journeyStateText(train, state);
 
     final scheduleText = _scheduleText(train, state);
-    final scheduleColor = scheduleText != null ? getPunctualityColor(train.status) : null;
+    final scheduleColor = scheduleText != null ? getPunctualityColor(train.status, context) : null;
     final scheduleIcon = scheduleText != null ? getPunctualityIcon(train.status) : null;
     final scheduledDepartureTime = _scheduledDeparture(train);
     final scheduledArrivalTime = _scheduledArrival(train);
@@ -95,7 +96,7 @@ class TrainStatusColors {
 
   static DateTime? getScheduledArrivalTime(Train train) => _scheduledArrival(train);
 
-  static Color getJourneyStateColor(Train train) => _journeyStateColor(getJourneyState(train));
+  static Color getJourneyStateColor(Train train, [BuildContext? context]) => _journeyStateColor(getJourneyState(train), context);
 
   static IconData getJourneyStateIcon(Train train) => _journeyStateIcon(getJourneyState(train));
 
@@ -104,10 +105,10 @@ class TrainStatusColors {
 
   static String? getScheduleText(Train train) => _scheduleText(train, getJourneyState(train));
 
-  static Color? getScheduleColor(Train train) {
+  static Color? getScheduleColor(Train train, [BuildContext? context]) {
     final scheduleText = getScheduleText(train);
     if (scheduleText == null) return null;
-    return getPunctualityColor(train.status);
+    return getPunctualityColor(train.status, context);
   }
 
   static IconData? getScheduleIcon(Train train) {
@@ -119,7 +120,22 @@ class TrainStatusColors {
   static bool isTrainInProgress(Train train) =>
       getJourneyState(train) == TrainJourneyState.inProgress;
 
-  static Color getPunctualityColor(TrainStatus status) {
+  static Color getPunctualityColor(TrainStatus status, [BuildContext? context]) {
+    if (context != null) {
+      final isDark = Theme.of(context).brightness == Brightness.dark;
+      switch (status) {
+        case TrainStatus.onTime:
+          return isDark ? context.theme.textPrimary : onTimeColor;
+        case TrainStatus.delayed:
+          return delayedColor;
+        case TrainStatus.early:
+          return earlyColor;
+        case TrainStatus.cancelled:
+          return cancelledColor;
+        case TrainStatus.unknown:
+          return isDark ? context.theme.textSecondary : unknownColor;
+      }
+    }
     switch (status) {
       case TrainStatus.onTime:
         return onTimeColor;
@@ -154,11 +170,24 @@ class TrainStatusColors {
       return DependencyInjection.instance.clockService.now();
     } catch (_) {
       const useMockData = bool.fromEnvironment('USE_MOCK_DATA');
-      return useMockData ? DateTime(2025, 1, 6, 7, 0) : DateTime.now();
+      return useMockData ? DateTime(2025, 1, 6, 7) : DateTime.now();
     }
   }
 
-  static Color _journeyStateColor(TrainJourneyState state) {
+  static Color _journeyStateColor(TrainJourneyState state, [BuildContext? context]) {
+    if (context != null) {
+      final isDark = Theme.of(context).brightness == Brightness.dark;
+      switch (state) {
+        case TrainJourneyState.upcoming:
+          return isDark ? context.theme.textPrimary : upcomingColor;
+        case TrainJourneyState.inProgress:
+          return inProgressColor;
+        case TrainJourneyState.completed:
+          return isDark ? context.theme.textSecondary : completedColor;
+        case TrainJourneyState.cancelled:
+          return cancelledColor;
+      }
+    }
     switch (state) {
       case TrainJourneyState.upcoming:
         return upcomingColor;

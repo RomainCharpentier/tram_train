@@ -181,8 +181,13 @@ class _TripSchedulePageState extends State<TripSchedulePage> {
   }
 
   Widget _buildTripInfo() {
-    return Card(
+    return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: context.theme.card,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: context.theme.outline, width: 1),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -195,9 +200,10 @@ class _TripSchedulePageState extends State<TripSchedulePage> {
                 Expanded(
                   child: Text(
                     '${widget.trip.departureStation.name} → ${widget.trip.arrivalStation.name}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
+                      color: context.theme.textPrimary,
                     ),
                   ),
                 ),
@@ -310,28 +316,30 @@ class _TripSchedulePageState extends State<TripSchedulePage> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(train.direction),
+        backgroundColor: context.theme.card,
+        title: Text(train.direction, style: TextStyle(color: context.theme.textPrimary)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Départ: ${train.departureTimeFormatted}'),
-            Text('Statut: ${train.statusText}'),
+            Text('Départ: ${train.departureTimeFormatted}', style: TextStyle(color: context.theme.textPrimary)),
+            Text('Statut: ${train.statusText}', style: TextStyle(color: context.theme.textPrimary)),
             if (train.baseDepartureTime != null)
               Text(
-                  'Heure prévue: ${train.baseDepartureTime!.hour.toString().padLeft(2, '0')}:${train.baseDepartureTime!.minute.toString().padLeft(2, '0')}'),
+                  'Heure prévue: ${train.baseDepartureTime!.hour.toString().padLeft(2, '0')}:${train.baseDepartureTime!.minute.toString().padLeft(2, '0')}',
+                  style: TextStyle(color: context.theme.textPrimary)),
             if (train.additionalInfo.isNotEmpty) ...[
               const SizedBox(height: 8),
-              const Text('Informations:',
-                  style: TextStyle(fontWeight: FontWeight.bold)),
-              ...train.additionalInfo.map((info) => Text('• $info')),
+              Text('Informations:',
+                  style: TextStyle(fontWeight: FontWeight.bold, color: context.theme.textPrimary)),
+              ...train.additionalInfo.map((info) => Text('• $info', style: TextStyle(color: context.theme.textPrimary))),
             ],
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Fermer'),
+            child: Text('Fermer', style: TextStyle(color: context.theme.primary)),
           ),
         ],
       ),
@@ -342,15 +350,34 @@ class _TripSchedulePageState extends State<TripSchedulePage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-            '${widget.trip.departureStation.name} → ${widget.trip.arrivalStation.name}'),
+          '${widget.trip.departureStation.name} → ${widget.trip.arrivalStation.name}',
+          style: TextStyle(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.black
+                : Colors.white,
+          ),
+        ),
         backgroundColor: context.theme.primary,
+        foregroundColor: Theme.of(context).brightness == Brightness.dark
+            ? Colors.black
+            : Colors.white,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.black
+                : Colors.white,
+          ),
           onPressed: () => Navigator.of(context).pop(),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.white),
+            icon: Icon(
+              Icons.refresh,
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.black
+                  : Colors.white,
+            ),
             onPressed: _loadTrains,
             tooltip: 'Actualiser',
           ),

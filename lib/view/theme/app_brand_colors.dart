@@ -28,12 +28,12 @@ class AppBrandColors extends ThemeExtension<AppBrandColors> {
       );
 
   factory AppBrandColors.dark() => const AppBrandColors(
-        primary: Color(0xFF5BA0F2),
-        secondary: Color(0xFF3B6BB0),
-        success: Color(0xFF22C55E),
-        warning: Color(0xFFF59E0B),
-        error: Color(0xFFFF6B6B),
-        info: Color(0xFF5BA0F2),
+        primary: Color(0xFF7BB3F5),
+        secondary: Color(0xFF6BA3E8),
+        success: Color(0xFF4ADE80),
+        warning: Color(0xFFFFA366),
+        error: Color(0xFFF87171),
+        info: Color(0xFF7BB3F5),
       );
 
   @override

@@ -20,62 +20,81 @@ class TripStatusCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final presentation =
-        train != null ? TrainStatusColors.buildPresentation(train!) : null;
+        train != null ? TrainStatusColors.buildPresentation(train!, context) : null;
 
-    return Card(
+    return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      child: InkWell(
-        onTap: onTap,
+      decoration: BoxDecoration(
+        color: context.theme.card,
         borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              TrainStatusIndicator(train: train),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      trip.description,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    if (presentation != null) ...[
+        border: Border.all(color: context.theme.outline, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.black.withOpacity(0.3)
+                : Colors.black.withOpacity(0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+            spreadRadius: 0,
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                TrainStatusIndicator(train: train),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Text(
-                        presentation.primaryText,
+                        trip.description,
                         style: TextStyle(
-                          fontSize: 14,
-                          color: presentation.primaryColor,
-                          fontWeight:
-                              presentation.state == TrainJourneyState.cancelled
-                                  ? FontWeight.w600
-                                  : FontWeight.normal,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: context.theme.textPrimary,
                         ),
                       ),
-                      if (presentation.scheduleText != null &&
-                          presentation.scheduleColor != null &&
-                          presentation.scheduleIcon != null) ...[
-                        const SizedBox(height: 4),
-                        _buildScheduleBadge(presentation),
+                      const SizedBox(height: 4),
+                      if (presentation != null) ...[
+                        Text(
+                          presentation.primaryText,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: presentation.primaryColor,
+                            fontWeight:
+                                presentation.state == TrainJourneyState.cancelled
+                                    ? FontWeight.w600
+                                    : FontWeight.normal,
+                          ),
+                        ),
+                        if (presentation.scheduleText != null &&
+                            presentation.scheduleColor != null &&
+                            presentation.scheduleIcon != null) ...[
+                          const SizedBox(height: 4),
+                          _buildScheduleBadge(presentation),
+                        ],
+                      ] else ...[
+                        Text(
+                          '${trip.daysName} à ${trip.timeFormatted}',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: context.theme.textSecondary,
+                          ),
+                        ),
                       ],
-                    ] else ...[
-                      Text(
-                        '${trip.daysName} à ${trip.timeFormatted}',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: context.theme.textSecondary,
-                        ),
-                      ),
                     ],
-                  ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

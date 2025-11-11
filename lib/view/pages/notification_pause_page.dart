@@ -28,8 +28,7 @@ class _NotificationPausePageState extends State<NotificationPausePage> {
     });
 
     try {
-      final pauses = await DependencyInjection.instance.notificationPauseService
-          .getAllPauses();
+      final pauses = await DependencyInjection.instance.notificationPauseService.getAllPauses();
       setState(() {
         _pauses = pauses;
         _isLoading = false;
@@ -124,28 +123,47 @@ class _NotificationPausePageState extends State<NotificationPausePage> {
     final isActive = pause.isActive;
     final isCurrentPause = _isCurrentPause(pause);
 
-    return Card(
+    return Container(
       margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: context.theme.card,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: context.theme.outline, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.black.withOpacity(0.3)
+                : Colors.black.withOpacity(0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+            spreadRadius: 0,
+          ),
+        ],
+      ),
       child: ListTile(
         leading: CircleAvatar(
           backgroundColor: isCurrentPause
               ? context.theme.error
               : (isActive ? context.theme.warning : context.theme.outline),
           child: Icon(
-            isCurrentPause
-                ? Icons.pause
-                : (isActive ? Icons.schedule : Icons.pause_circle),
-            color: Colors.white,
+            isCurrentPause ? Icons.pause : (isActive ? Icons.schedule : Icons.pause_circle),
+            color: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
           ),
         ),
         title: Text(
           pause.name,
-          style: const TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: context.theme.textPrimary,
+          ),
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(pause.description ?? ''),
+            Text(
+              pause.description ?? '',
+              style: TextStyle(color: context.theme.textSecondary),
+            ),
             const SizedBox(height: 4),
             Row(
               children: [
@@ -216,7 +234,7 @@ class _NotificationPausePageState extends State<NotificationPausePage> {
     return now.isAfter(pause.startDate) && now.isBefore(pause.endDate);
   }
 
-  void _handlePauseAction(String action, NotificationPause pause) async {
+  Future<void> _handlePauseAction(String action, NotificationPause pause) async {
     switch (action) {
       case 'toggle':
         await _togglePause(pause);
@@ -230,14 +248,12 @@ class _NotificationPausePageState extends State<NotificationPausePage> {
   Future<void> _togglePause(NotificationPause pause) async {
     try {
       final updatedPause = pause.copyWith(isActive: !pause.isActive);
-      await DependencyInjection.instance.notificationPauseService
-          .updatePause(updatedPause);
+      await DependencyInjection.instance.notificationPauseService.updatePause(updatedPause);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-                updatedPause.isActive ? 'Pause activée' : 'Pause désactivée'),
+            content: Text(updatedPause.isActive ? 'Pause activée' : 'Pause désactivée'),
             backgroundColor: context.theme.success,
           ),
         );
@@ -247,8 +263,16 @@ class _NotificationPausePageState extends State<NotificationPausePage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erreur: $e'),
-            backgroundColor: context.theme.error,
+            content: Text(
+              'Erreur: $e',
+              style: TextStyle(
+                color:
+                    Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
+              ),
+            ),
+            backgroundColor: Theme.of(context).brightness == Brightness.dark
+                ? context.theme.error.withOpacity(0.75)
+                : context.theme.error,
           ),
         );
       }
@@ -259,13 +283,19 @@ class _NotificationPausePageState extends State<NotificationPausePage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Supprimer la pause'),
+        backgroundColor: context.theme.card,
+        title: Text(
+          'Supprimer la pause',
+          style: TextStyle(color: context.theme.textPrimary),
+        ),
         content: Text(
-            'Êtes-vous sûr de vouloir supprimer la pause "${pause.name}" ?'),
+          'Êtes-vous sûr de vouloir supprimer la pause "${pause.name}" ?',
+          style: TextStyle(color: context.theme.textPrimary),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Annuler'),
+            child: Text('Annuler', style: TextStyle(color: context.theme.primary)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
@@ -278,8 +308,7 @@ class _NotificationPausePageState extends State<NotificationPausePage> {
 
     if (confirmed == true) {
       try {
-        await DependencyInjection.instance.notificationPauseService
-            .deletePause(pause.id);
+        await DependencyInjection.instance.notificationPauseService.deletePause(pause.id);
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -294,8 +323,16 @@ class _NotificationPausePageState extends State<NotificationPausePage> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Erreur: $e'),
-              backgroundColor: context.theme.error,
+              content: Text(
+                'Erreur: $e',
+                style: TextStyle(
+                  color:
+                      Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
+                ),
+              ),
+              backgroundColor: Theme.of(context).brightness == Brightness.dark
+                  ? context.theme.error.withOpacity(0.75)
+                  : context.theme.error,
             ),
           );
         }
@@ -321,18 +358,31 @@ class _NotificationPausePageState extends State<NotificationPausePage> {
   Widget _buildScaffold() {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Pauses de notification'),
+        title: Text(
+          'Pauses de notification',
+          style: TextStyle(
+            color: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
+          ),
+        ),
         backgroundColor: context.theme.primary,
-        foregroundColor: Colors.white,
+        foregroundColor:
+            Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
+          ),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
       body: _buildBody(),
       floatingActionButton: FloatingActionButton(
         onPressed: _showCreatePauseDialog,
-        child: const Icon(Icons.add),
+        backgroundColor: context.theme.primary,
+        child: Icon(
+          Icons.add,
+          color: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
+        ),
       ),
     );
   }
@@ -364,47 +414,84 @@ class _CreatePauseDialogState extends State<_CreatePauseDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Créer une pause'),
+      backgroundColor: context.theme.card,
+      title: Text(
+        'Créer une pause',
+        style: TextStyle(color: context.theme.textPrimary),
+      ),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               controller: _nameController,
-              decoration: const InputDecoration(
+              style: TextStyle(color: context.theme.textPrimary),
+              decoration: InputDecoration(
                 labelText: 'Nom de la pause',
-                hintText: 'Ex: Vacances d\'été',
+                labelStyle: TextStyle(color: context.theme.textSecondary),
+                hintText: "Ex: Vacances d'été",
+                hintStyle: TextStyle(color: context.theme.textSecondary),
+                enabledBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: context.theme.outline),
+                ),
+                focusedBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: context.theme.primary),
+                ),
               ),
             ),
             const SizedBox(height: 16),
             TextField(
               controller: _descriptionController,
-              decoration: const InputDecoration(
+              style: TextStyle(color: context.theme.textPrimary),
+              decoration: InputDecoration(
                 labelText: 'Description',
+                labelStyle: TextStyle(color: context.theme.textSecondary),
                 hintText: 'Ex: Pause pendant les vacances',
+                hintStyle: TextStyle(color: context.theme.textSecondary),
+                enabledBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: context.theme.outline),
+                ),
+                focusedBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: context.theme.primary),
+                ),
               ),
               maxLines: 2,
             ),
             const SizedBox(height: 16),
             ListTile(
-              title: const Text('Date de début'),
-              subtitle: Text(_startDate != null
-                  ? _formatDate(_startDate!)
-                  : 'Sélectionner'),
-              trailing: const Icon(Icons.calendar_today),
+              title: Text(
+                'Date de début',
+                style: TextStyle(color: context.theme.textPrimary),
+              ),
+              subtitle: Text(
+                _startDate != null ? _formatDate(_startDate!) : 'Sélectionner',
+                style: TextStyle(color: context.theme.textSecondary),
+              ),
+              trailing: Icon(Icons.calendar_today, color: context.theme.textSecondary),
               onTap: _selectStartDate,
             ),
             ListTile(
-              title: const Text('Date de fin'),
+              title: Text(
+                'Date de fin',
+                style: TextStyle(color: context.theme.textPrimary),
+              ),
               subtitle: Text(
-                  _endDate != null ? _formatDate(_endDate!) : 'Sélectionner'),
-              trailing: const Icon(Icons.calendar_today),
+                _endDate != null ? _formatDate(_endDate!) : 'Sélectionner',
+                style: TextStyle(color: context.theme.textSecondary),
+              ),
+              trailing: Icon(Icons.calendar_today, color: context.theme.textSecondary),
               onTap: _selectEndDate,
             ),
             const SizedBox(height: 16),
             SwitchListTile(
-              title: const Text('Pause active'),
-              subtitle: const Text('La pause sera activée immédiatement'),
+              title: Text(
+                'Pause active',
+                style: TextStyle(color: context.theme.textPrimary),
+              ),
+              subtitle: Text(
+                'La pause sera activée immédiatement',
+                style: TextStyle(color: context.theme.textSecondary),
+              ),
               value: _isActive,
               onChanged: (value) {
                 setState(() {
@@ -418,10 +505,15 @@ class _CreatePauseDialogState extends State<_CreatePauseDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Annuler'),
+          child: Text('Annuler', style: TextStyle(color: context.theme.primary)),
         ),
         ElevatedButton(
           onPressed: _createPause,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: context.theme.primary,
+            foregroundColor:
+                Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
+          ),
           child: const Text('Créer'),
         ),
       ],
@@ -459,13 +551,18 @@ class _CreatePauseDialogState extends State<_CreatePauseDialog> {
   }
 
   Future<void> _createPause() async {
-    if (_nameController.text.trim().isEmpty ||
-        _startDate == null ||
-        _endDate == null) {
+    if (_nameController.text.trim().isEmpty || _startDate == null || _endDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Veuillez remplir tous les champs'),
-          backgroundColor: context.theme.error,
+          content: Text(
+            'Veuillez remplir tous les champs',
+            style: TextStyle(
+              color: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
+            ),
+          ),
+          backgroundColor: Theme.of(context).brightness == Brightness.dark
+              ? context.theme.error.withOpacity(0.75)
+              : context.theme.error,
         ),
       );
       return;
@@ -474,9 +571,15 @@ class _CreatePauseDialogState extends State<_CreatePauseDialog> {
     if (_endDate!.isBefore(_startDate!)) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content:
-              const Text('La date de fin doit être après la date de début'),
-          backgroundColor: context.theme.error,
+          content: Text(
+            'La date de fin doit être après la date de début',
+            style: TextStyle(
+              color: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
+            ),
+          ),
+          backgroundColor: Theme.of(context).brightness == Brightness.dark
+              ? context.theme.error.withOpacity(0.75)
+              : context.theme.error,
         ),
       );
       return;
@@ -493,16 +596,23 @@ class _CreatePauseDialogState extends State<_CreatePauseDialog> {
         createdAt: DateTime.now(),
       );
 
-      await DependencyInjection.instance.notificationPauseService
-          .createPause(pause);
+      await DependencyInjection.instance.notificationPauseService.createPause(pause);
 
       if (mounted) {
         Navigator.pop(context);
         widget.onPauseCreated?.call(pause);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Pause créée avec succès'),
-            backgroundColor: context.theme.success,
+            content: Text(
+              'Pause créée avec succès',
+              style: TextStyle(
+                color:
+                    Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
+              ),
+            ),
+            backgroundColor: Theme.of(context).brightness == Brightness.dark
+                ? context.theme.success.withOpacity(0.75)
+                : context.theme.success,
           ),
         );
       }
@@ -510,8 +620,16 @@ class _CreatePauseDialogState extends State<_CreatePauseDialog> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erreur: $e'),
-            backgroundColor: context.theme.error,
+            content: Text(
+              'Erreur: $e',
+              style: TextStyle(
+                color:
+                    Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
+              ),
+            ),
+            backgroundColor: Theme.of(context).brightness == Brightness.dark
+                ? context.theme.error.withOpacity(0.75)
+                : context.theme.error,
           ),
         );
       }

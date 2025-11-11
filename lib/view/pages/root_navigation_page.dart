@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../theme/page_theme_provider.dart';
 import 'home_page.dart';
 import 'notifications_page.dart';
 import 'profile_page.dart';
@@ -73,41 +74,49 @@ class _RootNavigationPageState extends State<RootNavigationPage> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final brightness = Theme.of(context).brightness;
+    final pageColors = PageThemeColors.forPage(_selectedIndex, brightness);
 
-    return WillPopScope(
-      onWillPop: _onWillPop,
-      child: Scaffold(
-        body: Stack(
-          children: List.generate(
-            _pages.length,
-            (index) => _buildOffstageNavigator(index),
+    return PageThemeProvider(
+      colors: pageColors,
+      child: WillPopScope(
+        onWillPop: _onWillPop,
+        child: Scaffold(
+          body: Stack(
+            children: List.generate(
+              _pages.length,
+              (index) => _buildOffstageNavigator(index),
+            ),
           ),
-        ),
-        bottomNavigationBar: NavigationBar(
-          selectedIndex: _selectedIndex,
-          onDestinationSelected: _onDestinationSelected,
-          backgroundColor: Theme.of(context).colorScheme.surface,
-          indicatorColor: colorScheme.primary.withOpacity(0.12),
-          height: 72,
-          labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-          destinations: const [
-            NavigationDestination(
-              icon: Icon(Icons.route_outlined),
-              selectedIcon: Icon(Icons.route),
-              label: 'Mes trajets',
+          bottomNavigationBar: AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+            child: NavigationBar(
+              selectedIndex: _selectedIndex,
+              onDestinationSelected: _onDestinationSelected,
+              backgroundColor: Theme.of(context).colorScheme.surface,
+              indicatorColor: pageColors.primary.withOpacity(0.12),
+              height: 72,
+              labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+              destinations: [
+                NavigationDestination(
+                  icon: Icon(Icons.route_outlined, color: _selectedIndex == 0 ? pageColors.primary : Theme.of(context).brightness == Brightness.dark ? Colors.grey.shade400 : Colors.grey.shade600),
+                  selectedIcon: Icon(Icons.route, color: pageColors.primary),
+                  label: 'Mes trajets',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.notifications_outlined, color: _selectedIndex == 1 ? pageColors.primary : Theme.of(context).brightness == Brightness.dark ? Colors.grey.shade400 : Colors.grey.shade600),
+                  selectedIcon: Icon(Icons.notifications, color: pageColors.primary),
+                  label: 'Notifications',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.person_outline, color: _selectedIndex == 2 ? pageColors.primary : Theme.of(context).brightness == Brightness.dark ? Colors.grey.shade400 : Colors.grey.shade600),
+                  selectedIcon: Icon(Icons.person, color: pageColors.primary),
+                  label: 'Profil',
+                ),
+              ],
             ),
-            NavigationDestination(
-              icon: Icon(Icons.notifications_outlined),
-              selectedIcon: Icon(Icons.notifications),
-              label: 'Notifications',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.person_outline),
-              selectedIcon: Icon(Icons.person),
-              label: 'Profil',
-            ),
-          ],
+          ),
         ),
       ),
     );

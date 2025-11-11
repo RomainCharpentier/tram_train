@@ -41,9 +41,11 @@ class LogoWidget extends StatelessWidget {
                     ],
                   ),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.train,
-                  color: Colors.white,
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Colors.black
+                      : Colors.white,
                   size: 40,
                 ),
               );
@@ -54,7 +56,7 @@ class LogoWidget extends StatelessWidget {
         if (showText) ...[
           const SizedBox(height: 8),
           Text(
-            'Train\'Qil',
+            "Train'Qil",
             style: TextStyle(
               fontSize: size * 0.18,
               fontWeight: FontWeight.bold,

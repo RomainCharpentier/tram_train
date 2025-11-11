@@ -10,16 +10,28 @@ class AppThemeColors {
   AppBrandColors get _bc => Theme.of(context).extension<AppBrandColors>()!;
   AppPalette get _ap => Theme.of(context).extension<AppPalette>()!;
 
-  // Couleurs de base (ColorScheme)
-  // API simple demandée: primary/secondary/success/warning/error/info
   Color get primary => _bc.primary;
-  Color get secondary => _bc.secondary;
   Color get tertiary => _ap.tertiary;
-  Color get error => _bc.error;
+  Color get error {
+    final color = _bc.error;
+    return Theme.of(context).brightness == Brightness.dark
+        ? color.withOpacity(0.75)
+        : color;
+  }
   Color get onPrimary => _cs.onPrimary;
-  // Alias texte/fonds/bordure explicites
-  Color get textPrimary => _ap.onSurface;
-  Color get textSecondary => _ap.muted;
+  
+  Color get textPrimary {
+    final color = _ap.onSurface;
+    return Theme.of(context).brightness == Brightness.dark
+        ? color.withOpacity(0.95)
+        : color;
+  }
+  Color get textSecondary {
+    final color = _ap.muted;
+    return Theme.of(context).brightness == Brightness.dark
+        ? color.withOpacity(0.80)
+        : color;
+  }
   Color get textOnPrimary => _cs.onPrimary;
   Color get bgSurface => _ap.surface;
   Color get bgCard => _ap.card;
@@ -27,22 +39,35 @@ class AppThemeColors {
   Color get surface => _ap.surface;
   Color get card => _ap.card;
   Color get onSurface => _ap.onSurface;
-  Color get outline => _ap.outline;
-  Color get muted => _ap.muted;
+  Color get outline {
+    final color = _ap.outline;
+    return Theme.of(context).brightness == Brightness.dark
+        ? color.withOpacity(0.60)
+        : color;
+  }
+  Color get muted {
+    final color = _ap.muted;
+    return Theme.of(context).brightness == Brightness.dark
+        ? color.withOpacity(0.80)
+        : color;
+  }
 
-  // Couleurs sémantiques
-  Color get success => _bc.success;
+  Color get success {
+    final color = _bc.success;
+    return Theme.of(context).brightness == Brightness.dark
+        ? color.withOpacity(0.70)
+        : color;
+  }
+  
   Color get warning => _bc.warning;
   Color get info => _bc.info;
-
-  // Aides alpha fréquentes
+  Color get secondary => _bc.secondary;
   Color _alpha(Color c, double a) => c.withValues(alpha: a);
   Color get errorBg => _alpha(error, 0.08);
   Color get errorBorder => _alpha(error, 0.3);
   Color get successBg => _alpha(success, 0.08);
   Color get successBorder => _alpha(success, 0.3);
 
-  // Gradients
   Color get gradientStart => _ap.gradientStart;
   Color get gradientEnd => _ap.gradientEnd;
 }

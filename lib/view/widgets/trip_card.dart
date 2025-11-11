@@ -27,16 +27,15 @@ class TripCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final presentation = nextTrain != null
-        ? TrainStatusColors.buildPresentation(nextTrain!)
-        : null;
+    final presentation =
+        nextTrain != null ? TrainStatusColors.buildPresentation(nextTrain!, context) : null;
 
     final trailingWidgets = <Widget>[];
     if (nextTrain?.externalUrl != null && nextTrain!.externalUrl!.isNotEmpty) {
       trailingWidgets.add(
         IconButton(
           tooltip: 'Ouvrir sur SNCF.com',
-          icon: const Icon(Icons.open_in_new),
+          icon: Icon(Icons.open_in_new, color: context.theme.textPrimary),
           onPressed: () => _openExternalUrl(context, nextTrain!.externalUrl!),
         ),
       );
@@ -44,39 +43,41 @@ class TripCard extends StatelessWidget {
     if (showActions) {
       trailingWidgets.add(
         PopupMenuButton<String>(
+          icon: Icon(Icons.more_vert, color: context.theme.textPrimary),
           onSelected: (value) => onAction(value, trip),
-          itemBuilder: (context) => const [
+          itemBuilder: (context) => [
             PopupMenuItem(
               value: 'edit',
               child: ListTile(
-                leading: Icon(Icons.edit),
-                title: Text('Modifier'),
+                leading: Icon(Icons.edit, color: context.theme.textPrimary),
+                title: Text('Modifier', style: TextStyle(color: context.theme.textPrimary)),
                 contentPadding: EdgeInsets.zero,
               ),
             ),
             PopupMenuItem(
               value: 'duplicate',
               child: ListTile(
-                leading: Icon(Icons.copy),
-                title: Text('Dupliquer'),
+                leading: Icon(Icons.copy, color: context.theme.textPrimary),
+                title: Text('Dupliquer', style: TextStyle(color: context.theme.textPrimary)),
                 contentPadding: EdgeInsets.zero,
               ),
             ),
             PopupMenuItem(
               value: 'toggle',
               child: ListTile(
-                leading: Icon(Icons.play_arrow),
-                title: Text('Activer/Désactiver'),
+                leading: Icon(Icons.play_arrow, color: context.theme.textPrimary),
+                title:
+                    Text('Activer/Désactiver', style: TextStyle(color: context.theme.textPrimary)),
                 contentPadding: EdgeInsets.zero,
               ),
             ),
             PopupMenuItem(
               value: 'delete',
               child: ListTile(
-                leading: Icon(Icons.delete, color: Colors.red),
+                leading: Icon(Icons.delete, color: context.theme.error),
                 title: Text(
                   'Supprimer',
-                  style: TextStyle(color: Colors.red),
+                  style: TextStyle(color: context.theme.error),
                 ),
                 contentPadding: EdgeInsets.zero,
               ),
@@ -86,76 +87,89 @@ class TripCard extends StatelessWidget {
       );
     }
 
-    return Card(
+    return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      child: InkWell(
-        onTap: onTap,
+      decoration: BoxDecoration(
+        color: context.theme.card,
         borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Expanded(
-                child: Row(
-                  children: [
-                    if (showStatusIndicator) ...[
-                      TrainStatusIndicator(train: nextTrain),
-                      const SizedBox(width: 16),
-                    ] else ...[
-                      Icon(Icons.calendar_today, color: context.theme.muted),
-                      const SizedBox(width: 16),
-                    ],
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            trip.description,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          if (presentation != null) ...[
-                            Text(
-                              presentation.primaryText,
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: presentation.primaryColor,
-                                fontWeight: presentation.state ==
-                                        TrainJourneyState.cancelled
-                                    ? FontWeight.w600
-                                    : FontWeight.normal,
-                              ),
-                            ),
-                            if (presentation.scheduleText != null &&
-                                presentation.scheduleColor != null &&
-                                presentation.scheduleIcon != null) ...[
-                              const SizedBox(height: 4),
-                              _buildScheduleBadge(presentation),
-                            ],
-                          ] else ...[
-                            Text(
-                              '${trip.daysName} à ${trip.timeFormatted}',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: context.theme.textSecondary,
-                              ),
-                            ),
-                          ],
-                        ],
+        border: Border.all(color: context.theme.outline, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.black.withOpacity(0.3)
+                : Colors.black.withOpacity(0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+            spreadRadius: 0,
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (showStatusIndicator) ...[
+                  TrainStatusIndicator(train: nextTrain),
+                  const SizedBox(width: 16),
+                ] else ...[
+                  Icon(Icons.calendar_today, color: context.theme.textSecondary, size: 24),
+                  const SizedBox(width: 16),
+                ],
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        trip.description.isNotEmpty ? trip.description : 'Trajet sans description',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: context.theme.textPrimary,
+                        ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 6),
+                      if (presentation != null) ...[
+                        Text(
+                          presentation.primaryText,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: presentation.primaryColor,
+                            fontWeight: presentation.state == TrainJourneyState.cancelled
+                                ? FontWeight.w600
+                                : FontWeight.normal,
+                          ),
+                        ),
+                        if (presentation.scheduleText != null &&
+                            presentation.scheduleColor != null &&
+                            presentation.scheduleIcon != null) ...[
+                          const SizedBox(height: 4),
+                          _buildScheduleBadge(presentation),
+                        ],
+                      ] else ...[
+                        Text(
+                          '${trip.daysName} à ${trip.timeFormatted}',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: context.theme.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
-              ),
-              if (trailingWidgets.isNotEmpty)
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: trailingWidgets,
-                ),
-            ],
+                if (trailingWidgets.isNotEmpty) ...[
+                  const SizedBox(width: 8),
+                  ...trailingWidgets,
+                ],
+              ],
+            ),
           ),
         ),
       ),
@@ -168,7 +182,7 @@ class TripCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
+        color: color.withOpacity(0.12),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
@@ -200,7 +214,7 @@ class TripCard extends StatelessWidget {
     final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!launched) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Impossible d\'ouvrir le lien SNCF')),
+        const SnackBar(content: Text("Impossible d'ouvrir le lien SNCF")),
       );
     }
   }

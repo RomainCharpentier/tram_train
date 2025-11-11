@@ -146,8 +146,15 @@ class _TripProgressPageState extends State<TripProgressPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Trajet ${widget.trip.description}'),
+        title: Text(
+          'Trajet ${widget.trip.description}',
+          style: TextStyle(
+            color: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
+          ),
+        ),
         backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor:
+            Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
       ),
       body: _buildBody(),
     );
@@ -232,8 +239,9 @@ class _TripProgressPageState extends State<TripProgressPage> {
             padding: const EdgeInsets.only(top: 8),
             child: OutlinedButton.icon(
               onPressed: () => _openExternalUrl(train.externalUrl!),
-              icon: const Icon(Icons.open_in_new),
-              label: const Text('Voir ce trajet sur SNCF.com'),
+              icon: Icon(Icons.open_in_new, color: context.theme.primary),
+              label: Text('Voir ce trajet sur SNCF.com',
+                  style: TextStyle(color: context.theme.primary)),
             ),
           ),
       ],
@@ -242,8 +250,14 @@ class _TripProgressPageState extends State<TripProgressPage> {
 
   Widget _buildJourneyPlan(Train train, bool isInProgress, double progress) {
     if (_isLoadingStops) {
-      return const Card(
-        child: Padding(
+      return Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          color: context.theme.card,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: context.theme.outline, width: 1),
+        ),
+        child: const Padding(
           padding: EdgeInsets.all(20),
           child: Center(child: CircularProgressIndicator()),
         ),
@@ -258,17 +272,24 @@ class _TripProgressPageState extends State<TripProgressPage> {
   }
 
   Widget _buildFullJourneyPlan(Train train, bool isInProgress, double progress) {
-    return Card(
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: context.theme.card,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: context.theme.outline, width: 1),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Parcours du train',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
+                color: context.theme.textPrimary,
               ),
             ),
             const SizedBox(height: 16),
@@ -291,7 +312,7 @@ class _TripProgressPageState extends State<TripProgressPage> {
   }
 
   Widget _buildStopRow(JourneyStop stop, Train train) {
-    final presentation = TrainStatusColors.buildPresentation(train);
+    final presentation = TrainStatusColors.buildPresentation(train, context);
     Color dotColor;
     IconData? dotIcon;
     final isPassed = stop.isPassed;
@@ -301,7 +322,7 @@ class _TripProgressPageState extends State<TripProgressPage> {
       dotColor = presentation.primaryColor;
       dotIcon = Icons.train;
     } else if (isPassed) {
-      dotColor = TrainStatusColors.onTimeColor;
+      dotColor = TrainStatusColors.getPunctualityColor(TrainStatus.onTime, context);
       dotIcon = Icons.check_circle;
     } else {
       dotColor = context.theme.outline;
@@ -322,16 +343,31 @@ class _TripProgressPageState extends State<TripProgressPage> {
             width: 32,
             height: 32,
             decoration: BoxDecoration(
-              color:
-                  isPassed ? Colors.grey.withValues(alpha: 0.1) : dotColor.withValues(alpha: 0.1),
+              color: isPassed
+                  ? (Theme.of(context).brightness == Brightness.dark
+                      ? Colors.grey.shade700.withOpacity(0.1)
+                      : Colors.grey.withValues(alpha: 0.1))
+                  : dotColor.withValues(alpha: 0.1),
               shape: BoxShape.circle,
               border: Border.all(
-                color: isPassed ? Colors.grey : dotColor,
+                color: isPassed
+                    ? (Theme.of(context).brightness == Brightness.dark
+                        ? Colors.grey.shade600
+                        : Colors.grey)
+                    : dotColor,
                 width: 2,
               ),
             ),
             child: dotIcon != null
-                ? Icon(dotIcon, color: isPassed ? Colors.grey : dotColor, size: 18)
+                ? Icon(
+                    dotIcon,
+                    color: isPassed
+                        ? (Theme.of(context).brightness == Brightness.dark
+                            ? Colors.grey.shade400
+                            : Colors.grey)
+                        : dotColor,
+                    size: 18,
+                  )
                 : null,
           ),
           const SizedBox(width: 12),
@@ -419,8 +455,8 @@ class _TripProgressPageState extends State<TripProgressPage> {
     }
 
     final journeyColor = widget.currentTrain != null
-        ? TrainStatusColors.getJourneyStateColor(widget.currentTrain!)
-        : TrainStatusColors.unknownColor;
+        ? TrainStatusColors.getJourneyStateColor(widget.currentTrain!, context)
+        : TrainStatusColors.getPunctualityColor(TrainStatus.unknown, context);
 
     return Padding(
       padding: const EdgeInsets.only(left: 15, top: 4, bottom: 4),
@@ -436,7 +472,9 @@ class _TripProgressPageState extends State<TripProgressPage> {
                   width: 3,
                   height: greyHeight,
                   decoration: BoxDecoration(
-                    color: Colors.grey.withValues(alpha: 0.3),
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.grey.shade600.withOpacity(0.3)
+                        : Colors.grey.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(1.5),
                   ),
                 ),
@@ -470,7 +508,13 @@ class _TripProgressPageState extends State<TripProgressPage> {
   }
 
   Widget _buildSimpleJourneyPlan(Train train, bool isInProgress, double progress) {
-    return Card(
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: context.theme.card,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: context.theme.outline, width: 1),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -478,7 +522,8 @@ class _TripProgressPageState extends State<TripProgressPage> {
           children: [
             Row(
               children: [
-                _buildStationDot(TrainStatusColors.onTimeColor, true),
+                _buildStationDot(
+                    TrainStatusColors.getPunctualityColor(TrainStatus.onTime, context), true),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Column(
@@ -486,9 +531,10 @@ class _TripProgressPageState extends State<TripProgressPage> {
                     children: [
                       Text(
                         widget.trip.departureStation.name,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
+                          color: context.theme.textPrimary,
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -523,7 +569,7 @@ class _TripProgressPageState extends State<TripProgressPage> {
                         height: 4,
                         width: MediaQuery.of(context).size.width * 0.8 * (progress / 100),
                         decoration: BoxDecoration(
-                          color: TrainStatusColors.getJourneyStateColor(train),
+                          color: TrainStatusColors.getJourneyStateColor(train, context),
                           borderRadius: BorderRadius.circular(2),
                         ),
                       ),
@@ -542,7 +588,7 @@ class _TripProgressPageState extends State<TripProgressPage> {
                           width: 16,
                           height: 16,
                           decoration: BoxDecoration(
-                            color: TrainStatusColors.getJourneyStateColor(train),
+                            color: TrainStatusColors.getJourneyStateColor(train, context),
                             shape: BoxShape.circle,
                             border: Border.all(color: Colors.white, width: 2),
                           ),
@@ -563,7 +609,7 @@ class _TripProgressPageState extends State<TripProgressPage> {
                 _buildStationDot(
                   train.status == TrainStatus.cancelled
                       ? TrainStatusColors.cancelledColor
-                      : TrainStatusColors.onTimeColor,
+                      : TrainStatusColors.getPunctualityColor(TrainStatus.onTime, context),
                   false,
                 ),
                 const SizedBox(width: 16),
@@ -573,9 +619,10 @@ class _TripProgressPageState extends State<TripProgressPage> {
                     children: [
                       Text(
                         widget.trip.arrivalStation.name,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
+                          color: context.theme.textPrimary,
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -607,7 +654,8 @@ class _TripProgressPageState extends State<TripProgressPage> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: TrainStatusColors.getJourneyStateColor(train).withValues(alpha: 0.1),
+                    color: TrainStatusColors.getJourneyStateColor(train, context)
+                        .withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -615,7 +663,7 @@ class _TripProgressPageState extends State<TripProgressPage> {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
-                      color: TrainStatusColors.getJourneyStateColor(train),
+                      color: TrainStatusColors.getJourneyStateColor(train, context),
                     ),
                   ),
                 ),
@@ -644,17 +692,24 @@ class _TripProgressPageState extends State<TripProgressPage> {
   }
 
   Widget _buildScheduleDetails(Train train) {
-    return Card(
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: context.theme.card,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: context.theme.outline, width: 1),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Horaires',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
+                color: context.theme.textPrimary,
               ),
             ),
             const SizedBox(height: 12),
@@ -712,9 +767,10 @@ class _TripProgressPageState extends State<TripProgressPage> {
           children: [
             Text(
               time,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
+                color: context.theme.textPrimary,
               ),
             ),
             if (baseTime != null && baseTime != time) ...[
@@ -743,7 +799,7 @@ class _TripProgressPageState extends State<TripProgressPage> {
       return DependencyInjection.instance.clockService.now();
     } catch (e) {
       const useMockData = bool.fromEnvironment('USE_MOCK_DATA');
-      return useMockData ? DateTime(2025, 1, 6, 7, 0) : DateTime.now();
+      return useMockData ? DateTime(2025, 1, 6, 7) : DateTime.now();
     }
   }
 
@@ -773,14 +829,34 @@ class _TripProgressPageState extends State<TripProgressPage> {
     if (uri == null) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Lien invalide')),
+        SnackBar(
+          content: Text(
+            'Lien invalide',
+            style: TextStyle(
+              color: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
+            ),
+          ),
+          backgroundColor: Theme.of(context).brightness == Brightness.dark
+              ? context.theme.error.withOpacity(0.75)
+              : context.theme.error,
+        ),
       );
       return;
     }
     final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!launched && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Impossible d\'ouvrir le lien SNCF')),
+        SnackBar(
+          content: Text(
+            "Impossible d'ouvrir le lien SNCF",
+            style: TextStyle(
+              color: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
+            ),
+          ),
+          backgroundColor: Theme.of(context).brightness == Brightness.dark
+              ? context.theme.error.withOpacity(0.75)
+              : context.theme.error,
+        ),
       );
     }
   }

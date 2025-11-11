@@ -9,6 +9,7 @@ import 'trip_progress_page.dart';
 import '../widgets/logo_widget.dart';
 import '../widgets/trip_card.dart';
 import '../theme/theme_x.dart';
+import '../theme/page_theme_provider.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -318,26 +319,33 @@ class _HomePageState extends State<HomePage> {
     return RefreshIndicator(
       onRefresh: _loadActiveTrips,
       child: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         children: [
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  const Icon(Icons.access_time),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'Heure actuelle (mock) : ${formattedNow[0].toUpperCase()}${formattedNow.substring(1)}',
-                      style: const TextStyle(fontWeight: FontWeight.bold),
+          Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              color: context.theme.card,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: context.theme.outline, width: 1),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.access_time, color: context.theme.info, size: 20),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Heure actuelle (mock) : ${formattedNow[0].toUpperCase()}${formattedNow.substring(1)}',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                      color: context.theme.textPrimary,
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 16),
           if (sortedTrips.isEmpty) ...[
             _buildEmptyTripsMessage(),
           ] else ...[
@@ -349,19 +357,42 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildEmptyTripsMessage() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            Icon(Icons.info, color: context.theme.warning),
-            const SizedBox(height: 8),
-            const Text('Aucun trajet actif', style: TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 4),
-            Text('Utilisez le bouton + pour ajouter un trajet',
-                style: TextStyle(color: context.theme.muted)),
-          ],
-        ),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: context.theme.card,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: context.theme.outline, width: 1),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.info_outline, color: context.theme.info, size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Aucun trajet actif',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                    color: context.theme.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Utilisez le bouton + pour ajouter un trajet',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: context.theme.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -374,6 +405,7 @@ class _HomePageState extends State<HomePage> {
       nextTrain: nextTrain,
       onAction: (action, t) => _handleTripAction(action, t),
       onTap: () => _showTripDetails(trip),
+      showStatusIndicator: true,
       showActions: false,
     );
   }
@@ -409,7 +441,18 @@ class _HomePageState extends State<HomePage> {
         await DependencyInjection.instance.tripReminderService.refreshSchedules();
         _loadActiveTrips();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Trajet dupliqué')),
+          SnackBar(
+            content: Text(
+              'Trajet dupliqué',
+              style: TextStyle(
+                color:
+                    Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
+              ),
+            ),
+            backgroundColor: Theme.of(context).brightness == Brightness.dark
+                ? context.theme.success.withOpacity(0.75)
+                : context.theme.success,
+          ),
         );
         break;
       case 'toggle':
@@ -418,23 +461,35 @@ class _HomePageState extends State<HomePage> {
         await DependencyInjection.instance.tripReminderService.refreshSchedules();
         _loadActiveTrips();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Trajet ${updatedTrip.isActive ? 'activé' : 'désactivé'}')),
+          SnackBar(
+            content: Text(
+              'Trajet ${updatedTrip.isActive ? 'activé' : 'désactivé'}',
+              style: TextStyle(
+                color:
+                    Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
+              ),
+            ),
+            backgroundColor: Theme.of(context).brightness == Brightness.dark
+                ? context.theme.info.withOpacity(0.75)
+                : context.theme.info,
+          ),
         );
         break;
       case 'delete':
         final confirmed = await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
-            title: const Text('Supprimer le trajet'),
-            content: const Text('Êtes-vous sûr de vouloir supprimer ce trajet ?'),
+            title: Text('Supprimer le trajet', style: TextStyle(color: context.theme.textPrimary)),
+            content: Text('Êtes-vous sûr de vouloir supprimer ce trajet ?',
+                style: TextStyle(color: context.theme.textPrimary)),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
-                child: const Text('Annuler'),
+                child: Text('Annuler', style: TextStyle(color: context.theme.primary)),
               ),
               TextButton(
                 onPressed: () => Navigator.pop(context, true),
-                child: const Text('Supprimer', style: TextStyle(color: Colors.red)),
+                child: Text('Supprimer', style: TextStyle(color: context.theme.error)),
               ),
             ],
           ),
@@ -444,7 +499,18 @@ class _HomePageState extends State<HomePage> {
           await DependencyInjection.instance.tripReminderService.refreshSchedules();
           _loadActiveTrips();
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Trajet supprimé (doublons inclus)')),
+            SnackBar(
+              content: Text(
+                'Trajet supprimé (doublons inclus)',
+                style: TextStyle(
+                  color:
+                      Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
+                ),
+              ),
+              backgroundColor: Theme.of(context).brightness == Brightness.dark
+                  ? context.theme.success.withOpacity(0.75)
+                  : context.theme.success,
+            ),
           );
         }
         break;
@@ -471,24 +537,83 @@ class _HomePageState extends State<HomePage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16).copyWith(top: 8),
-              child: Text(
-                'Mes trajets',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w700,
-                  color: context.theme.textPrimary,
-                ),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Builder(
+                    builder: (context) {
+                      final pageColors = PageThemeProvider.of(context);
+                      return Row(
+                        children: [
+                          Container(
+                            width: 4,
+                            height: 28,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  pageColors.primaryDark,
+                                  pageColors.primaryLight,
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          ShaderMask(
+                            shaderCallback: (bounds) => LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                pageColors.primaryDark,
+                                pageColors.primary,
+                              ],
+                            ).createShader(bounds),
+                            child: const Text(
+                              'Mes trajets',
+                              style: TextStyle(
+                                fontSize: 28,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white,
+                                letterSpacing: -0.5,
+                                height: 1.2,
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Consultez vos trajets actifs et suivez les prochains départs en temps réel.',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: context.theme.textSecondary,
+                      height: 1.4,
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 12),
             Expanded(child: _buildBody()),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _navigateToAddTrip(context),
-        child: const Icon(Icons.add),
+      floatingActionButton: Builder(
+        builder: (context) {
+          final pageColors = PageThemeProvider.of(context);
+          return FloatingActionButton(
+            onPressed: () => _navigateToAddTrip(context),
+            backgroundColor: pageColors.primary,
+            child: Icon(
+              Icons.add,
+              color: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
+            ),
+          );
+        },
       ),
     );
   }

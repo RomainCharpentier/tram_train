@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../theme/theme_x.dart';
+import '../theme/page_theme_provider.dart';
 import '../../domain/models/notification_pause.dart';
 import '../../domain/models/station.dart';
 import '../../domain/models/trip.dart' as domain;
@@ -269,18 +270,16 @@ class _NotificationsPageState extends State<NotificationsPage> {
       child: RefreshIndicator(
         onRefresh: _loadData,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           physics: const AlwaysScrollableScrollPhysics(),
           children: [
             _buildHeader(context),
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
             _buildNotificationsSection(context, activeTrips),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
             _buildPauseSection(context),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
             _buildTestCard(context),
-            const SizedBox(height: 24),
-            _buildSystemReminder(context),
           ],
         ),
       ),
@@ -288,23 +287,66 @@ class _NotificationsPageState extends State<NotificationsPage> {
   }
 
   Widget _buildHeader(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Notifications',
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: context.theme.textPrimary,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Builder(
+            builder: (context) {
+              final pageColors = PageThemeProvider.of(context);
+              return Row(
+                children: [
+                  Container(
+                    width: 4,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          pageColors.primaryDark,
+                          pageColors.primaryLight,
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  ShaderMask(
+                    shaderCallback: (bounds) => LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        pageColors.primaryDark,
+                        pageColors.primary,
+                      ],
+                    ).createShader(bounds),
+                    child: const Text(
+                      'Notifications',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                        letterSpacing: -0.5,
+                        height: 1.2,
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Gérez les alertes pour chaque trajet et mettez-les en pause si besoin.',
-          style: TextStyle(color: context.theme.textSecondary),
-        ),
-      ],
+          const SizedBox(height: 6),
+          Text(
+            'Gérez les alertes pour chaque trajet et mettez-les en pause si besoin.',
+            style: TextStyle(
+              fontSize: 13,
+              color: context.theme.textSecondary,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -321,42 +363,102 @@ class _NotificationsPageState extends State<NotificationsPage> {
       return _buildEmptyNotificationsCard(context);
     }
 
-    return Card(
-      child: Column(
-        children: activeTrips.map((trip) {
-          return Column(
-            children: [
-              SwitchListTile(
-                secondary: CircleAvatar(
-                  backgroundColor: context.theme.primary.withOpacity(0.12),
-                  child: Icon(
-                    trip.notificationsEnabled
-                        ? Icons.notifications_active
-                        : Icons.notifications_off,
-                    color: context.theme.primary,
-                  ),
-                ),
-                title: Text(trip.description),
-                subtitle: Text(
-                  '${trip.day.displayName} · ${trip.timeFormatted}',
-                  style: TextStyle(color: context.theme.textSecondary),
-                ),
-                value: trip.notificationsEnabled,
-                onChanged: (value) => _toggleNotifications(trip, value),
+    return Column(
+      children: activeTrips.map((trip) {
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          decoration: BoxDecoration(
+            color: context.theme.card,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: context.theme.outline, width: 1),
+            boxShadow: [
+              BoxShadow(
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.black.withOpacity(0.3)
+                    : Colors.black.withOpacity(0.08),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+                spreadRadius: 0,
               ),
-              if (trip != activeTrips.last) const Divider(height: 1),
             ],
-          );
-        }).toList(),
-      ),
+          ),
+          child: Material(
+            color: context.theme.card,
+            child: InkWell(
+              onTap: () => _toggleNotifications(trip, !trip.notificationsEnabled),
+              borderRadius: BorderRadius.circular(12),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color:
+                            trip.notificationsEnabled ? context.theme.success : context.theme.muted,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        trip.notificationsEnabled
+                            ? Icons.notifications_active
+                            : Icons.notifications_off,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.black
+                            : Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            trip.description.isNotEmpty
+                                ? trip.description
+                                : 'Trajet sans description',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: context.theme.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${trip.day.displayName} · ${trip.timeFormatted}',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: context.theme.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Switch(
+                      value: trip.notificationsEnabled,
+                      onChanged: (value) => _toggleNotifications(trip, value),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      }).toList(),
     );
   }
 
   Widget _buildErrorCard(BuildContext context) {
-    return Card(
-      color: context.theme.errorBg,
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: context.theme.errorBg,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: context.theme.errorBorder, width: 1),
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -375,8 +477,8 @@ class _NotificationsPageState extends State<NotificationsPage> {
             const SizedBox(height: 12),
             ElevatedButton.icon(
               onPressed: _loadData,
-              icon: const Icon(Icons.refresh),
-              label: const Text('Réessayer'),
+              icon: Icon(Icons.refresh, color: context.theme.onPrimary),
+              label: Text('Réessayer', style: TextStyle(color: context.theme.onPrimary)),
             ),
           ],
         ),
@@ -385,16 +487,35 @@ class _NotificationsPageState extends State<NotificationsPage> {
   }
 
   Widget _buildEmptyNotificationsCard(BuildContext context) {
-    return Card(
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: context.theme.card,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: context.theme.outline, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.black.withOpacity(0.3)
+                : Colors.black.withOpacity(0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+            spreadRadius: 0,
+          ),
+        ],
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Column(
           children: [
             Icon(Icons.notifications_off, color: context.theme.muted),
             const SizedBox(height: 12),
-            const Text(
+            Text(
               'Aucune notification active',
-              style: TextStyle(fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: context.theme.textPrimary,
+              ),
             ),
             const SizedBox(height: 4),
             Text(
@@ -409,17 +530,44 @@ class _NotificationsPageState extends State<NotificationsPage> {
   }
 
   Widget _buildPauseSection(BuildContext context) {
-    return Card(
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: context.theme.card,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: context.theme.outline, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.black.withOpacity(0.3)
+                : Colors.black.withOpacity(0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+            spreadRadius: 0,
+          ),
+        ],
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                CircleAvatar(
-                  backgroundColor: context.theme.primary.withOpacity(0.12),
-                  child: Icon(Icons.pause_circle, color: context.theme.primary),
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: context.theme.warning,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.pause_circle,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.black
+                        : Colors.white,
+                    size: 24,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Text(
@@ -458,8 +606,10 @@ class _NotificationsPageState extends State<NotificationsPage> {
                     ),
                     child: Text(
                       _currentPause!.isCurrentlyActive ? 'PAUSE ACTIVE' : 'PAUSE À VENIR',
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.black
+                            : Colors.white,
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
                       ),
@@ -503,17 +653,44 @@ class _NotificationsPageState extends State<NotificationsPage> {
   }
 
   Widget _buildTestCard(BuildContext context) {
-    return Card(
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: context.theme.card,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: context.theme.outline, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.black.withOpacity(0.3)
+                : Colors.black.withOpacity(0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+            spreadRadius: 0,
+          ),
+        ],
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                CircleAvatar(
-                  backgroundColor: context.theme.primary.withOpacity(0.12),
-                  child: Icon(Icons.notifications_active, color: context.theme.primary),
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: context.theme.info,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.notifications_active,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.black
+                        : Colors.white,
+                    size: 24,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Text(
@@ -546,37 +723,17 @@ class _NotificationsPageState extends State<NotificationsPage> {
             const SizedBox(height: 16),
             ElevatedButton.icon(
               onPressed: _isTestingNotification ? null : _sendTestNotification,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: context.theme.primary,
+                foregroundColor:
+                    Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
+              ),
               icon: Icon(
                 _isTestingNotification ? Icons.hourglass_top : Icons.play_arrow,
               ),
               label: Text(_isTestingNotification
                   ? 'Notification dans 5 secondes...'
                   : 'Envoyer une notification test'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSystemReminder(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Astuce',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: context.theme.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Assurez-vous que les notifications sont autorisées pour l’application dans les réglages de votre téléphone.',
-              style: TextStyle(color: context.theme.textSecondary),
             ),
           ],
         ),

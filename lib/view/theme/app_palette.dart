@@ -32,23 +32,23 @@ class AppPalette extends ThemeExtension<AppPalette> {
         tertiary: Color(0xFF1E3A8A),
         gradientStart: Color(0xFF4A90E2),
         gradientEnd: Color(0xFF2E5BBA),
-        surface: Colors.white,
+        surface: Color(0xFFF0F2F5),
         card: Colors.white,
         onSurface: Color(0xFF1A202C),
-        outline: Color(0xFFE5E7EB),
+        outline: Color(0xFFD1D5DB),
         muted: Color(0xFF6B7280),
       );
 
   factory AppPalette.dark() => const AppPalette(
-        primary: Color(0xFF5BA0F2),
-        secondary: Color(0xFF3B6BB0),
-        tertiary: Color(0xFF3B6BB0),
-        gradientStart: Color(0xFF5BA0F2),
-        gradientEnd: Color(0xFF3B6BB0),
+        primary: Color(0xFF7BB3F5),
+        secondary: Color(0xFF6BA3E8),
+        tertiary: Color(0xFF6BA3E8),
+        gradientStart: Color(0xFF7BB3F5),
+        gradientEnd: Color(0xFF6BA3E8),
         surface: Color(0xFF1A1A1A),
         card: Color(0xFF2A2A2A),
-        onSurface: Colors.white,
-        outline: Color(0xFF374151),
+        onSurface: Color(0xFFE5E7EB),
+        outline: Color(0xFF4B5563),
         muted: Color(0xFF9CA3AF),
       );
 

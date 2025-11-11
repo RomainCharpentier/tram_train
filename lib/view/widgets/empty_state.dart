@@ -35,6 +35,12 @@ class EmptyState extends StatelessWidget {
             const SizedBox(height: 24),
             ElevatedButton(
               onPressed: onAction,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: context.theme.primary,
+                foregroundColor: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.black
+                    : Colors.white,
+              ),
               child: Text(actionLabel!),
             ),
           ],

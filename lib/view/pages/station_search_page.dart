@@ -55,7 +55,7 @@ class _StationSearchPageState extends State<StationSearchPage> {
   Future<void> _loadFavoriteStatus() async {
     final favorites = await _favoriteStationService.getAllFavoriteStations();
     setState(() {
-      _favoriteStatus = {for (var fav in favorites) fav.id: true};
+      _favoriteStatus = {for (final fav in favorites) fav.id: true};
     });
   }
 
@@ -88,19 +88,16 @@ class _StationSearchPageState extends State<StationSearchPage> {
 
     try {
       final destinationNames =
-          await ConnectedStationsService.getConnectedDestinationNames(
-              widget.departureStation!);
+          await ConnectedStationsService.getConnectedDestinationNames(widget.departureStation!);
 
       final results = destinationNames
-          .map((name) => SearchResult.suggestion(
-              Station(id: 'TEMP_${name.hashCode}', name: name),
+          .map((name) => SearchResult.suggestion(Station(id: 'TEMP_${name.hashCode}', name: name),
               metadata: {'connected': true, 'suggestion': true}))
           .toList();
 
       _setSearchResults(results);
     } catch (e) {
-      _setErrorState(
-          'Erreur lors du chargement des destinations connectées: $e');
+      _setErrorState('Erreur lors du chargement des destinations connectées: $e');
     }
   }
 
@@ -119,8 +116,8 @@ class _StationSearchPageState extends State<StationSearchPage> {
     _setLoadingState(true);
 
     try {
-      final results = await DependencyInjection.instance.stationSearchService
-          .searchStations(searchQuery);
+      final results =
+          await DependencyInjection.instance.stationSearchService.searchStations(searchQuery);
       _setSearchResults(results);
       _loadFavoriteStatus();
     } catch (e) {
@@ -137,9 +134,8 @@ class _StationSearchPageState extends State<StationSearchPage> {
     }
 
     try {
-      final suggestions = await DependencyInjection
-          .instance.stationSearchService
-          .getSearchSuggestions(query);
+      final suggestions =
+          await DependencyInjection.instance.stationSearchService.getSearchSuggestions(query);
       setState(() {
         _suggestions = suggestions;
       });
@@ -154,8 +150,8 @@ class _StationSearchPageState extends State<StationSearchPage> {
     });
 
     try {
-      final results = await DependencyInjection.instance.stationSearchService
-          .searchStationsByType(type);
+      final results =
+          await DependencyInjection.instance.stationSearchService.searchStationsByType(type);
       _setSearchResults(results);
     } catch (e) {
       _setErrorState('Erreur lors de la recherche par type: $e');
@@ -166,14 +162,9 @@ class _StationSearchPageState extends State<StationSearchPage> {
     _setLoadingState(true);
 
     try {
-      final results = await DependencyInjection.instance.stationSearchService
-          .advancedSearch(
-        query: _searchController.text.trim().isNotEmpty
-            ? _searchController.text.trim()
-            : null,
-        transportType: _selectedTransportType != TransportType.all
-            ? _selectedTransportType
-            : null,
+      final results = await DependencyInjection.instance.stationSearchService.advancedSearch(
+        query: _searchController.text.trim().isNotEmpty ? _searchController.text.trim() : null,
+        transportType: _selectedTransportType != TransportType.all ? _selectedTransportType : null,
       );
       _setSearchResults(results);
     } catch (e) {
@@ -264,13 +255,22 @@ class _StationSearchPageState extends State<StationSearchPage> {
       spacing: 8,
       children: TransportType.values.map((type) {
         return FilterChip(
-          label: Text(type.displayName),
+          label: Text(
+            type.displayName,
+            style: TextStyle(
+              color: _selectedTransportType == type
+                  ? context.theme.primary
+                  : context.theme.textPrimary,
+            ),
+          ),
           selected: _selectedTransportType == type,
           onSelected: (selected) {
             if (selected) {
               _searchByTransportType(type);
             }
           },
+          selectedColor: context.theme.primary.withOpacity(0.2),
+          checkmarkColor: context.theme.primary,
         );
       }).toList(),
     );
@@ -293,8 +293,7 @@ class _StationSearchPageState extends State<StationSearchPage> {
     }
 
     if (_error != null) {
-      return ErrorState(
-          message: 'Erreur: $_error', onRetry: () => _searchStations());
+      return ErrorState(message: 'Erreur: $_error', onRetry: () => _searchStations());
     }
 
     if (_searchResults.isEmpty) {
@@ -306,13 +305,11 @@ class _StationSearchPageState extends State<StationSearchPage> {
         if (widget.departureStation != null &&
             _searchResults.isNotEmpty &&
             _searchController.text.isEmpty)
-          InfoBanner(
-              text: 'Gares connectées à ${widget.departureStation!.name}'),
+          InfoBanner(text: 'Gares connectées à ${widget.departureStation!.name}'),
         Expanded(
           child: ListView.builder(
             itemCount: _searchResults.length,
-            itemBuilder: (context, index) =>
-                _buildStationCard(_searchResults[index]),
+            itemBuilder: (context, index) => _buildStationCard(_searchResults[index]),
           ),
         ),
       ],
@@ -322,9 +319,8 @@ class _StationSearchPageState extends State<StationSearchPage> {
   Widget _buildEmptyState() {
     return EmptyState(
       icon: Icons.search,
-      title: widget.departureStation != null
-          ? 'Aucune gare connectée trouvée'
-          : 'Recherchez une gare',
+      title:
+          widget.departureStation != null ? 'Aucune gare connectée trouvée' : 'Recherchez une gare',
       subtitle: widget.departureStation != null
           ? 'Aucune gare connectée à ${widget.departureStation!.name}'
           : 'Tapez le nom d\'une gare et cliquez sur "Rechercher"',
@@ -335,13 +331,21 @@ class _StationSearchPageState extends State<StationSearchPage> {
     final station = result.data;
     final isSuggestion = result.metadata?['suggestion'] == true;
 
-    return Card(
+    return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      decoration: BoxDecoration(
+        color: context.theme.card,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: context.theme.outline, width: 1),
+      ),
       child: ListTile(
         leading: _buildStationLeading(result, isSuggestion),
         title: Text(
           station.name,
-          style: const TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: context.theme.textPrimary,
+          ),
         ),
         subtitle: _buildStationSubtitle(result, station, isSuggestion),
         trailing: _buildStationTrailing(station),
@@ -352,8 +356,7 @@ class _StationSearchPageState extends State<StationSearchPage> {
 
   Widget _buildStationLeading(SearchResult<Station> result, bool isSuggestion) {
     return CircleAvatar(
-      backgroundColor:
-          isSuggestion ? context.theme.warning : _getTypeColor(result.type),
+      backgroundColor: isSuggestion ? context.theme.warning : _getTypeColor(result.type),
       child: Icon(
         isSuggestion ? Icons.lightbulb_outline : _getTypeIcon(result.type),
         color: Colors.white,
@@ -361,17 +364,18 @@ class _StationSearchPageState extends State<StationSearchPage> {
     );
   }
 
-  Widget _buildStationSubtitle(
-      SearchResult<Station> result, Station station, bool isSuggestion) {
+  Widget _buildStationSubtitle(SearchResult<Station> result, Station station, bool isSuggestion) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(station.description ?? ''),
+        Text(
+          station.description ?? '',
+          style: TextStyle(color: context.theme.textSecondary),
+        ),
         if (isSuggestion)
           Text(
             'Suggestion - Cliquez pour rechercher cette gare',
-            style: TextStyle(
-                color: context.theme.warning, fontStyle: FontStyle.italic),
+            style: TextStyle(color: context.theme.warning, fontStyle: FontStyle.italic),
           ),
         if (result.metadata?['distance'] != null)
           Text(
@@ -389,7 +393,11 @@ class _StationSearchPageState extends State<StationSearchPage> {
 
   Widget? _buildStationTrailing(Station station) {
     if (widget.showFavoriteButton && _favoriteStatus[station.id] == true) {
-      return Icon(Icons.star, color: Colors.amber);
+      return Icon(
+        Icons.star,
+        color:
+            Theme.of(context).brightness == Brightness.dark ? Colors.amber.shade300 : Colors.amber,
+      );
     }
     return null;
   }
@@ -460,7 +468,7 @@ class _StationSearchPageState extends State<StationSearchPage> {
     if (station.id.startsWith('TEMP_')) {
       _showSnackBar(
           'Veuillez d\'abord rechercher la station "${station.name}" pour l\'ajouter aux favoris',
-          Colors.orange);
+          context.theme.warning);
       return;
     }
 
@@ -478,28 +486,34 @@ class _StationSearchPageState extends State<StationSearchPage> {
         _favoriteStatus[station.id] = !isFavorite;
       });
     } catch (e) {
-      _showSnackBar('Erreur: ${e.toString()}', Colors.red);
+      _showSnackBar('Erreur: ${e.toString()}', context.theme.error);
     }
   }
 
   Future<void> _removeFavorite(Station station) async {
     await _favoriteStationService.removeFavoriteStation(station.id);
     if (!mounted) return;
-    _showSnackBar('${station.name} retirée des favoris', Colors.orange);
+    _showSnackBar('${station.name} retirée des favoris', context.theme.warning);
   }
 
   Future<void> _addFavorite(Station station) async {
     await _favoriteStationService.addFavoriteStation(station);
     if (!mounted) return;
-    _showSnackBar('${station.name} ajoutée aux favoris', Colors.green);
+    _showSnackBar('${station.name} ajoutée aux favoris', context.theme.success);
   }
 
   void _showSnackBar(String message, Color backgroundColor) {
     if (!mounted) return;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message),
-        backgroundColor: backgroundColor,
+        content: Text(
+          message,
+          style: TextStyle(
+            color: isDark ? Colors.black : Colors.white,
+          ),
+        ),
+        backgroundColor: isDark ? backgroundColor.withOpacity(0.75) : backgroundColor,
       ),
     );
   }
@@ -523,8 +537,8 @@ class _StationSearchPageState extends State<StationSearchPage> {
     _setLoadingState(true);
 
     try {
-      final results = await DependencyInjection.instance.stationSearchService
-          .searchStations(destinationName);
+      final results =
+          await DependencyInjection.instance.stationSearchService.searchStations(destinationName);
 
       if (results.isEmpty) {
         _setErrorState('Aucune gare trouvée pour "$destinationName"');
@@ -582,11 +596,22 @@ class _StationSearchPageState extends State<StationSearchPage> {
   PreferredSizeWidget _buildAppBar() {
     final canPop = Navigator.of(context).canPop();
     return AppBar(
-      title: const Text('Recherche de Gares'),
+      title: Text(
+        'Recherche de Gares',
+        style: TextStyle(
+          color: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
+        ),
+      ),
       backgroundColor: context.theme.primary,
+      foregroundColor:
+          Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
       leading: canPop
           ? IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              icon: Icon(
+                Icons.arrow_back,
+                color:
+                    Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
+              ),
               onPressed: () => Navigator.of(context).maybePop(),
             )
           : null,
@@ -594,7 +619,7 @@ class _StationSearchPageState extends State<StationSearchPage> {
         IconButton(
           icon: Icon(
             _showAdvancedFilters ? Icons.filter_list_off : Icons.filter_list,
-            color: Colors.white,
+            color: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
           ),
           onPressed: () {
             setState(() {

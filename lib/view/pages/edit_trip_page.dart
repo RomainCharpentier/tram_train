@@ -48,7 +48,9 @@ class _EditTripPageState extends State<EditTripPage> {
       onPressed: canSave ? _saveTrip : null,
       style: ElevatedButton.styleFrom(
         backgroundColor: Theme.of(context).colorScheme.primary,
-        foregroundColor: Theme.of(context).colorScheme.onPrimary,
+        foregroundColor: Theme.of(context).brightness == Brightness.dark
+            ? Colors.black
+            : Colors.white,
         padding: const EdgeInsets.symmetric(vertical: 16),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
@@ -164,10 +166,18 @@ class _EditTripPageState extends State<EditTripPage> {
 
   void _showSnackBar(String message, Color backgroundColor) {
     if (!mounted) return;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message),
-        backgroundColor: backgroundColor,
+        content: Text(
+          message,
+          style: TextStyle(
+            color: isDark ? Colors.black : Colors.white,
+          ),
+        ),
+        backgroundColor: isDark
+            ? backgroundColor.withOpacity(0.75)
+            : backgroundColor,
         duration: const Duration(seconds: 5),
       ),
     );
@@ -204,38 +214,93 @@ class _EditTripPageState extends State<EditTripPage> {
 
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
-      title: const Text('Modifier le trajet'),
+      title: Text(
+        'Modifier le trajet',
+        style: TextStyle(
+          color: Theme.of(context).brightness == Brightness.dark
+              ? Colors.black
+              : Colors.white,
+        ),
+      ),
       backgroundColor: Theme.of(context).colorScheme.primary,
-      foregroundColor: Theme.of(context).colorScheme.onPrimary,
+      foregroundColor: Theme.of(context).brightness == Brightness.dark
+          ? Colors.black
+          : Colors.white,
       leading: IconButton(
-        icon: Icon(Icons.arrow_back,
-            color: Theme.of(context).colorScheme.onPrimary),
+        icon: Icon(
+          Icons.arrow_back,
+          color: Theme.of(context).brightness == Brightness.dark
+              ? Colors.black
+              : Colors.white,
+        ),
         onPressed: () => Navigator.of(context).pop(),
       ),
     );
   }
 
   Widget _buildDepartureStationCard() {
-    return Card(
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: context.theme.card,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: context.theme.outline, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.black.withOpacity(0.3)
+                : Colors.black.withOpacity(0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+            spreadRadius: 0,
+          ),
+        ],
+      ),
       child: ListTile(
-        leading:
-            Icon(Icons.train, color: Theme.of(context).colorScheme.primary),
-        title: Text(_departureStation.name),
-        subtitle: Text(_departureStation.description ?? ''),
-        trailing: const Icon(Icons.arrow_forward_ios),
+        leading: Icon(Icons.train, color: context.theme.primary),
+        title: Text(
+          _departureStation.name,
+          style: TextStyle(color: context.theme.textPrimary),
+        ),
+        subtitle: Text(
+          _departureStation.description ?? '',
+          style: TextStyle(color: context.theme.textSecondary),
+        ),
+        trailing: Icon(Icons.arrow_forward_ios, color: context.theme.textSecondary),
         onTap: () => _selectStation(true),
       ),
     );
   }
 
   Widget _buildArrivalStationCard() {
-    return Card(
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: context.theme.card,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: context.theme.outline, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.black.withOpacity(0.3)
+                : Colors.black.withOpacity(0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+            spreadRadius: 0,
+          ),
+        ],
+      ),
       child: ListTile(
-        leading: Icon(Icons.location_on,
-            color: Theme.of(context).colorScheme.secondary),
-        title: Text(_arrivalStation.name),
-        subtitle: Text(_arrivalStation.description ?? ''),
-        trailing: const Icon(Icons.arrow_forward_ios),
+        leading: Icon(Icons.location_on, color: context.theme.secondary),
+        title: Text(
+          _arrivalStation.name,
+          style: TextStyle(color: context.theme.textPrimary),
+        ),
+        subtitle: Text(
+          _arrivalStation.description ?? '',
+          style: TextStyle(color: context.theme.textSecondary),
+        ),
+        trailing: Icon(Icons.arrow_forward_ios, color: context.theme.textSecondary),
         onTap: () => _selectStation(false),
       ),
     );
@@ -251,9 +316,11 @@ class _EditTripPageState extends State<EditTripPage> {
             color: Theme.of(context).colorScheme.primary,
             borderRadius: BorderRadius.circular(20),
           ),
-          child: const Icon(
+          child: Icon(
             Icons.swap_vert,
-            color: Colors.white,
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.black
+                : Colors.white,
             size: 24,
           ),
         ),
@@ -298,37 +365,99 @@ class _EditTripPageState extends State<EditTripPage> {
   }
 
   Widget _buildTimeCard() {
-    return Card(
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: context.theme.card,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: context.theme.outline, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.black.withOpacity(0.3)
+                : Colors.black.withOpacity(0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+            spreadRadius: 0,
+          ),
+        ],
+      ),
       child: ListTile(
-        leading: Icon(Icons.access_time,
-            color: Theme.of(context).colorScheme.primary),
-        title: Text('Départ à ${_selectedTime.format(context)}'),
-        trailing: const Icon(Icons.arrow_forward_ios),
+        leading: Icon(Icons.access_time, color: context.theme.primary),
+        title: Text(
+          'Départ à ${_selectedTime.format(context)}',
+          style: TextStyle(color: context.theme.textPrimary),
+        ),
+        trailing: Icon(Icons.arrow_forward_ios, color: context.theme.textSecondary),
         onTap: _selectTime,
       ),
     );
   }
 
   Widget _buildActiveSwitch() {
-    return Card(
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: context.theme.card,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: context.theme.outline, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.black.withOpacity(0.3)
+                : Colors.black.withOpacity(0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+            spreadRadius: 0,
+          ),
+        ],
+      ),
       child: SwitchListTile(
-        title: const Text('Trajet actif'),
-        subtitle: const Text('Ce trajet sera affiché sur le tableau de bord'),
+        title: Text(
+          'Trajet actif',
+          style: TextStyle(color: context.theme.textPrimary),
+        ),
+        subtitle: Text(
+          'Ce trajet sera affiché sur le tableau de bord',
+          style: TextStyle(color: context.theme.textSecondary),
+        ),
         value: _isActive,
         onChanged: (value) => setState(() => _isActive = value),
-        activeThumbColor: Theme.of(context).colorScheme.primary,
+        activeColor: context.theme.primary,
       ),
     );
   }
 
   Widget _buildNotificationsSwitch() {
-    return Card(
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: context.theme.card,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: context.theme.outline, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.black.withOpacity(0.3)
+                : Colors.black.withOpacity(0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+            spreadRadius: 0,
+          ),
+        ],
+      ),
       child: SwitchListTile(
-        title: const Text('Notifications activées'),
-        subtitle: const Text('Recevoir des notifications pour ce trajet'),
+        title: Text(
+          'Notifications activées',
+          style: TextStyle(color: context.theme.textPrimary),
+        ),
+        subtitle: Text(
+          'Recevoir des notifications pour ce trajet',
+          style: TextStyle(color: context.theme.textSecondary),
+        ),
         value: _notificationsEnabled,
         onChanged: (value) => setState(() => _notificationsEnabled = value),
-        activeThumbColor: Theme.of(context).colorScheme.primary,
+        activeColor: context.theme.primary,
       ),
     );
   }

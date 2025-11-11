@@ -56,10 +56,8 @@ class ThemeService extends ChangeNotifier {
         secondary: palette.secondary,
         surface: palette.surface,
         error: const Color(0xFFE53E3E),
-        onPrimary: Colors.white,
         onSecondary: Colors.white,
         onSurface: palette.onSurface,
-        onError: Colors.white,
       ),
       appBarTheme: AppBarTheme(
         backgroundColor: palette.primary,
@@ -96,13 +94,13 @@ class ThemeService extends ChangeNotifier {
       useMaterial3: true,
       brightness: Brightness.dark,
       colorScheme: ColorScheme.dark(
-        primary: palette.primary,
-        secondary: palette.secondary,
+        primary: palette.primary.withOpacity(0.75),
+        secondary: palette.secondary.withOpacity(0.75),
         surface: palette.surface,
-        error: const Color(0xFFFF6B6B),
+        error: const Color(0xFFF87171).withOpacity(0.75), // Rouge plus doux
         onPrimary: Colors.white,
         onSecondary: Colors.white,
-        onSurface: Colors.white,
+        onSurface: palette.onSurface.withOpacity(0.95), // Texte légèrement adouci
         onError: Colors.white,
       ),
       appBarTheme: AppBarTheme(

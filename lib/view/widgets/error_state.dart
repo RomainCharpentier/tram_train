@@ -17,11 +17,20 @@ class ErrorState extends StatelessWidget {
               size: 64, color: context.theme.error.withValues(alpha: 0.8)),
           const SizedBox(height: 16),
           Text(message,
-              style: const TextStyle(fontSize: 16),
+              style: TextStyle(fontSize: 16, color: context.theme.textPrimary),
               textAlign: TextAlign.center),
           if (onRetry != null) ...[
             const SizedBox(height: 16),
-            ElevatedButton(onPressed: onRetry, child: const Text('Réessayer')),
+            ElevatedButton(
+              onPressed: onRetry,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: context.theme.primary,
+                foregroundColor: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.black
+                    : Colors.white,
+              ),
+              child: const Text('Réessayer'),
+            ),
           ],
         ],
       ),

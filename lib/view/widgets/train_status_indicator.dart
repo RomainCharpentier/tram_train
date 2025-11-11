@@ -28,7 +28,7 @@ class TrainStatusIndicator extends StatelessWidget {
       );
     }
 
-    final presentation = TrainStatusColors.buildPresentation(train!);
+    final presentation = TrainStatusColors.buildPresentation(train!, context);
 
     return _buildIndicator(
       color: presentation.primaryColor,
@@ -50,8 +50,8 @@ class TrainStatusIndicator extends StatelessWidget {
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        shape: BoxShape.circle,
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: color, width: borderWidth),
       ),
       child: Icon(

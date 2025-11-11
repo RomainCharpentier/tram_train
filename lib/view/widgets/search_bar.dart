@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/theme_x.dart';
 
 class AppSearchBar extends StatelessWidget {
   final TextEditingController controller;
@@ -26,12 +27,14 @@ class AppSearchBar extends StatelessWidget {
           child: TextField(
             controller: controller,
             focusNode: focusNode,
+            style: TextStyle(color: context.theme.textPrimary),
             decoration: InputDecoration(
               hintText: hintText,
-              prefixIcon: const Icon(Icons.search),
+              hintStyle: TextStyle(color: context.theme.textSecondary),
+              prefixIcon: Icon(Icons.search, color: context.theme.textSecondary),
               suffixIcon: controller.text.isNotEmpty
                   ? IconButton(
-                      icon: const Icon(Icons.clear),
+                      icon: Icon(Icons.clear, color: context.theme.textSecondary),
                       onPressed: () {
                         controller.clear();
                         onChanged?.call('');
@@ -39,8 +42,19 @@ class AppSearchBar extends StatelessWidget {
                       },
                     )
                   : null,
+              filled: true,
+              fillColor: context.theme.card,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: context.theme.outline),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: context.theme.outline),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: context.theme.primary, width: 2),
               ),
             ),
             onChanged: onChanged,
@@ -54,6 +68,10 @@ class AppSearchBar extends StatelessWidget {
             icon: const Icon(Icons.search),
             label: const Text('Rechercher'),
             style: ElevatedButton.styleFrom(
+              backgroundColor: context.theme.primary,
+              foregroundColor: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.black
+                  : Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             ),
           ),
