@@ -53,21 +53,16 @@ class _AddTripPageState extends State<AddTripPage> {
         title: Text(
           'Ajouter un favori',
           style: TextStyle(
-            color: Theme.of(context).brightness == Brightness.dark
-                ? Colors.black
-                : Colors.white,
+            color: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
           ),
         ),
         backgroundColor: context.theme.primary,
-        foregroundColor: Theme.of(context).brightness == Brightness.dark
-            ? Colors.black
-            : Colors.white,
+        foregroundColor:
+            Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
         leading: IconButton(
           icon: Icon(
             Icons.arrow_back,
-            color: Theme.of(context).brightness == Brightness.dark
-                ? Colors.black
-                : Colors.white,
+            color: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
           ),
           onPressed: () => Navigator.of(context).pop(),
         ),
@@ -320,7 +315,7 @@ class _AddTripPageState extends State<AddTripPage> {
               decoration: BoxDecoration(
                 color: context.theme.card,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: context.theme.outline, width: 1),
+                border: Border.all(color: context.theme.outline),
                 boxShadow: [
                   BoxShadow(
                     color: Theme.of(context).brightness == Brightness.dark
@@ -328,7 +323,6 @@ class _AddTripPageState extends State<AddTripPage> {
                         : Colors.black.withOpacity(0.08),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
-                    spreadRadius: 0,
                   ),
                 ],
               ),
@@ -356,7 +350,7 @@ class _AddTripPageState extends State<AddTripPage> {
               decoration: BoxDecoration(
                 color: context.theme.card,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: context.theme.outline, width: 1),
+                border: Border.all(color: context.theme.outline),
                 boxShadow: [
                   BoxShadow(
                     color: Theme.of(context).brightness == Brightness.dark
@@ -364,7 +358,6 @@ class _AddTripPageState extends State<AddTripPage> {
                         : Colors.black.withOpacity(0.08),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
-                    spreadRadius: 0,
                   ),
                 ],
               ),
@@ -413,7 +406,7 @@ class _AddTripPageState extends State<AddTripPage> {
                 decoration: BoxDecoration(
                   color: context.theme.card,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: context.theme.outline, width: 1),
+                  border: Border.all(color: context.theme.outline),
                   boxShadow: [
                     BoxShadow(
                       color: Theme.of(context).brightness == Brightness.dark
@@ -421,7 +414,6 @@ class _AddTripPageState extends State<AddTripPage> {
                           : Colors.black.withOpacity(0.08),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
-                      spreadRadius: 0,
                     ),
                   ],
                 ),
@@ -448,7 +440,7 @@ class _AddTripPageState extends State<AddTripPage> {
                 decoration: BoxDecoration(
                   color: context.theme.card,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: context.theme.outline, width: 1),
+                  border: Border.all(color: context.theme.outline),
                   boxShadow: [
                     BoxShadow(
                       color: Theme.of(context).brightness == Brightness.dark
@@ -456,7 +448,6 @@ class _AddTripPageState extends State<AddTripPage> {
                           : Colors.black.withOpacity(0.08),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
-                      spreadRadius: 0,
                     ),
                   ],
                 ),
@@ -483,47 +474,96 @@ class _AddTripPageState extends State<AddTripPage> {
                             final arrStr = arr != null ? _formatHHmm(arr) : '??:??';
                             final key = _candidateKey(t);
                             final already = _isAlreadySavedTrain(t);
-                            return RadioListTile<String>(
-                              value: key,
-                              groupValue: _selectedCandidateId,
-                              onChanged: already
-                                  ? null
-                                  : (val) {
-                                      setState(() {
-                                        _selectedCandidateId = key;
-                                        _selectedTime = flutter.TimeOfDay(
-                                          hour: t.departureTime.hour,
-                                          minute: t.departureTime.minute,
-                                        );
-                                      });
-                                    },
-                              activeColor: context.theme.primary,
-                              secondary: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.schedule, color: context.theme.textSecondary),
-                                  if (already) const SizedBox(width: 8),
-                                  if (already)
-                                    Chip(
-                                      label: Text(
-                                        'Déjà enregistré',
-                                        style: TextStyle(
-                                          color: context.theme.textPrimary,
-                                          fontSize: 12,
+                            final isSelected = _selectedCandidateId == key;
+                            return Column(
+                              children: [
+                                RadioListTile<String>(
+                                  value: key,
+                                  groupValue: _selectedCandidateId,
+                                  onChanged: already
+                                      ? null
+                                      : (val) {
+                                          setState(() {
+                                            _selectedCandidateId = key;
+                                            _selectedTime = flutter.TimeOfDay(
+                                              hour: t.departureTime.hour,
+                                              minute: t.departureTime.minute,
+                                            );
+                                          });
+                                        },
+                                  activeColor: context.theme.primary,
+                                  secondary: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.schedule, color: context.theme.textSecondary),
+                                      if (already) const SizedBox(width: 8),
+                                      if (already)
+                                        Chip(
+                                          label: Text(
+                                            'Déjà enregistré',
+                                            style: TextStyle(
+                                              color: context.theme.textPrimary,
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                          backgroundColor: context.theme.muted.withOpacity(0.2),
                                         ),
-                                      ),
-                                      backgroundColor: context.theme.muted.withOpacity(0.2),
+                                    ],
+                                  ),
+                                  title: Text(
+                                    '$depStr → $arrStr',
+                                    style: TextStyle(color: context.theme.textPrimary),
+                                  ),
+                                  subtitle: Text(
+                                    '${_formatDayLabel(t.departureTime)} • ${t.direction} • ${t.statusText}',
+                                    style: TextStyle(color: context.theme.textSecondary),
+                                  ),
+                                ),
+                                // Afficher les arrêts intermédiaires si le trajet est sélectionné
+                                if (isSelected && t.intermediateStops.isNotEmpty) ...[
+                                  Padding(
+                                    padding:
+                                        const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Arrêts intermédiaires:',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
+                                            color: context.theme.textSecondary,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Wrap(
+                                          spacing: 4,
+                                          runSpacing: 4,
+                                          children: t.intermediateStops.map((stop) {
+                                            final time = stop.departureTime ?? stop.arrivalTime;
+                                            final timeStr = time != null ? _formatHHmm(time) : '';
+                                            return Chip(
+                                              label: Text(
+                                                timeStr.isNotEmpty
+                                                    ? '${stop.station.name} ($timeStr)'
+                                                    : stop.station.name,
+                                                style: TextStyle(
+                                                  fontSize: 11,
+                                                  color: context.theme.textPrimary,
+                                                ),
+                                              ),
+                                              backgroundColor:
+                                                  context.theme.primary.withOpacity(0.1),
+                                              padding: const EdgeInsets.symmetric(
+                                                  horizontal: 8, vertical: 4),
+                                            );
+                                          }).toList(),
+                                        ),
+                                      ],
                                     ),
+                                  ),
                                 ],
-                              ),
-                              title: Text(
-                                '$depStr → $arrStr',
-                                style: TextStyle(color: context.theme.textPrimary),
-                              ),
-                              subtitle: Text(
-                                '${_formatDayLabel(t.departureTime)} • ${t.direction} • ${t.statusText}',
-                                style: TextStyle(color: context.theme.textSecondary),
-                              ),
+                              ],
                             );
                           },
                         ),
@@ -570,7 +610,7 @@ class _AddTripPageState extends State<AddTripPage> {
                 decoration: BoxDecoration(
                   color: context.theme.card,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: context.theme.outline, width: 1),
+                  border: Border.all(color: context.theme.outline),
                   boxShadow: [
                     BoxShadow(
                       color: Theme.of(context).brightness == Brightness.dark
@@ -578,7 +618,6 @@ class _AddTripPageState extends State<AddTripPage> {
                           : Colors.black.withOpacity(0.08),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
-                      spreadRadius: 0,
                     ),
                   ],
                 ),
@@ -609,7 +648,8 @@ class _AddTripPageState extends State<AddTripPage> {
                         runSpacing: 4,
                         children: [
                           Chip(
-                            avatar: Icon(Icons.access_time, size: 16, color: context.theme.textSecondary),
+                            avatar: Icon(Icons.access_time,
+                                size: 16, color: context.theme.textSecondary),
                             label: Text(
                               _selectedTime!.format(context),
                               style: TextStyle(color: context.theme.textPrimary),
@@ -618,7 +658,8 @@ class _AddTripPageState extends State<AddTripPage> {
                           ),
                           if (_selectedDays.isNotEmpty)
                             Chip(
-                              avatar: Icon(Icons.event, size: 16, color: context.theme.textSecondary),
+                              avatar:
+                                  Icon(Icons.event, size: 16, color: context.theme.textSecondary),
                               label: Text(
                                 _selectedDays.length == domain.DayOfWeek.values.length
                                     ? 'Tous les jours'
@@ -628,7 +669,8 @@ class _AddTripPageState extends State<AddTripPage> {
                               backgroundColor: context.theme.primary.withOpacity(0.1),
                             ),
                           Chip(
-                            avatar: Icon(Icons.directions_railway, size: 16, color: context.theme.textSecondary),
+                            avatar: Icon(Icons.directions_railway,
+                                size: 16, color: context.theme.textSecondary),
                             label: Text(
                               _directTrainsOnly ? 'Direct uniquement' : 'Avec correspondances',
                               style: TextStyle(color: context.theme.textPrimary),
@@ -639,7 +681,9 @@ class _AddTripPageState extends State<AddTripPage> {
                             avatar: Icon(
                               Icons.notifications_active_outlined,
                               size: 16,
-                              color: _notificationsEnabled ? context.theme.warning : context.theme.textSecondary,
+                              color: _notificationsEnabled
+                                  ? context.theme.warning
+                                  : context.theme.textSecondary,
                             ),
                             label: Text(
                               _notificationsEnabled ? 'Notifications ON' : 'Notifications OFF',
@@ -859,9 +903,7 @@ class _AddTripPageState extends State<AddTripPage> {
           content: Text(
             'Erreur: Station(s) invalide(s). Veuillez re-sélectionner les stations.',
             style: TextStyle(
-              color: Theme.of(context).brightness == Brightness.dark
-                  ? Colors.black
-                  : Colors.white,
+              color: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
             ),
           ),
           backgroundColor: Theme.of(context).brightness == Brightness.dark
@@ -988,9 +1030,8 @@ class _AddTripPageState extends State<AddTripPage> {
             content: Text(
               'Erreur lors de la proposition des trains: $e',
               style: TextStyle(
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? Colors.black
-                    : Colors.white,
+                color:
+                    Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
               ),
             ),
             backgroundColor: Theme.of(context).brightness == Brightness.dark
@@ -1027,9 +1068,8 @@ class _AddTripPageState extends State<AddTripPage> {
               content: Text(
                 '⚠️ ${result.message}',
                 style: TextStyle(
-                  color: Theme.of(context).brightness == Brightness.dark
-                      ? Colors.black
-                      : Colors.white,
+                  color:
+                      Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
                 ),
               ),
               backgroundColor: Theme.of(context).brightness == Brightness.dark
@@ -1066,9 +1106,8 @@ class _AddTripPageState extends State<AddTripPage> {
             content: Text(
               '✅ Trajet enregistré avec succès !',
               style: TextStyle(
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? Colors.black
-                    : Colors.white,
+                color:
+                    Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
               ),
             ),
             backgroundColor: Theme.of(context).brightness == Brightness.dark
@@ -1084,9 +1123,8 @@ class _AddTripPageState extends State<AddTripPage> {
             content: Text(
               "Erreur lors de l'enregistrement : $e",
               style: TextStyle(
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? Colors.black
-                    : Colors.white,
+                color:
+                    Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
               ),
             ),
             backgroundColor: Theme.of(context).brightness == Brightness.dark

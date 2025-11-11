@@ -92,7 +92,7 @@ class TripCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: context.theme.card,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: context.theme.outline, width: 1),
+        border: Border.all(color: context.theme.outline),
         boxShadow: [
           BoxShadow(
             color: Theme.of(context).brightness == Brightness.dark
@@ -100,7 +100,6 @@ class TripCard extends StatelessWidget {
                 : Colors.black.withOpacity(0.08),
             blurRadius: 8,
             offset: const Offset(0, 2),
-            spreadRadius: 0,
           ),
         ],
       ),
@@ -137,7 +136,7 @@ class TripCard extends StatelessWidget {
                       const SizedBox(height: 6),
                       if (presentation != null) ...[
                         Text(
-                          presentation.primaryText,
+                          'Prochain départ : ${trip.daysName} à ${trip.timeFormatted}',
                           style: TextStyle(
                             fontSize: 14,
                             color: presentation.primaryColor,
@@ -154,7 +153,7 @@ class TripCard extends StatelessWidget {
                         ],
                       ] else ...[
                         Text(
-                          '${trip.daysName} à ${trip.timeFormatted}',
+                          'Prochain départ : ${trip.daysName} à ${trip.timeFormatted}',
                           style: TextStyle(
                             fontSize: 14,
                             color: context.theme.textSecondary,

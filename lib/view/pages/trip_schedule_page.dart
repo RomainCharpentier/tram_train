@@ -78,16 +78,13 @@ class _TripSchedulePageState extends State<TripSchedulePage> {
       final result = <Train>[];
       if (before != null) {
         final tt = before.departureTime;
-        final sameDay =
-            tt.year == ref.year && tt.month == ref.month && tt.day == ref.day;
+        final sameDay = tt.year == ref.year && tt.month == ref.month && tt.day == ref.day;
         final within3h = ref.difference(tt) <= const Duration(hours: 3);
         if (sameDay || within3h) {
           result.add(before);
         }
       }
-      if (after != null &&
-          (result.isEmpty ||
-              result.first.departureTime != after.departureTime)) {
+      if (after != null && (result.isEmpty || result.first.departureTime != after.departureTime)) {
         result.add(after);
       }
 
@@ -125,15 +122,7 @@ class _TripSchedulePageState extends State<TripSchedulePage> {
   }
 
   String _formatRefLabel(DateTime dt) {
-    const names = [
-      'Lundi',
-      'Mardi',
-      'Mercredi',
-      'Jeudi',
-      'Vendredi',
-      'Samedi',
-      'Dimanche'
-    ];
+    const names = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
     final dayName = names[(dt.weekday - 1).clamp(0, 6)];
     final dd = dt.day.toString().padLeft(2, '0');
     final mm = dt.month.toString().padLeft(2, '0');
@@ -186,7 +175,7 @@ class _TripSchedulePageState extends State<TripSchedulePage> {
       decoration: BoxDecoration(
         color: context.theme.card,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: context.theme.outline, width: 1),
+        border: Border.all(color: context.theme.outline),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -214,26 +203,20 @@ class _TripSchedulePageState extends State<TripSchedulePage> {
               children: [
                 Icon(
                   widget.trip.isActive ? Icons.check_circle : Icons.cancel,
-                  color: widget.trip.isActive
-                      ? context.theme.success
-                      : context.theme.error,
+                  color: widget.trip.isActive ? context.theme.success : context.theme.error,
                   size: 16,
                 ),
                 const SizedBox(width: 4),
                 Text(
                   widget.trip.isActive ? 'Trajet actif' : 'Trajet inactif',
                   style: TextStyle(
-                    color: widget.trip.isActive
-                        ? context.theme.success
-                        : context.theme.error,
+                    color: widget.trip.isActive ? context.theme.success : context.theme.error,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
                 const SizedBox(width: 16),
                 Icon(
-                  widget.trip.notificationsEnabled
-                      ? Icons.notifications
-                      : Icons.notifications_off,
+                  widget.trip.notificationsEnabled ? Icons.notifications : Icons.notifications_off,
                   size: 16,
                   color: widget.trip.notificationsEnabled
                       ? context.theme.warning
@@ -241,9 +224,7 @@ class _TripSchedulePageState extends State<TripSchedulePage> {
                 ),
                 const SizedBox(width: 4),
                 Text(
-                  widget.trip.notificationsEnabled
-                      ? 'Notifications'
-                      : 'Pas de notifications',
+                  widget.trip.notificationsEnabled ? 'Notifications' : 'Pas de notifications',
                   style: TextStyle(
                     color: widget.trip.notificationsEnabled
                         ? context.theme.warning
@@ -313,28 +294,63 @@ class _TripSchedulePageState extends State<TripSchedulePage> {
   }
 
   void _showTrainDetails(Train train) {
+    String _formatHHmm(DateTime dt) {
+      final h = dt.hour.toString().padLeft(2, '0');
+      final m = dt.minute.toString().padLeft(2, '0');
+      return '$h:$m';
+    }
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: context.theme.card,
         title: Text(train.direction, style: TextStyle(color: context.theme.textPrimary)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Départ: ${train.departureTimeFormatted}', style: TextStyle(color: context.theme.textPrimary)),
-            Text('Statut: ${train.statusText}', style: TextStyle(color: context.theme.textPrimary)),
-            if (train.baseDepartureTime != null)
-              Text(
-                  'Heure prévue: ${train.baseDepartureTime!.hour.toString().padLeft(2, '0')}:${train.baseDepartureTime!.minute.toString().padLeft(2, '0')}',
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Départ: ${train.departureTimeFormatted}',
                   style: TextStyle(color: context.theme.textPrimary)),
-            if (train.additionalInfo.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Text('Informations:',
-                  style: TextStyle(fontWeight: FontWeight.bold, color: context.theme.textPrimary)),
-              ...train.additionalInfo.map((info) => Text('• $info', style: TextStyle(color: context.theme.textPrimary))),
+              if (train.arrivalTime != null)
+                Text('Arrivée: ${train.arrivalTimeFormatted}',
+                    style: TextStyle(color: context.theme.textPrimary)),
+              Text('Statut: ${train.statusText}',
+                  style: TextStyle(color: context.theme.textPrimary)),
+              if (train.baseDepartureTime != null)
+                Text(
+                    'Heure prévue: ${train.baseDepartureTime!.hour.toString().padLeft(2, '0')}:${train.baseDepartureTime!.minute.toString().padLeft(2, '0')}',
+                    style: TextStyle(color: context.theme.textPrimary)),
+              if (train.intermediateStops.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Text('Arrêts intermédiaires:',
+                    style:
+                        TextStyle(fontWeight: FontWeight.bold, color: context.theme.textPrimary)),
+                const SizedBox(height: 4),
+                ...train.intermediateStops.map((stop) {
+                  final time = stop.departureTime ?? stop.arrivalTime;
+                  final timeStr = time != null ? _formatHHmm(time) : '';
+                  return Padding(
+                    padding: const EdgeInsets.only(left: 8, top: 4),
+                    child: Text(
+                      '• ${stop.station.name}${timeStr.isNotEmpty ? ' ($timeStr)' : ''}',
+                      style: TextStyle(color: context.theme.textSecondary, fontSize: 13),
+                    ),
+                  );
+                }),
+              ],
+              if (train.additionalInfo.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Text('Informations:',
+                    style:
+                        TextStyle(fontWeight: FontWeight.bold, color: context.theme.textPrimary)),
+                ...train.additionalInfo.map((info) => Padding(
+                      padding: const EdgeInsets.only(left: 8, top: 4),
+                      child: Text('• $info', style: TextStyle(color: context.theme.textPrimary)),
+                    )),
+              ],
             ],
-          ],
+          ),
         ),
         actions: [
           TextButton(
@@ -352,21 +368,16 @@ class _TripSchedulePageState extends State<TripSchedulePage> {
         title: Text(
           '${widget.trip.departureStation.name} → ${widget.trip.arrivalStation.name}',
           style: TextStyle(
-            color: Theme.of(context).brightness == Brightness.dark
-                ? Colors.black
-                : Colors.white,
+            color: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
           ),
         ),
         backgroundColor: context.theme.primary,
-        foregroundColor: Theme.of(context).brightness == Brightness.dark
-            ? Colors.black
-            : Colors.white,
+        foregroundColor:
+            Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
         leading: IconButton(
           icon: Icon(
             Icons.arrow_back,
-            color: Theme.of(context).brightness == Brightness.dark
-                ? Colors.black
-                : Colors.white,
+            color: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
           ),
           onPressed: () => Navigator.of(context).pop(),
         ),
@@ -374,9 +385,7 @@ class _TripSchedulePageState extends State<TripSchedulePage> {
           IconButton(
             icon: Icon(
               Icons.refresh,
-              color: Theme.of(context).brightness == Brightness.dark
-                  ? Colors.black
-                  : Colors.white,
+              color: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
             ),
             onPressed: _loadTrains,
             tooltip: 'Actualiser',
@@ -411,8 +420,7 @@ class _TripSchedulePageState extends State<TripSchedulePage> {
             ),
           if (_filteredTrains.isNotEmpty)
             Builder(builder: (context) {
-              final ref =
-                  _lastRequestedRef ?? _computeReferenceDateTime(widget.trip);
+              final ref = _lastRequestedRef ?? _computeReferenceDateTime(widget.trip);
               DateTime? before;
               DateTime? after;
               for (final t in _filteredTrains) {

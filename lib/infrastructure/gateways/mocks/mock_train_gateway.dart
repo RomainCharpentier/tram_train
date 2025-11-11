@@ -207,6 +207,7 @@ class MockTrainGateway implements TrainGateway {
       additionalInfo: template.additionalInfo,
       departurePlatform: template.departurePlatform,
       arrivalPlatform: template.arrivalPlatform,
+      intermediateStops: template.intermediateStops,
     );
   }
 

@@ -1,4 +1,5 @@
 import 'station.dart';
+import 'journey_stop.dart';
 
 enum TrainStatus {
   onTime,
@@ -29,6 +30,7 @@ class Train {
   final String? departurePlatform;
   final String? arrivalPlatform;
   final String? externalUrl;
+  final List<JourneyStop> intermediateStops;
 
   const Train({
     required this.id,
@@ -44,6 +46,7 @@ class Train {
     this.departurePlatform,
     this.arrivalPlatform,
     this.externalUrl,
+    this.intermediateStops = const [],
   });
 
   factory Train.fromTimes({
@@ -88,21 +91,18 @@ class Train {
       departurePlatform: departurePlatform,
       arrivalPlatform: arrivalPlatform,
       externalUrl: externalUrl,
+      intermediateStops: const [],
     );
   }
 
   String get statusText {
     switch (status) {
       case TrainStatus.onTime:
-        return 'À l\'heure';
+        return "À l'heure";
       case TrainStatus.delayed:
-        return delayMinutes != null
-            ? 'En retard (+$delayMinutes min)'
-            : 'En retard';
+        return delayMinutes != null ? 'En retard (+$delayMinutes min)' : 'En retard';
       case TrainStatus.early:
-        return delayMinutes != null
-            ? 'En avance ($delayMinutes min)'
-            : 'En avance';
+        return delayMinutes != null ? 'En avance ($delayMinutes min)' : 'En avance';
       case TrainStatus.cancelled:
         return 'Annulé';
       case TrainStatus.unknown:

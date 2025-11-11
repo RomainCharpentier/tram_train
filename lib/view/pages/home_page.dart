@@ -260,7 +260,7 @@ class _HomePageState extends State<HomePage> {
       return _buildEmptyState();
     }
 
-    return _buildDashboard();
+    return _buildDashboard(context);
   }
 
   Widget _buildEmptyState() {
@@ -291,7 +291,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildDashboard() {
+  Widget _buildDashboard(BuildContext context) {
     DateTime now;
     try {
       now = DependencyInjection.instance.clockService.now();
@@ -316,36 +316,40 @@ class _HomePageState extends State<HomePage> {
         return trainA.departureTime.compareTo(trainB.departureTime);
       });
 
+    const useMockData = bool.fromEnvironment('USE_MOCK_DATA');
+
     return RefreshIndicator(
       onRefresh: _loadActiveTrips,
       child: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         children: [
-          Container(
-            margin: const EdgeInsets.only(bottom: 12),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            decoration: BoxDecoration(
-              color: context.theme.card,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: context.theme.outline, width: 1),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.access_time, color: context.theme.info, size: 20),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Heure actuelle (mock) : ${formattedNow[0].toUpperCase()}${formattedNow.substring(1)}',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                      color: context.theme.textPrimary,
+          if (useMockData) ...[
+            Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              decoration: BoxDecoration(
+                color: context.theme.card,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: context.theme.outline),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.access_time, color: context.theme.info, size: 20),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Heure actuelle (mock) : ${formattedNow[0].toUpperCase()}${formattedNow.substring(1)}',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                        color: context.theme.textPrimary,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
+          ],
           if (sortedTrips.isEmpty) ...[
             _buildEmptyTripsMessage(),
           ] else ...[
@@ -363,7 +367,7 @@ class _HomePageState extends State<HomePage> {
       decoration: BoxDecoration(
         color: context.theme.card,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: context.theme.outline, width: 1),
+        border: Border.all(color: context.theme.outline),
       ),
       child: Row(
         children: [
@@ -405,7 +409,6 @@ class _HomePageState extends State<HomePage> {
       nextTrain: nextTrain,
       onAction: (action, t) => _handleTripAction(action, t),
       onTap: () => _showTripDetails(trip),
-      showStatusIndicator: true,
       showActions: false,
     );
   }

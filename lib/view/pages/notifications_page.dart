@@ -195,11 +195,10 @@ class _NotificationsPageState extends State<NotificationsPage> {
 
       final pause = NotificationPause(
         id: NotificationPause.generateId(),
-        name: 'Pause jusqu\'au ${_formatDateTime(endDate)}',
+        name: "Pause jusqu'au ${_formatDateTime(endDate)}",
         startDate: DateTime.now(),
         endDate: endDate,
         isActive: true,
-        description: null,
         createdAt: DateTime.now(),
       );
 
@@ -213,7 +212,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Notifications en pause jusqu\'au ${_formatDateTime(pause.endDate)}',
+            "Notifications en pause jusqu'au ${_formatDateTime(pause.endDate)}",
           ),
         ),
       );
@@ -278,8 +277,10 @@ class _NotificationsPageState extends State<NotificationsPage> {
             _buildNotificationsSection(context, activeTrips),
             const SizedBox(height: 16),
             _buildPauseSection(context),
-            const SizedBox(height: 16),
-            _buildTestCard(context),
+            if (const bool.fromEnvironment('USE_MOCK_DATA')) ...[
+              const SizedBox(height: 16),
+              _buildTestCard(context),
+            ],
           ],
         ),
       ),
@@ -370,7 +371,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
           decoration: BoxDecoration(
             color: context.theme.card,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: context.theme.outline, width: 1),
+            border: Border.all(color: context.theme.outline),
             boxShadow: [
               BoxShadow(
                 color: Theme.of(context).brightness == Brightness.dark
@@ -378,7 +379,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
                     : Colors.black.withOpacity(0.08),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
-                spreadRadius: 0,
               ),
             ],
           ),
@@ -455,7 +455,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
       decoration: BoxDecoration(
         color: context.theme.errorBg,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: context.theme.errorBorder, width: 1),
+        border: Border.all(color: context.theme.errorBorder),
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -492,7 +492,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
       decoration: BoxDecoration(
         color: context.theme.card,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: context.theme.outline, width: 1),
+        border: Border.all(color: context.theme.outline),
         boxShadow: [
           BoxShadow(
             color: Theme.of(context).brightness == Brightness.dark
@@ -500,7 +500,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
                 : Colors.black.withOpacity(0.08),
             blurRadius: 8,
             offset: const Offset(0, 2),
-            spreadRadius: 0,
           ),
         ],
       ),
@@ -535,7 +534,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
       decoration: BoxDecoration(
         color: context.theme.card,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: context.theme.outline, width: 1),
+        border: Border.all(color: context.theme.outline),
         boxShadow: [
           BoxShadow(
             color: Theme.of(context).brightness == Brightness.dark
@@ -543,7 +542,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
                 : Colors.black.withOpacity(0.08),
             blurRadius: 8,
             offset: const Offset(0, 2),
-            spreadRadius: 0,
           ),
         ],
       ),
@@ -658,7 +656,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
       decoration: BoxDecoration(
         color: context.theme.card,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: context.theme.outline, width: 1),
+        border: Border.all(color: context.theme.outline),
         boxShadow: [
           BoxShadow(
             color: Theme.of(context).brightness == Brightness.dark
@@ -666,7 +664,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
                 : Colors.black.withOpacity(0.08),
             blurRadius: 8,
             offset: const Offset(0, 2),
-            spreadRadius: 0,
           ),
         ],
       ),
