@@ -100,8 +100,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
     });
 
     try {
-      final notificationService =
-          DependencyInjection.instance.notificationService;
+      final notificationService = DependencyInjection.instance.notificationService;
       await notificationService.initialize();
       await Future.delayed(const Duration(seconds: 5));
       if (!mounted) return;
@@ -169,8 +168,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text(
-              'Veuillez sélectionner une date de fin dans le futur'),
+          content: const Text('Veuillez sélectionner une date de fin dans le futur'),
           backgroundColor: context.theme.error,
         ),
       );
@@ -240,8 +238,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
     });
 
     try {
-      await DependencyInjection.instance.notificationPauseService
-          .deletePause(_currentPause!.id);
+      await DependencyInjection.instance.notificationPauseService.deletePause(_currentPause!.id);
       setState(() {
         _currentPause = null;
         _isPauseUpdating = false;
@@ -311,8 +308,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
     );
   }
 
-  Widget _buildNotificationsSection(
-      BuildContext context, List<domain.Trip> activeTrips) {
+  Widget _buildNotificationsSection(BuildContext context, List<domain.Trip> activeTrips) {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -453,8 +449,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: _currentPause!.isCurrentlyActive
                           ? context.theme.error
@@ -462,9 +457,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
-                      _currentPause!.isCurrentlyActive
-                          ? 'PAUSE ACTIVE'
-                          : 'PAUSE À VENIR',
+                      _currentPause!.isCurrentlyActive ? 'PAUSE ACTIVE' : 'PAUSE À VENIR',
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 11,
@@ -490,15 +483,13 @@ class _NotificationsPageState extends State<NotificationsPage> {
                   child: OutlinedButton.icon(
                     onPressed: _isPauseUpdating ? null : _showPauseOptions,
                     icon: const Icon(Icons.add),
-                    label: Text(
-                        _currentPause == null ? 'Programmer' : 'Modifier la pause'),
+                    label: Text(_currentPause == null ? 'Programmer' : 'Modifier la pause'),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed:
-                        _currentPause == null || _isPauseUpdating ? null : _cancelPause,
+                    onPressed: _currentPause == null || _isPauseUpdating ? null : _cancelPause,
                     icon: const Icon(Icons.close),
                     label: const Text('Désactiver'),
                   ),
@@ -522,8 +513,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
               children: [
                 CircleAvatar(
                   backgroundColor: context.theme.primary.withOpacity(0.12),
-                  child:
-                      Icon(Icons.notifications_active, color: context.theme.primary),
+                  child: Icon(Icons.notifications_active, color: context.theme.primary),
                 ),
                 const SizedBox(width: 12),
                 Text(
@@ -600,4 +590,3 @@ class _NotificationsPageState extends State<NotificationsPage> {
     return '${formatted[0].toUpperCase()}${formatted.substring(1)}';
   }
 }
-
