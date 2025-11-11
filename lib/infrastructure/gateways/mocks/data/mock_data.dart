@@ -1,6 +1,7 @@
 import '../../../../domain/models/trip.dart' as domain;
 import '../../../../domain/models/train.dart';
 import '../../../../domain/models/station.dart';
+import '../mock_favorite_station_storage.dart';
 
 /// Données mock pour tester l'application
 ///
@@ -47,6 +48,27 @@ class MockData {
       latitude: 44.8258,
       longitude: -0.5563,
     );
+
+    const rennes = Station(
+      id: 'stop_point:SNCF:87471003',
+      name: 'Rennes',
+      latitude: 48.1033,
+      longitude: -1.6720,
+    );
+
+    const nantes = Station(
+      id: 'stop_point:SNCF:87481002',
+      name: 'Nantes',
+      latitude: 47.2173,
+      longitude: -1.5534,
+    );
+
+    MockFavoriteStationStorage.seedFavorites([
+      parisNord,
+      lyonPartDieu,
+      rennes,
+      nantes,
+    ]);
 
     return [
       domain.Trip(
@@ -95,7 +117,7 @@ class MockData {
   }
 
   static List<Train> getMockTrains([DateTime? now]) {
-    now ??= DateTime(2025, 1, 6, 7, 0);
+    now ??= DateTime(2025, 1, 6, 7);
     const parisNord = Station(
       id: 'stop_point:SNCF:87384008',
       name: 'Paris Nord',
@@ -214,11 +236,9 @@ class MockData {
       Train(
         id: 'mock_train_in_progress',
         direction: 'Lille Europe',
-        departureTime:
-            now.subtract(const Duration(minutes: 30)), // Départ il y a 30 min
+        departureTime: now.subtract(const Duration(minutes: 30)), // Départ il y a 30 min
         baseDepartureTime: now.subtract(const Duration(minutes: 30)),
-        arrivalTime:
-            now.add(const Duration(minutes: 35)), // Arrivée dans 35 min
+        arrivalTime: now.add(const Duration(minutes: 35)), // Arrivée dans 35 min
         baseArrivalTime: now.add(const Duration(minutes: 35)),
         status: TrainStatus.onTime,
         station: parisNord,
@@ -335,8 +355,7 @@ class MockData {
     );
 
     // Retourner les stations intermédiaires selon le trajet
-    if (trip.departureStation.id == parisNord.id &&
-        trip.arrivalStation.id == lilleEurope.id) {
+    if (trip.departureStation.id == parisNord.id && trip.arrivalStation.id == lilleEurope.id) {
       // Paris → Lille : Arras, Creil
       return [arras, creil];
     } else if (trip.departureStation.id == parisNord.id &&

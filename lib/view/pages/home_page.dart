@@ -296,7 +296,7 @@ class _HomePageState extends State<HomePage> {
       now = DependencyInjection.instance.clockService.now();
     } catch (e) {
       const useMockData = bool.fromEnvironment('USE_MOCK_DATA');
-      now = useMockData ? DateTime(2025, 1, 6, 7, 0) : DateTime.now();
+      now = useMockData ? DateTime(2025, 1, 6, 7) : DateTime.now();
     }
     final formattedNow = DateFormat("EEEE d MMMM yyyy 'à' HH:mm", 'fr_FR').format(now);
 
@@ -466,7 +466,26 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildScaffold() {
     return Scaffold(
-      body: SafeArea(child: _buildBody()),
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16).copyWith(top: 8),
+              child: Text(
+                'Mes trajets',
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w700,
+                  color: context.theme.textPrimary,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Expanded(child: _buildBody()),
+          ],
+        ),
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _navigateToAddTrip(context),
         child: const Icon(Icons.add),

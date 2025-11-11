@@ -17,6 +17,7 @@ import 'package:train_qil/infrastructure/gateways/mocks/mock_trip_storage.dart';
 import 'package:train_qil/infrastructure/gateways/mocks/mock_train_gateway.dart';
 import 'package:train_qil/infrastructure/gateways/mocks/mock_station_search_gateway.dart';
 import 'package:train_qil/infrastructure/gateways/mocks/mock_station_history_gateway.dart';
+import 'package:train_qil/infrastructure/gateways/mocks/mock_favorite_station_storage.dart';
 import 'package:train_qil/infrastructure/mappers/trip_mapper.dart';
 import 'package:train_qil/infrastructure/mappers/sncf_mapper.dart';
 import 'package:train_qil/env_config.dart';
@@ -33,10 +34,8 @@ class DependencyInjection {
 
   static ClockService get _getClockServiceInstance {
     const useMockData = bool.fromEnvironment('USE_MOCK_DATA');
-    if (_staticClockService == null) {
-      _staticClockService =
-          useMockData ? MockClockService(DateTime(2025, 1, 6, 7, 0)) : SystemClockService();
-    }
+    _staticClockService ??=
+        useMockData ? MockClockService(DateTime(2025, 1, 6, 7, 0)) : SystemClockService();
     return _staticClockService!;
   }
 
@@ -56,8 +55,8 @@ class DependencyInjection {
   late final LocalStorageGateway localStorageGateway;
   late final TrainGateway trainGateway;
   late final StationSearchGateway stationSearchGateway;
-  late final NotificationPauseStorageGateway notificationPauseStorageGateway;
-  late final FavoriteStationStorageGateway favoriteStationStorageGateway;
+  late final NotificationPauseStorage notificationPauseStorageGateway;
+  late final FavoriteStationStorage favoriteStationStorageGateway;
 
   // Gateways concrètes (pour compatibilité si besoin)
   SncfGateway? _sncfGateway;
@@ -78,7 +77,7 @@ class DependencyInjection {
     const useMockData = bool.fromEnvironment('USE_MOCK_DATA');
 
     // Toujours réinitialiser _staticClockService pour garantir la bonne valeur
-    final mockNow = DateTime(2025, 1, 6, 7, 0);
+    final mockNow = DateTime(2025, 1, 6, 7);
     _staticClockService = useMockData ? MockClockService(mockNow) : SystemClockService();
 
     instance.tripMapper = TripMapper();
@@ -110,6 +109,8 @@ class DependencyInjection {
         searchGateway: instance.stationSearchGateway,
         historyGateway: mockHistoryGateway,
       );
+
+      instance.favoriteStationStorageGateway = MockFavoriteStationStorage();
     } else {
       instance.localStorageGateway = LocalStorageGateway(mapper: instance.tripMapper);
       instance._sncfGateway = SncfGateway(
@@ -132,11 +133,12 @@ class DependencyInjection {
       instance.stationSearchService = StationSearchService(
         searchGateway: instance.stationSearchGateway,
       );
+
+      instance.favoriteStationStorageGateway = FavoriteStationStorageGateway();
     }
 
     // Gateways qui restent les mêmes (pas de mocks pour l'instant)
     instance.notificationPauseStorageGateway = NotificationPauseStorageGateway();
-    instance.favoriteStationStorageGateway = FavoriteStationStorageGateway();
     instance.notificationPauseService =
         NotificationPauseService(storage: instance.notificationPauseStorageGateway);
     instance.favoriteStationService =
