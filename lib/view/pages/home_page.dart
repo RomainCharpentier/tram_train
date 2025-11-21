@@ -51,7 +51,7 @@ class _HomePageState extends State<HomePage> {
       });
 
       await _loadNextTrainsForTrips();
-    } catch (e) {
+    } on Object catch (e) {
       setState(() {
         _error = 'Erreur lors du chargement des trajets: $e';
         _isLoading = false;
@@ -64,7 +64,7 @@ class _HomePageState extends State<HomePage> {
     DateTime now;
     try {
       now = DependencyInjection.instance.clockService.now();
-    } catch (e) {
+    } on Object catch (_) {
       const useMockData = bool.fromEnvironment('USE_MOCK_DATA');
       now = useMockData ? DateTime(2025, 1, 6, 7) : DateTime.now();
     }
@@ -79,7 +79,7 @@ class _HomePageState extends State<HomePage> {
           final nextTrain = await _findNextScheduledTrain(trip, now);
           tripNextTrains[trip.id] = nextTrain;
         }
-      } catch (e) {
+      } on Object catch (_) {
         tripNextTrains[trip.id] = null;
       }
     }
@@ -295,7 +295,7 @@ class _HomePageState extends State<HomePage> {
     DateTime now;
     try {
       now = DependencyInjection.instance.clockService.now();
-    } catch (e) {
+    } on Object catch (_) {
       const useMockData = bool.fromEnvironment('USE_MOCK_DATA');
       now = useMockData ? DateTime(2025, 1, 6, 7) : DateTime.now();
     }
@@ -421,6 +421,7 @@ class _HomePageState extends State<HomePage> {
       ),
     );
     if (result == true) {
+      if (!mounted) return;
       _loadActiveTrips();
     }
   }
@@ -442,6 +443,7 @@ class _HomePageState extends State<HomePage> {
         );
         await DependencyInjection.instance.tripService.saveTrip(duplicatedTrip);
         await DependencyInjection.instance.tripReminderService.refreshSchedules();
+        if (!mounted) return;
         _loadActiveTrips();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -453,7 +455,7 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
             backgroundColor: Theme.of(context).brightness == Brightness.dark
-                ? context.theme.success.withOpacity(0.75)
+                ? context.theme.success.withValues(alpha:0.75)
                 : context.theme.success,
           ),
         );
@@ -462,6 +464,7 @@ class _HomePageState extends State<HomePage> {
         final updatedTrip = trip.copyWith(isActive: !trip.isActive);
         await DependencyInjection.instance.tripService.saveTrip(updatedTrip);
         await DependencyInjection.instance.tripReminderService.refreshSchedules();
+        if (!mounted) return;
         _loadActiveTrips();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -473,7 +476,7 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
             backgroundColor: Theme.of(context).brightness == Brightness.dark
-                ? context.theme.info.withOpacity(0.75)
+                ? context.theme.info.withValues(alpha:0.75)
                 : context.theme.info,
           ),
         );
@@ -500,6 +503,7 @@ class _HomePageState extends State<HomePage> {
         if (confirmed == true) {
           await DependencyInjection.instance.tripService.deleteTripAndSimilar(trip);
           await DependencyInjection.instance.tripReminderService.refreshSchedules();
+          if (!mounted) return;
           _loadActiveTrips();
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -511,7 +515,7 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
               backgroundColor: Theme.of(context).brightness == Brightness.dark
-                  ? context.theme.success.withOpacity(0.75)
+                  ? context.theme.success.withValues(alpha:0.75)
                   : context.theme.success,
             ),
           );

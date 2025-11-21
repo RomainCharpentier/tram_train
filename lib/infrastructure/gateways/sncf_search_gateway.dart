@@ -253,7 +253,7 @@ class SncfSearchGateway implements StationSearchGateway {
     final longer = s1.length > s2.length ? s1 : s2;
     final shorter = s1.length > s2.length ? s2 : s1;
 
-    if (longer.length == 0) return 1.0;
+    if (longer.isEmpty) return 1.0;
 
     final distance = _levenshteinDistance(longer, shorter);
     return (longer.length - distance) / longer.length;

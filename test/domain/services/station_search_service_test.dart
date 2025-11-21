@@ -20,7 +20,7 @@ void main() {
   test('searchStations returns recent stations when query empty', () async {
     historyGateway.recentQueries = ['Paris'];
     searchGateway.resultsByQuery['Paris'] = [
-      SearchResult(
+      const SearchResult(
         data: Station(id: '1', name: 'Paris'),
         score: 1.0,
         type: SearchResultType.exact,
@@ -35,7 +35,7 @@ void main() {
 
   test('searchStations calls gateway and stores history', () async {
     searchGateway.resultsByQuery['Lyon'] = [
-      SearchResult(
+      const SearchResult(
         data: Station(id: '2', name: 'Lyon'),
         score: 0.9,
         type: SearchResultType.partial,

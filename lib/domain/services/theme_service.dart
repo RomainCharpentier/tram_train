@@ -86,7 +86,6 @@ class ThemeService extends ChangeNotifier {
       ],
     );
   }
-
   /// Obtient le thème sombre personnalisé
   ThemeData get darkTheme {
     final palette = AppPalette.dark();
@@ -94,24 +93,21 @@ class ThemeService extends ChangeNotifier {
       useMaterial3: true,
       brightness: Brightness.dark,
       colorScheme: ColorScheme.dark(
-        primary: palette.primary.withOpacity(0.75),
-        secondary: palette.secondary.withOpacity(0.75),
+        primary: palette.primary,
+        secondary: palette.secondary,
         surface: palette.surface,
-        error: const Color(0xFFF87171).withOpacity(0.75), // Rouge plus doux
-        onPrimary: Colors.white,
-        onSecondary: Colors.white,
-        onSurface: palette.onSurface.withOpacity(0.95), // Texte légèrement adouci
-        onError: Colors.white,
+        error: const Color(0xFFE53E3E),
+        onSurface: palette.onSurface,
       ),
       appBarTheme: AppBarTheme(
         backgroundColor: palette.surface,
-        foregroundColor: Colors.white,
+        foregroundColor: palette.textPrimary,
         elevation: 0,
         centerTitle: true,
       ),
       cardTheme: CardThemeData(
-        elevation: 4,
         color: palette.card,
+        elevation: 2,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
         ),
@@ -119,7 +115,7 @@ class ThemeService extends ChangeNotifier {
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: palette.primary,
-          foregroundColor: Colors.white,
+          foregroundColor: Colors.black,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
           ),

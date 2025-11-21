@@ -93,7 +93,7 @@ class _TripSchedulePageState extends State<TripSchedulePage> {
         _filteredTrains = result;
         _isLoading = false;
       });
-    } catch (e) {
+    } on Object catch (e) {
       setState(() {
         _error = 'Impossible de charger les horaires: $e';
         _isLoading = false;
@@ -294,7 +294,7 @@ class _TripSchedulePageState extends State<TripSchedulePage> {
   }
 
   void _showTrainDetails(Train train) {
-    String _formatHHmm(DateTime dt) {
+    String formatHHmm(DateTime dt) {
       final h = dt.hour.toString().padLeft(2, '0');
       final m = dt.minute.toString().padLeft(2, '0');
       return '$h:$m';
@@ -329,7 +329,7 @@ class _TripSchedulePageState extends State<TripSchedulePage> {
                 const SizedBox(height: 4),
                 ...train.intermediateStops.map((stop) {
                   final time = stop.departureTime ?? stop.arrivalTime;
-                  final timeStr = time != null ? _formatHHmm(time) : '';
+                  final timeStr = time != null ? formatHHmm(time) : '';
                   return Padding(
                     padding: const EdgeInsets.only(left: 8, top: 4),
                     child: Text(

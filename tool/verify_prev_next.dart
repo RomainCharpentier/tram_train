@@ -1,3 +1,4 @@
+// ignore_for_file: avoid_print
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:train_qil/infrastructure/mappers/sncf_mapper.dart';
@@ -15,7 +16,7 @@ Future<void> main() async {
 
   const from = Station(id: 'SNCF:87590349', name: 'Babinière');
   const to = Station(id: 'SNCF:87481002', name: 'Nantes');
-  final target = DateTime(2025, 11, 3, 8, 0);
+  final target = DateTime(2025, 11, 3, 8);
 
   print('📅 Cible: $target');
 
@@ -31,7 +32,7 @@ Future<void> main() async {
 
     print('⬅️ before = ${before?.departureTime}');
     print('➡️ after  = ${after?.departureTime}');
-  } catch (e) {
+  } on Object catch (e) {
     print('❌ erreur: $e');
   } finally {
     httpClient.close();

@@ -38,7 +38,7 @@ class ConnectedStationsService {
       }
 
       return destinationNames.toList();
-    } catch (e) {
+    } on Object catch (_) {
       // Fallback : retourner une liste vide
       return [];
     }
@@ -93,7 +93,7 @@ class ConnectedStationsService {
             totalJourneys: totalJourneys,
             directJourneys: 0,
             message:
-                'NON CONNECTÉ - Aucun trajet direct trouvé (${totalJourneys} trajet(s) avec correspondances)',
+                'NON CONNECTÉ - Aucun trajet direct trouvé ($totalJourneys trajet(s) avec correspondances)',
           );
         }
       } else {
@@ -106,9 +106,10 @@ class ConnectedStationsService {
               'CONNECTÉ - $totalJourneys trajet(s) trouvé(s) ($directJourneys direct(s))',
         );
       }
-    } catch (e) {
+    } on Object catch (_) {
       // Fallback : vérifier via les destinations finales
       try {
+        // ignore: deprecated_member_use_from_same_package
         final connectedStations = await getConnectedStations(departure);
         final isConnected = connectedStations.any((s) =>
             _areStationNamesSimilar(s.name, arrival.name) ||
@@ -122,7 +123,7 @@ class ConnectedStationsService {
               ? 'CONNECTÉ - Vérifié via destinations'
               : 'NON CONNECTÉ - Aucune connexion trouvée',
         );
-      } catch (fallbackError) {
+      } on Object catch (_) {
         return ConnectionResult(
           isConnected: false,
           totalJourneys: 0,
@@ -166,6 +167,7 @@ class ConnectedStationsService {
   /// Récupère les gares connectées avec filtrage par nom
   static Future<List<Station>> getConnectedStationsWithFilter(
       Station departureStation, String searchQuery) async {
+    // ignore: deprecated_member_use_from_same_package
     final allConnectedStations = await getConnectedStations(departureStation);
 
     if (searchQuery.isEmpty) {

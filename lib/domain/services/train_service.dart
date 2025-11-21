@@ -50,7 +50,7 @@ class TrainService {
     }
 
     // Fallback si ce n'est pas un SncfGateway
-    throw UnsupportedError('findJourneysBetween n\'est supporté que par SncfGateway');
+    throw UnsupportedError("findJourneysBetween n'est supporté que par SncfGateway");
   }
 
   /// Recherche des trajets avec une contrainte d'heure de départ

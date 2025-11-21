@@ -1,3 +1,4 @@
+// ignore_for_file: avoid_print
 import 'dart:convert';
 
 import 'package:train_qil/infrastructure/mappers/sncf_mapper.dart';
@@ -5,8 +6,8 @@ import 'package:train_qil/domain/models/station.dart';
 
 void main() {
   final mapper = SncfMapper();
-  final from = const Station(id: 'SNCF:87590349', name: 'Babinière');
-  final to = const Station(id: 'SNCF:87481002', name: 'Nantes');
+  const from = Station(id: 'SNCF:87590349', name: 'Babinière');
+  const to = Station(id: 'SNCF:87481002', name: 'Nantes');
 
   // JSON minimal qui ressemble à la réponse SNCF avec un départ lundi 2025-11-03 08:14:00
   final raw = {

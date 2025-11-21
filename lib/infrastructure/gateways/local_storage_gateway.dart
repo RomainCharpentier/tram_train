@@ -47,7 +47,7 @@ class LocalStorageGateway implements TripStorage {
         final decoded = json.decode(tripJson);
         final trip = _mapper.fromJson(decoded);
         validTrips.add(trip);
-      } catch (e) {
+      } on Object catch (e) {
         debugPrint("Erreur lors du décodage d'un trajet: $e");
       }
     }

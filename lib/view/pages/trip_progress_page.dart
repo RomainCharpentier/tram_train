@@ -255,7 +255,7 @@ class _TripProgressPageState extends State<TripProgressPage> {
         decoration: BoxDecoration(
           color: context.theme.card,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: context.theme.outline, width: 1),
+          border: Border.all(color: context.theme.outline),
         ),
         child: const Padding(
           padding: EdgeInsets.all(20),
@@ -277,7 +277,7 @@ class _TripProgressPageState extends State<TripProgressPage> {
       decoration: BoxDecoration(
         color: context.theme.card,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: context.theme.outline, width: 1),
+        border: Border.all(color: context.theme.outline),
       ),
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -345,7 +345,7 @@ class _TripProgressPageState extends State<TripProgressPage> {
             decoration: BoxDecoration(
               color: isPassed
                   ? (Theme.of(context).brightness == Brightness.dark
-                      ? Colors.grey.shade700.withOpacity(0.1)
+                      ? Colors.grey.shade700.withValues(alpha:0.1)
                       : Colors.grey.withValues(alpha: 0.1))
                   : dotColor.withValues(alpha: 0.1),
               shape: BoxShape.circle,
@@ -473,7 +473,7 @@ class _TripProgressPageState extends State<TripProgressPage> {
                   height: greyHeight,
                   decoration: BoxDecoration(
                     color: Theme.of(context).brightness == Brightness.dark
-                        ? Colors.grey.shade600.withOpacity(0.3)
+                        ? Colors.grey.shade600.withValues(alpha:0.3)
                         : Colors.grey.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(1.5),
                   ),
@@ -513,7 +513,7 @@ class _TripProgressPageState extends State<TripProgressPage> {
       decoration: BoxDecoration(
         color: context.theme.card,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: context.theme.outline, width: 1),
+        border: Border.all(color: context.theme.outline),
       ),
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -697,7 +697,7 @@ class _TripProgressPageState extends State<TripProgressPage> {
       decoration: BoxDecoration(
         color: context.theme.card,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: context.theme.outline, width: 1),
+        border: Border.all(color: context.theme.outline),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -797,7 +797,7 @@ class _TripProgressPageState extends State<TripProgressPage> {
   DateTime _now() {
     try {
       return DependencyInjection.instance.clockService.now();
-    } catch (e) {
+    } on Object catch (_) {
       const useMockData = bool.fromEnvironment('USE_MOCK_DATA');
       return useMockData ? DateTime(2025, 1, 6, 7) : DateTime.now();
     }
@@ -837,7 +837,7 @@ class _TripProgressPageState extends State<TripProgressPage> {
             ),
           ),
           backgroundColor: Theme.of(context).brightness == Brightness.dark
-              ? context.theme.error.withOpacity(0.75)
+              ? context.theme.error.withValues(alpha:0.75)
               : context.theme.error,
         ),
       );
@@ -854,7 +854,7 @@ class _TripProgressPageState extends State<TripProgressPage> {
             ),
           ),
           backgroundColor: Theme.of(context).brightness == Brightness.dark
-              ? context.theme.error.withOpacity(0.75)
+              ? context.theme.error.withValues(alpha:0.75)
               : context.theme.error,
         ),
       );

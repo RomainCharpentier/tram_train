@@ -1,5 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'station.dart';
 
+@immutable
 class Trip {
   final String id;
   final Station departureStation;
@@ -102,6 +104,7 @@ enum DayOfWeek {
   }
 }
 
+@immutable
 class TimeOfDay {
   final int hour;
   final int minute;

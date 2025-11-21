@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'station.dart';
 import 'journey_stop.dart';
 
@@ -16,6 +17,7 @@ enum TrainJourneyState {
   cancelled,
 }
 
+@immutable
 class Train {
   final String id;
   final String direction;
@@ -91,7 +93,6 @@ class Train {
       departurePlatform: departurePlatform,
       arrivalPlatform: arrivalPlatform,
       externalUrl: externalUrl,
-      intermediateStops: const [],
     );
   }
 

@@ -168,7 +168,7 @@ class TrainStatusColors {
   static DateTime _now() {
     try {
       return DependencyInjection.instance.clockService.now();
-    } catch (_) {
+    } on Object catch (_) {
       const useMockData = bool.fromEnvironment('USE_MOCK_DATA');
       return useMockData ? DateTime(2025, 1, 6, 7) : DateTime.now();
     }

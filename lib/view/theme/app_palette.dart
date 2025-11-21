@@ -12,6 +12,7 @@ class AppPalette extends ThemeExtension<AppPalette> {
   final Color onSurface;
   final Color outline;
   final Color muted;
+  final Color textPrimary;
 
   const AppPalette({
     required this.primary,
@@ -24,6 +25,7 @@ class AppPalette extends ThemeExtension<AppPalette> {
     required this.onSurface,
     required this.outline,
     required this.muted,
+    required this.textPrimary,
   });
 
   factory AppPalette.light() => const AppPalette(
@@ -37,6 +39,7 @@ class AppPalette extends ThemeExtension<AppPalette> {
         onSurface: Color(0xFF1A202C),
         outline: Color(0xFFD1D5DB),
         muted: Color(0xFF6B7280),
+        textPrimary: Color(0xFF1A202C),
       );
 
   factory AppPalette.dark() => const AppPalette(
@@ -50,6 +53,7 @@ class AppPalette extends ThemeExtension<AppPalette> {
         onSurface: Color(0xFFE5E7EB),
         outline: Color(0xFF4B5563),
         muted: Color(0xFF9CA3AF),
+        textPrimary: Color(0xFFE5E7EB),
       );
 
   @override
@@ -64,6 +68,7 @@ class AppPalette extends ThemeExtension<AppPalette> {
     Color? onSurface,
     Color? outline,
     Color? muted,
+    Color? textPrimary,
   }) {
     return AppPalette(
       primary: primary ?? this.primary,
@@ -76,6 +81,7 @@ class AppPalette extends ThemeExtension<AppPalette> {
       onSurface: onSurface ?? this.onSurface,
       outline: outline ?? this.outline,
       muted: muted ?? this.muted,
+      textPrimary: textPrimary ?? this.textPrimary,
     );
   }
 
@@ -93,6 +99,7 @@ class AppPalette extends ThemeExtension<AppPalette> {
       onSurface: Color.lerp(onSurface, other.onSurface, t) ?? onSurface,
       outline: Color.lerp(outline, other.outline, t) ?? outline,
       muted: Color.lerp(muted, other.muted, t) ?? muted,
+      textPrimary: Color.lerp(textPrimary, other.textPrimary, t) ?? textPrimary,
     );
   }
 }

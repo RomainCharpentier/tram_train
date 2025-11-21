@@ -57,7 +57,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
         _currentPause = selectedPause;
         _isLoading = false;
       });
-    } catch (e) {
+    } on Object catch (e) {
       setState(() {
         _error = 'Impossible de récupérer les données: $e';
         _isLoading = false;
@@ -70,6 +70,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
       final updatedTrip = trip.copyWith(notificationsEnabled: enabled);
       await DependencyInjection.instance.tripService.saveTrip(updatedTrip);
       await DependencyInjection.instance.tripReminderService.refreshSchedules();
+      if (!mounted) return;
       setState(() {
         _trips = _trips.map((t) => t.id == trip.id ? updatedTrip : t).toList();
       });
@@ -81,7 +82,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
               : 'Notifications désactivées pour ${trip.description}'),
         ),
       );
-    } catch (e) {
+    } on Object catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -110,14 +111,15 @@ class _NotificationsPageState extends State<NotificationsPage> {
       setState(() {
         _testMessage = '✅ Notification envoyée !';
       });
-    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isTestingNotification = false;
+        });
+      }
+    } on Object catch (e) {
       if (!mounted) return;
       setState(() {
         _testMessage = '❌ Erreur: $e';
-      });
-    } finally {
-      if (!mounted) return;
-      setState(() {
         _isTestingNotification = false;
       });
     }
@@ -176,6 +178,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
       return;
     }
 
+    if (!mounted) return;
     await _schedulePauseUntil(endDate);
   }
 
@@ -203,6 +206,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
       );
 
       await pauseService.createPause(pause);
+      if (!mounted) return;
       setState(() {
         _currentPause = pause;
         _isPauseUpdating = false;
@@ -216,7 +220,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
           ),
         ),
       );
-    } catch (e) {
+    } on Object catch (e) {
       if (!mounted) return;
       setState(() {
         _isPauseUpdating = false;
@@ -239,6 +243,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
 
     try {
       await DependencyInjection.instance.notificationPauseService.deletePause(_currentPause!.id);
+      if (!mounted) return;
       setState(() {
         _currentPause = null;
         _isPauseUpdating = false;
@@ -247,7 +252,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Pause désactivée')),
       );
-    } catch (e) {
+    } on Object catch (e) {
       if (!mounted) return;
       setState(() {
         _isPauseUpdating = false;
@@ -375,8 +380,8 @@ class _NotificationsPageState extends State<NotificationsPage> {
             boxShadow: [
               BoxShadow(
                 color: Theme.of(context).brightness == Brightness.dark
-                    ? Colors.black.withOpacity(0.3)
-                    : Colors.black.withOpacity(0.08),
+                    ? Colors.black.withValues(alpha:0.3)
+                    : Colors.black.withValues(alpha:0.08),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -496,8 +501,8 @@ class _NotificationsPageState extends State<NotificationsPage> {
         boxShadow: [
           BoxShadow(
             color: Theme.of(context).brightness == Brightness.dark
-                ? Colors.black.withOpacity(0.3)
-                : Colors.black.withOpacity(0.08),
+                ? Colors.black.withValues(alpha:0.3)
+                : Colors.black.withValues(alpha:0.08),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -538,8 +543,8 @@ class _NotificationsPageState extends State<NotificationsPage> {
         boxShadow: [
           BoxShadow(
             color: Theme.of(context).brightness == Brightness.dark
-                ? Colors.black.withOpacity(0.3)
-                : Colors.black.withOpacity(0.08),
+                ? Colors.black.withValues(alpha:0.3)
+                : Colors.black.withValues(alpha:0.08),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -660,8 +665,8 @@ class _NotificationsPageState extends State<NotificationsPage> {
         boxShadow: [
           BoxShadow(
             color: Theme.of(context).brightness == Brightness.dark
-                ? Colors.black.withOpacity(0.3)
-                : Colors.black.withOpacity(0.08),
+                ? Colors.black.withValues(alpha:0.3)
+                : Colors.black.withValues(alpha:0.08),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),

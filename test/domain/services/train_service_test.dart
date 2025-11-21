@@ -124,10 +124,9 @@ void main() {
           Train.fromTimes(
             id: '1',
             direction: 'Paris',
-            departureTime: DateTime(2025, 1, 1, 10, 0),
-            baseDepartureTime: DateTime(2025, 1, 1, 10, 0),
+            departureTime: DateTime(2025, 1, 1, 10),
+            baseDepartureTime: DateTime(2025, 1, 1, 10),
             station: testStation,
-            additionalInfo: [],
           ),
         ];
         mockGateway.setMockTrains(expectedTrains);
@@ -159,18 +158,16 @@ void main() {
           Train.fromTimes(
             id: '1',
             direction: 'Paris',
-            departureTime: DateTime(2025, 1, 1, 10, 0),
-            baseDepartureTime: DateTime(2025, 1, 1, 10, 0),
+            departureTime: DateTime(2025, 1, 1, 10),
+            baseDepartureTime: DateTime(2025, 1, 1, 10),
             station: testStation,
-            additionalInfo: [],
           ),
           Train.fromTimes(
             id: '2',
             direction: 'Nantes',
-            departureTime: DateTime(2025, 1, 1, 11, 0),
-            baseDepartureTime: DateTime(2025, 1, 1, 11, 0),
+            departureTime: DateTime(2025, 1, 1, 11),
+            baseDepartureTime: DateTime(2025, 1, 1, 11),
             station: testStation,
-            additionalInfo: [],
           ),
         ];
 
@@ -188,10 +185,9 @@ void main() {
           Train.fromTimes(
             id: '1',
             direction: 'Paris',
-            departureTime: DateTime(2025, 1, 1, 10, 0),
-            baseDepartureTime: DateTime(2025, 1, 1, 10, 0),
+            departureTime: DateTime(2025, 1, 1, 10),
+            baseDepartureTime: DateTime(2025, 1, 1, 10),
             station: testStation,
-            additionalInfo: [],
           ),
         ];
 
@@ -210,18 +206,16 @@ void main() {
           Train.fromTimes(
             id: '1',
             direction: 'Paris',
-            departureTime: DateTime(2025, 1, 1, 10, 0),
-            baseDepartureTime: DateTime(2025, 1, 1, 10, 0),
+            departureTime: DateTime(2025, 1, 1, 10),
+            baseDepartureTime: DateTime(2025, 1, 1, 10),
             station: testStation,
-            additionalInfo: [],
           ),
           Train.fromTimes(
             id: '2',
             direction: 'Nantes',
             departureTime: DateTime(2025, 1, 1, 11, 10),
-            baseDepartureTime: DateTime(2025, 1, 1, 11, 0),
+            baseDepartureTime: DateTime(2025, 1, 1, 11),
             station: testStation,
-            additionalInfo: [],
           ),
         ];
 
@@ -270,18 +264,16 @@ void main() {
           Train.fromTimes(
             id: '1',
             direction: 'Paris',
-            departureTime: DateTime(2025, 1, 1, 10, 0),
-            baseDepartureTime: DateTime(2025, 1, 1, 10, 0),
+            departureTime: DateTime(2025, 1, 1, 10),
+            baseDepartureTime: DateTime(2025, 1, 1, 10),
             station: testStation,
-            additionalInfo: [],
           ),
           Train.fromTimes(
             id: '2',
             direction: 'Nantes',
-            departureTime: DateTime(2025, 1, 1, 11, 0),
-            baseDepartureTime: DateTime(2025, 1, 1, 11, 0),
+            departureTime: DateTime(2025, 1, 1, 11),
+            baseDepartureTime: DateTime(2025, 1, 1, 11),
             station: testStation,
-            additionalInfo: [],
           ),
         ];
         mockGateway.setMockTrains(expectedTrains);
@@ -303,10 +295,10 @@ void main() {
           Train.fromTimes(
             id: '1',
             direction: 'Station B',
-            departureTime: DateTime(2025, 1, 1, 10, 0),
-            baseDepartureTime: DateTime(2025, 1, 1, 10, 0),
+            departureTime: DateTime(2025, 1, 1, 10),
+            baseDepartureTime: DateTime(2025, 1, 1, 10),
             station: stationA,
-            additionalInfo: ['Arrivée: 2025-01-01 11:00:00.000', 'Durée: 1h00'],
+            additionalInfo: const ['Arrivée: 2025-01-01 11:00:00.000', 'Durée: 1h00'],
           ),
         ];
         mockGateway.setMockTrains(expectedTrains);
@@ -331,7 +323,7 @@ void main() {
             departureTime: departureTime,
             baseDepartureTime: departureTime,
             station: stationA,
-            additionalInfo: ['Arrivée: 2025-01-01 15:30:00.000', 'Durée: 1h00'],
+            additionalInfo: const ['Arrivée: 2025-01-01 15:30:00.000', 'Durée: 1h00'],
           ),
         ];
         mockGateway.setMockTrains(expectedTrains);
@@ -348,15 +340,15 @@ void main() {
         // Given: I want to arrive at a specific time
         const stationA = Station(id: 'STATION_A', name: 'Station A');
         const stationB = Station(id: 'STATION_B', name: 'Station B');
-        final arrivalTime = DateTime(2025, 1, 1, 16, 0);
+        final arrivalTime = DateTime(2025, 1, 1, 16);
         final expectedTrains = [
           Train.fromTimes(
             id: '1',
             direction: 'Station B',
-            departureTime: DateTime(2025, 1, 1, 15, 0),
-            baseDepartureTime: DateTime(2025, 1, 1, 15, 0),
+            departureTime: DateTime(2025, 1, 1, 15),
+            baseDepartureTime: DateTime(2025, 1, 1, 15),
             station: stationA,
-            additionalInfo: ['Arrivée: 2025-01-01 16:00:00.000', 'Durée: 1h00'],
+            additionalInfo: const ['Arrivée: 2025-01-01 16:00:00.000', 'Durée: 1h00'],
           ),
         ];
         mockGateway.setMockTrains(expectedTrains);

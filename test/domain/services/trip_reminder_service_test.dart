@@ -10,7 +10,7 @@ import 'package:train_qil/domain/services/trip_service.dart';
 import 'package:train_qil/env_config.dart';
 
 void main() {
-  late FakeScheduler fakeScheduler;
+  late _FakeScheduler fakeScheduler;
   late MockClockService clock;
   late _TestTripService tripService;
 
@@ -18,8 +18,8 @@ void main() {
     debugDefaultTargetPlatformOverride = TargetPlatform.android;
     EnvConfig.apiKey = 'test-key';
 
-    fakeScheduler = FakeScheduler();
-    clock = MockClockService(DateTime(2025, 1, 6, 7, 0)); // Lundi 07:00
+    fakeScheduler = _FakeScheduler();
+    clock = MockClockService(DateTime(2025, 1, 6, 7)); // Lundi 07:00
     tripService = _TestTripService();
   });
 
@@ -28,7 +28,7 @@ void main() {
     EnvConfig.apiKey = null;
   });
 
-  TripReminderService _buildService() {
+  TripReminderService buildService() {
     return TripReminderService(
       tripService: tripService,
       clockService: clock,
@@ -38,7 +38,7 @@ void main() {
 
   test('scheduleTrip planifie une tâche pour un trajet actif', () async {
     final trip = _createTrip();
-    final service = _buildService();
+    final service = buildService();
 
     await service.scheduleTrip(trip);
 
@@ -51,14 +51,14 @@ void main() {
     expect(task.inputData?['tripId'], trip.id);
     expect(
       task.inputData?['departureDateTime'],
-      DateTime(2025, 1, 6, 8, 0).toIso8601String(),
+      DateTime(2025, 1, 6, 8).toIso8601String(),
     );
   });
 
   test('scheduleTrip annule la tâche quand les notifications sont désactivées',
       () async {
     final trip = _createTrip(id: 'disabled', notificationsEnabled: false);
-    final service = _buildService();
+    final service = buildService();
 
     await service.scheduleTrip(trip);
 
@@ -75,7 +75,7 @@ void main() {
     final muted = _createTrip(id: 'muted', notificationsEnabled: false);
     tripService.trips = [active, inactive, muted];
 
-    final service = _buildService();
+    final service = buildService();
     await service.refreshSchedules();
 
     expect(
@@ -92,12 +92,12 @@ void main() {
   });
 
   test('computeNextDeparture décale à la semaine suivante si nécessaire', () {
-    final now = DateTime(2025, 1, 6, 10, 0); // Lundi 10h
-    final trip = _createTrip(hour: 8, minute: 0);
+    final now = DateTime(2025, 1, 6, 10); // Lundi 10h
+    final trip = _createTrip();
 
     final next = TripReminderService.computeNextDeparture(trip, now);
 
-    expect(next, DateTime(2025, 1, 13, 8, 0));
+    expect(next, DateTime(2025, 1, 13, 8));
   });
 }
 
@@ -117,7 +117,7 @@ Trip _createTrip({
     time: TimeOfDay(hour: hour, minute: minute),
     isActive: isActive,
     notificationsEnabled: notificationsEnabled,
-    createdAt: DateTime(2025, 1, 1),
+    createdAt: DateTime(2025),
   );
 }
 
@@ -144,7 +144,7 @@ class _DummyTripStorage implements TripStorage {
   Future<void> saveTrip(Trip trip) async {}
 }
 
-class FakeScheduler implements BackgroundTaskScheduler {
+class _FakeScheduler implements BackgroundTaskScheduler {
   final List<_RegisteredTask> registeredTasks = [];
   final List<String> cancelledIds = [];
 

@@ -55,17 +55,20 @@ class _ProfilePageState extends State<ProfilePage> {
 
     try {
       final trips = await _tripService.getAllTrips();
+      if (!mounted) return;
       setState(() {
         _trips = trips;
       });
-    } catch (e) {
+    } on Object catch (e) {
       setState(() {
         _tripError = 'Erreur lors du chargement des trajets: $e';
       });
     } finally {
-      setState(() {
-        _isLoadingTrips = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoadingTrips = false;
+        });
+      }
     }
   }
 
@@ -77,17 +80,20 @@ class _ProfilePageState extends State<ProfilePage> {
 
     try {
       final favorites = await _favoriteService.getAllFavoriteStations();
+      if (!mounted) return;
       setState(() {
         _favoriteStations = favorites;
       });
-    } catch (e) {
+    } on Object catch (e) {
       setState(() {
         _favoritesError = 'Erreur lors du chargement des favoris: $e';
       });
     } finally {
-      setState(() {
-        _isLoadingFavorites = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoadingFavorites = false;
+        });
+      }
     }
   }
 
@@ -150,7 +156,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Gérez vos trajets enregistrés, vos stations favorites et personnalisez l\'application.',
+                  "Gérez vos trajets enregistrés, vos stations favorites et personnalisez l'application.",
                     style: TextStyle(
                       fontSize: 13,
                       color: context.theme.textSecondary,
@@ -187,15 +193,14 @@ class _ProfilePageState extends State<ProfilePage> {
       decoration: BoxDecoration(
         color: context.theme.card,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: context.theme.outline, width: 1),
+        border: Border.all(color: context.theme.outline),
         boxShadow: [
           BoxShadow(
             color: Theme.of(context).brightness == Brightness.dark
-                ? Colors.black.withOpacity(0.3)
-                : Colors.black.withOpacity(0.08),
+                ? Colors.black.withValues(alpha:0.3)
+                : Colors.black.withValues(alpha:0.08),
             blurRadius: 8,
             offset: const Offset(0, 2),
-            spreadRadius: 0,
           ),
         ],
       ),
@@ -407,15 +412,14 @@ class _ProfilePageState extends State<ProfilePage> {
             decoration: BoxDecoration(
               color: context.theme.card,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: context.theme.outline, width: 1),
+              border: Border.all(color: context.theme.outline),
               boxShadow: [
                 BoxShadow(
                   color: Theme.of(context).brightness == Brightness.dark
-                      ? Colors.black.withOpacity(0.3)
-                      : Colors.black.withOpacity(0.08),
+                      ? Colors.black.withValues(alpha:0.3)
+                      : Colors.black.withValues(alpha:0.08),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
-                  spreadRadius: 0,
                 ),
               ],
             ),
@@ -429,7 +433,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: context.theme.info.withOpacity(0.15),
+                        color: context.theme.info.withValues(alpha:0.15),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: context.theme.info, width: 1.5),
                       ),
@@ -531,7 +535,7 @@ class _ProfilePageState extends State<ProfilePage> {
       alignment: Alignment.centerRight,
       padding: const EdgeInsets.symmetric(horizontal: 24),
       decoration: BoxDecoration(
-        color: Colors.red.withOpacity(0.1),
+        color: Colors.red.withValues(alpha:0.1),
         borderRadius: BorderRadius.circular(12),
       ),
       child: const Row(
@@ -553,6 +557,7 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
     );
     if (result == true) {
+      if (!mounted) return;
       await _loadTrips();
       await _reminderService.refreshSchedules();
     }
@@ -566,6 +571,7 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
     );
     if (result == true) {
+      if (!mounted) return;
       await _loadTrips();
       await _reminderService.refreshSchedules();
     }
@@ -587,8 +593,9 @@ class _ProfilePageState extends State<ProfilePage> {
         );
         await _tripService.saveTrip(duplicatedTrip);
         await _reminderService.refreshSchedules();
+        if (!mounted) return;
         await _loadTrips();
-        if (mounted) {
+        if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Trajet dupliqué')),
           );
@@ -598,8 +605,9 @@ class _ProfilePageState extends State<ProfilePage> {
         final updatedTrip = trip.copyWith(isActive: !trip.isActive);
         await _tripService.saveTrip(updatedTrip);
         await _reminderService.refreshSchedules();
+        if (!mounted) return;
         await _loadTrips();
-        if (mounted) {
+        if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
@@ -612,6 +620,7 @@ class _ProfilePageState extends State<ProfilePage> {
       case 'delete':
         final confirmed = await _confirmTripDeletion(context, trip);
         if (confirmed == true) {
+          if (!context.mounted) return;
           await _deleteTrip(context, trip);
         }
         break;
@@ -644,8 +653,9 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> _deleteTrip(BuildContext context, domain.Trip trip) async {
     await _tripService.deleteTripAndSimilar(trip);
     await _reminderService.refreshSchedules();
+    if (!mounted) return;
     await _loadTrips();
-    if (mounted) {
+    if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Trajet supprimé')),
       );
@@ -661,6 +671,7 @@ class _ProfilePageState extends State<ProfilePage> {
     );
 
     if (result != null) {
+      if (!mounted) return;
       await _loadFavorites();
     }
   }
@@ -691,15 +702,15 @@ class _ProfilePageState extends State<ProfilePage> {
       try {
         await _favoriteService.removeFavoriteStation(station.id);
         await _loadFavorites();
-        if (mounted) {
+        if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('${station.name} retirée des favoris'),
             ),
           );
         }
-      } catch (e) {
-        if (mounted) {
+      } on Object catch (e) {
+        if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Erreur lors de la suppression: $e'),

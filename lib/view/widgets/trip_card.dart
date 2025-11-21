@@ -96,8 +96,8 @@ class TripCard extends StatelessWidget {
         boxShadow: [
           BoxShadow(
             color: Theme.of(context).brightness == Brightness.dark
-                ? Colors.black.withOpacity(0.3)
-                : Colors.black.withOpacity(0.08),
+                ? Colors.black.withValues(alpha:0.3)
+                : Colors.black.withValues(alpha:0.08),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -181,7 +181,7 @@ class TripCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
+        color: color.withValues(alpha:0.12),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
@@ -211,6 +211,7 @@ class TripCard extends StatelessWidget {
       return;
     }
     final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!context.mounted) return;
     if (!launched) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Impossible d'ouvrir le lien SNCF")),

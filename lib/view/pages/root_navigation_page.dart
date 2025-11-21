@@ -43,21 +43,7 @@ class _RootNavigationPageState extends State<RootNavigationPage> {
     });
   }
 
-  Future<bool> _onWillPop() async {
-    final NavigatorState? currentNavigator =
-        _navigatorKeys[_selectedIndex].currentState;
-    if (currentNavigator?.canPop() ?? false) {
-      currentNavigator!.maybePop();
-      return false;
-    }
-    if (_selectedIndex != 0) {
-      setState(() {
-        _selectedIndex = 0;
-      });
-      return false;
-    }
-    return true;
-  }
+
 
   Widget _buildOffstageNavigator(int index) {
     return Offstage(
@@ -79,8 +65,27 @@ class _RootNavigationPageState extends State<RootNavigationPage> {
 
     return PageThemeProvider(
       colors: pageColors,
-      child: WillPopScope(
-        onWillPop: _onWillPop,
+      child: PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, result) async {
+          if (didPop) return;
+          final NavigatorState? currentNavigator =
+              _navigatorKeys[_selectedIndex].currentState;
+          if (currentNavigator?.canPop() ?? false) {
+            currentNavigator!.maybePop();
+            return;
+          }
+          if (_selectedIndex != 0) {
+            setState(() {
+              _selectedIndex = 0;
+            });
+            return;
+          }
+          // Allow the system to pop (exit app)
+          if (context.mounted) {
+            Navigator.of(context).pop();
+          }
+        },
         child: Scaffold(
           body: Stack(
             children: List.generate(
@@ -95,7 +100,7 @@ class _RootNavigationPageState extends State<RootNavigationPage> {
               selectedIndex: _selectedIndex,
               onDestinationSelected: _onDestinationSelected,
               backgroundColor: Theme.of(context).colorScheme.surface,
-              indicatorColor: pageColors.primary.withOpacity(0.12),
+              indicatorColor: pageColors.primary.withValues(alpha:0.12),
               height: 72,
               labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
               destinations: [

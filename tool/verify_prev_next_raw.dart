@@ -1,3 +1,4 @@
+// ignore_for_file: avoid_print
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:train_qil/infrastructure/mappers/sncf_mapper.dart';
@@ -12,9 +13,9 @@ Future<void> main() async {
   final gw =
       SncfGateway(httpClient: httpClient, apiKey: apiKey, mapper: mapper);
 
-  final from = const Station(id: 'SNCF:87590349', name: 'Babinière');
-  final to = const Station(id: 'SNCF:87481002', name: 'Nantes');
-  final target = DateTime(2025, 11, 3, 8, 0, 0);
+  const from = Station(id: 'SNCF:87590349', name: 'Babinière');
+  const to = Station(id: 'SNCF:87481002', name: 'Nantes');
+  final target = DateTime(2025, 11, 3, 8);
 
   print('📅 Cible: $target');
   try {
@@ -33,8 +34,9 @@ Future<void> main() async {
       final before =
           trains.where((t) => t.departureTime.isBefore(target)).toList();
       print('⬅️ prev page before count = ${before.length}');
-      if (before.isNotEmpty)
+      if (before.isNotEmpty) {
         print('   last before = ${before.last.departureTime}');
+      }
     }
 
     if (next['href'] is String) {
@@ -44,10 +46,11 @@ Future<void> main() async {
       final after =
           trains.where((t) => !t.departureTime.isBefore(target)).toList();
       print('➡️ next page after count = ${after.length}');
-      if (after.isNotEmpty)
+      if (after.isNotEmpty) {
         print('   first after = ${after.first.departureTime}');
+      }
     }
-  } catch (e) {
+  } on Object catch (e) {
     print('❌ erreur: $e');
   } finally {
     httpClient.close();

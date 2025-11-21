@@ -1,4 +1,7 @@
+import 'package:flutter/foundation.dart';
+
 /// Modèle représentant une pause de notifications
+@immutable
 class NotificationPause {
   final String id;
   final String name;

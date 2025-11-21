@@ -38,9 +38,7 @@ class NotificationService {
     const androidSettings =
         AndroidInitializationSettings('@mipmap/ic_launcher');
     const iosSettings = DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: true,
+      
     );
     const initSettings = InitializationSettings(
       android: androidSettings,
@@ -123,7 +121,7 @@ class NotificationService {
       String title, String body, String? payload) async {
     const androidDetails = AndroidNotificationDetails(
       'train_qil_channel',
-      'Train\'Qil Notifications',
+      "Train'Qil Notifications",
       channelDescription: 'Notifications pour les trajets de train',
       importance: Importance.high,
       priority: Priority.high,

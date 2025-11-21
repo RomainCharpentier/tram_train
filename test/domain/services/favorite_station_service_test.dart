@@ -11,8 +11,8 @@ void main() {
     service = FavoriteStationService(storage);
   });
 
-  final station = Station(id: '1', name: 'Paris');
-  final station2 = Station(id: '2', name: 'Lyon');
+  const station = Station(id: '1', name: 'Paris');
+  const station2 = Station(id: '2', name: 'Lyon');
 
   test('addFavoriteStation stores the station', () async {
     await service.addFavoriteStation(station);

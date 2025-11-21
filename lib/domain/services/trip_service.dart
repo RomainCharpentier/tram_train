@@ -80,9 +80,9 @@ class TripService {
     DateTime now;
     try {
       now = DependencyInjection.instance.clockService.now();
-    } catch (e) {
+    } on Object catch (_) {
       const useMockData = bool.fromEnvironment('USE_MOCK_DATA');
-      now = useMockData ? DateTime(2025, 1, 6, 7, 0) : DateTime.now();
+      now = useMockData ? DateTime(2025, 1, 6, 7) : DateTime.now();
     }
     return trips.where((trip) => trip.isForToday(now)).toList();
   }
@@ -91,9 +91,9 @@ class TripService {
     DateTime now;
     try {
       now = DependencyInjection.instance.clockService.now();
-    } catch (e) {
+    } on Object catch (_) {
       const useMockData = bool.fromEnvironment('USE_MOCK_DATA');
-      now = useMockData ? DateTime(2025, 1, 6, 7, 0) : DateTime.now();
+      now = useMockData ? DateTime(2025, 1, 6, 7) : DateTime.now();
     }
     return trips.where((trip) => trip.isActiveToday(now)).toList();
   }

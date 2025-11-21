@@ -64,10 +64,11 @@ class _StationSearchPageState extends State<StationSearchPage> {
 
     try {
       final favorites = await _favoriteStationService.getAllFavoriteStations();
+      if (!mounted) return;
       _setSearchResults(
         favorites.map((station) => SearchResult.favorite(station)).toList(),
       );
-    } catch (e) {
+    } on Object catch (e) {
       _setErrorState('Erreur lors du chargement des favoris: $e');
     }
   }
@@ -94,9 +95,9 @@ class _StationSearchPageState extends State<StationSearchPage> {
           .map((name) => SearchResult.suggestion(Station(id: 'TEMP_${name.hashCode}', name: name),
               metadata: {'connected': true, 'suggestion': true}))
           .toList();
-
+      if (!mounted) return;
       _setSearchResults(results);
-    } catch (e) {
+    } on Object catch (e) {
       _setErrorState('Erreur lors du chargement des destinations connectées: $e');
     }
   }
@@ -118,9 +119,10 @@ class _StationSearchPageState extends State<StationSearchPage> {
     try {
       final results =
           await DependencyInjection.instance.stationSearchService.searchStations(searchQuery);
+      if (!mounted) return;
       _setSearchResults(results);
       _loadFavoriteStatus();
-    } catch (e) {
+    } on Object catch (e) {
       _setErrorState('Erreur lors de la recherche: $e');
     }
   }
@@ -139,7 +141,7 @@ class _StationSearchPageState extends State<StationSearchPage> {
       setState(() {
         _suggestions = suggestions;
       });
-    } catch (e) {}
+    } on Object catch (_) {}
   }
 
   Future<void> _searchByTransportType(TransportType type) async {
@@ -152,8 +154,9 @@ class _StationSearchPageState extends State<StationSearchPage> {
     try {
       final results =
           await DependencyInjection.instance.stationSearchService.searchStationsByType(type);
+      if (!mounted) return;
       _setSearchResults(results);
-    } catch (e) {
+    } on Object catch (e) {
       _setErrorState('Erreur lors de la recherche par type: $e');
     }
   }
@@ -166,8 +169,9 @@ class _StationSearchPageState extends State<StationSearchPage> {
         query: _searchController.text.trim().isNotEmpty ? _searchController.text.trim() : null,
         transportType: _selectedTransportType != TransportType.all ? _selectedTransportType : null,
       );
+      if (!mounted) return;
       _setSearchResults(results);
-    } catch (e) {
+    } on Object catch (e) {
       _setErrorState('Erreur lors de la recherche avancée: $e');
     }
   }
@@ -269,7 +273,7 @@ class _StationSearchPageState extends State<StationSearchPage> {
               _searchByTransportType(type);
             }
           },
-          selectedColor: context.theme.primary.withOpacity(0.2),
+          selectedColor: context.theme.primary.withValues(alpha:0.2),
           checkmarkColor: context.theme.primary,
         );
       }).toList(),
@@ -336,7 +340,7 @@ class _StationSearchPageState extends State<StationSearchPage> {
       decoration: BoxDecoration(
         color: context.theme.card,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: context.theme.outline, width: 1),
+        border: Border.all(color: context.theme.outline),
       ),
       child: ListTile(
         leading: _buildStationLeading(result, isSuggestion),
@@ -485,7 +489,7 @@ class _StationSearchPageState extends State<StationSearchPage> {
       setState(() {
         _favoriteStatus[station.id] = !isFavorite;
       });
-    } catch (e) {
+    } on Object catch (e) {
       _showSnackBar('Erreur: ${e.toString()}', context.theme.error);
     }
   }
@@ -513,7 +517,7 @@ class _StationSearchPageState extends State<StationSearchPage> {
             color: isDark ? Colors.black : Colors.white,
           ),
         ),
-        backgroundColor: isDark ? backgroundColor.withOpacity(0.75) : backgroundColor,
+        backgroundColor: isDark ? backgroundColor.withValues(alpha:0.75) : backgroundColor,
       ),
     );
   }
@@ -540,6 +544,8 @@ class _StationSearchPageState extends State<StationSearchPage> {
       final results =
           await DependencyInjection.instance.stationSearchService.searchStations(destinationName);
 
+      if (!mounted) return;
+
       if (results.isEmpty) {
         _setErrorState('Aucune gare trouvée pour "$destinationName"');
         return;
@@ -554,7 +560,7 @@ class _StationSearchPageState extends State<StationSearchPage> {
       }
 
       Navigator.pop(context, station);
-    } catch (e) {
+    } on Object catch (e) {
       _setErrorState('Erreur lors de la recherche de "$destinationName": $e');
     }
   }

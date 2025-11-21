@@ -230,7 +230,7 @@ class _AddTripPageState extends State<AddTripPage> {
                               ),
                             ),
                             backgroundColor: Theme.of(context).brightness == Brightness.dark
-                                ? context.theme.warning.withOpacity(0.75)
+                                ? context.theme.warning.withValues(alpha:0.75)
                                 : context.theme.warning,
                           ),
                         );
@@ -319,8 +319,8 @@ class _AddTripPageState extends State<AddTripPage> {
                 boxShadow: [
                   BoxShadow(
                     color: Theme.of(context).brightness == Brightness.dark
-                        ? Colors.black.withOpacity(0.3)
-                        : Colors.black.withOpacity(0.08),
+                        ? Colors.black.withValues(alpha:0.3)
+                        : Colors.black.withValues(alpha:0.08),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -354,8 +354,8 @@ class _AddTripPageState extends State<AddTripPage> {
                 boxShadow: [
                   BoxShadow(
                     color: Theme.of(context).brightness == Brightness.dark
-                        ? Colors.black.withOpacity(0.3)
-                        : Colors.black.withOpacity(0.08),
+                        ? Colors.black.withValues(alpha:0.3)
+                        : Colors.black.withValues(alpha:0.08),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -376,7 +376,7 @@ class _AddTripPageState extends State<AddTripPage> {
                     },
                     color: context.theme.textSecondary,
                     selectedColor: context.theme.primary,
-                    fillColor: context.theme.primary.withOpacity(0.1),
+                    fillColor: context.theme.primary.withValues(alpha:0.1),
                     children: [
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -410,8 +410,8 @@ class _AddTripPageState extends State<AddTripPage> {
                   boxShadow: [
                     BoxShadow(
                       color: Theme.of(context).brightness == Brightness.dark
-                          ? Colors.black.withOpacity(0.3)
-                          : Colors.black.withOpacity(0.08),
+                          ? Colors.black.withValues(alpha:0.3)
+                          : Colors.black.withValues(alpha:0.08),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -444,8 +444,8 @@ class _AddTripPageState extends State<AddTripPage> {
                   boxShadow: [
                     BoxShadow(
                       color: Theme.of(context).brightness == Brightness.dark
-                          ? Colors.black.withOpacity(0.3)
-                          : Colors.black.withOpacity(0.08),
+                          ? Colors.black.withValues(alpha:0.3)
+                          : Colors.black.withValues(alpha:0.08),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -477,9 +477,12 @@ class _AddTripPageState extends State<AddTripPage> {
                             final isSelected = _selectedCandidateId == key;
                             return Column(
                               children: [
+                                // ignore: deprecated_member_use
                                 RadioListTile<String>(
                                   value: key,
+                                  // ignore: deprecated_member_use
                                   groupValue: _selectedCandidateId,
+                                  // ignore: deprecated_member_use
                                   onChanged: already
                                       ? null
                                       : (val) {
@@ -506,7 +509,7 @@ class _AddTripPageState extends State<AddTripPage> {
                                               fontSize: 12,
                                             ),
                                           ),
-                                          backgroundColor: context.theme.muted.withOpacity(0.2),
+                                          backgroundColor: context.theme.muted.withValues(alpha:0.2),
                                         ),
                                     ],
                                   ),
@@ -553,7 +556,7 @@ class _AddTripPageState extends State<AddTripPage> {
                                                 ),
                                               ),
                                               backgroundColor:
-                                                  context.theme.primary.withOpacity(0.1),
+                                                  context.theme.primary.withValues(alpha:0.1),
                                               padding: const EdgeInsets.symmetric(
                                                   horizontal: 8, vertical: 4),
                                             );
@@ -614,8 +617,8 @@ class _AddTripPageState extends State<AddTripPage> {
                   boxShadow: [
                     BoxShadow(
                       color: Theme.of(context).brightness == Brightness.dark
-                          ? Colors.black.withOpacity(0.3)
-                          : Colors.black.withOpacity(0.08),
+                          ? Colors.black.withValues(alpha:0.3)
+                          : Colors.black.withValues(alpha:0.08),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -654,7 +657,7 @@ class _AddTripPageState extends State<AddTripPage> {
                               _selectedTime!.format(context),
                               style: TextStyle(color: context.theme.textPrimary),
                             ),
-                            backgroundColor: context.theme.primary.withOpacity(0.1),
+                            backgroundColor: context.theme.primary.withValues(alpha:0.1),
                           ),
                           if (_selectedDays.isNotEmpty)
                             Chip(
@@ -666,7 +669,7 @@ class _AddTripPageState extends State<AddTripPage> {
                                     : _selectedDays.map((d) => d.displayName).join(', '),
                                 style: TextStyle(color: context.theme.textPrimary),
                               ),
-                              backgroundColor: context.theme.primary.withOpacity(0.1),
+                              backgroundColor: context.theme.primary.withValues(alpha:0.1),
                             ),
                           Chip(
                             avatar: Icon(Icons.directions_railway,
@@ -675,7 +678,7 @@ class _AddTripPageState extends State<AddTripPage> {
                               _directTrainsOnly ? 'Direct uniquement' : 'Avec correspondances',
                               style: TextStyle(color: context.theme.textPrimary),
                             ),
-                            backgroundColor: context.theme.primary.withOpacity(0.1),
+                            backgroundColor: context.theme.primary.withValues(alpha:0.1),
                           ),
                           Chip(
                             avatar: Icon(
@@ -690,8 +693,8 @@ class _AddTripPageState extends State<AddTripPage> {
                               style: TextStyle(color: context.theme.textPrimary),
                             ),
                             backgroundColor: _notificationsEnabled
-                                ? context.theme.warning.withOpacity(0.1)
-                                : context.theme.primary.withOpacity(0.1),
+                                ? context.theme.warning.withValues(alpha:0.1)
+                                : context.theme.primary.withValues(alpha:0.1),
                           ),
                         ],
                       ),
@@ -739,6 +742,7 @@ class _AddTripPageState extends State<AddTripPage> {
     );
 
     if (result != null) {
+      if (!mounted) return;
       setState(() {
         if (isDeparture) {
           _departureStation = result;
@@ -774,7 +778,7 @@ class _AddTripPageState extends State<AddTripPage> {
           _connectionError = '✅ ${result.message}';
         }
       });
-    } catch (e) {
+    } on Object catch (e) {
       setState(() {
         _connectionError = 'Erreur lors de la validation: $e';
       });
@@ -796,6 +800,7 @@ class _AddTripPageState extends State<AddTripPage> {
     );
 
     if (time != null) {
+      if (!mounted) return;
       setState(() {
         _selectedTime = time;
       });
@@ -907,7 +912,7 @@ class _AddTripPageState extends State<AddTripPage> {
             ),
           ),
           backgroundColor: Theme.of(context).brightness == Brightness.dark
-              ? context.theme.error.withOpacity(0.75)
+              ? context.theme.error.withValues(alpha:0.75)
               : context.theme.error,
         ),
       );
@@ -970,7 +975,7 @@ class _AddTripPageState extends State<AddTripPage> {
               subset = _deduplicateTrains([...subset, byPrev]);
               subset.sort((a, b) => getRefTime(a).compareTo(getRefTime(b)));
             }
-          } catch (_) {}
+          } on Object catch (_) {}
         }
 
         if (after == null) {
@@ -982,7 +987,7 @@ class _AddTripPageState extends State<AddTripPage> {
               subset = _deduplicateTrains([...subset, byNext]);
               subset.sort((a, b) => getRefTime(a).compareTo(getRefTime(b)));
             }
-          } catch (_) {}
+          } on Object catch (_) {}
         }
 
         final result = <domain_train.Train>[];
@@ -1020,10 +1025,11 @@ class _AddTripPageState extends State<AddTripPage> {
         return;
       }
 
+      if (!mounted) return;
       setState(() {
         _candidateTrains = [];
       });
-    } catch (e) {
+    } on Object catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -1035,7 +1041,7 @@ class _AddTripPageState extends State<AddTripPage> {
               ),
             ),
             backgroundColor: Theme.of(context).brightness == Brightness.dark
-                ? context.theme.error.withOpacity(0.75)
+                ? context.theme.error.withValues(alpha:0.75)
                 : context.theme.error,
           ),
         );
@@ -1073,7 +1079,7 @@ class _AddTripPageState extends State<AddTripPage> {
                 ),
               ),
               backgroundColor: Theme.of(context).brightness == Brightness.dark
-                  ? context.theme.warning.withOpacity(0.75)
+                  ? context.theme.warning.withValues(alpha:0.75)
                   : context.theme.warning,
               duration: const Duration(seconds: 5),
             ),
@@ -1111,12 +1117,12 @@ class _AddTripPageState extends State<AddTripPage> {
               ),
             ),
             backgroundColor: Theme.of(context).brightness == Brightness.dark
-                ? context.theme.success.withOpacity(0.75)
+                ? context.theme.success.withValues(alpha:0.75)
                 : context.theme.success,
           ),
         );
       }
-    } catch (e) {
+    } on Object catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -1128,7 +1134,7 @@ class _AddTripPageState extends State<AddTripPage> {
               ),
             ),
             backgroundColor: Theme.of(context).brightness == Brightness.dark
-                ? context.theme.error.withOpacity(0.75)
+                ? context.theme.error.withValues(alpha:0.75)
                 : context.theme.error,
           ),
         );

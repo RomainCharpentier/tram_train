@@ -17,7 +17,7 @@ class EnvConfig {
       await dotenv.load(fileName: envFile);
 
       apiKey = dotenv.env['API_KEY'];
-    } catch (e) {
+    } on Object catch (_) {
       apiKey = '61032076-d074-439e-8526-5c39a541479f';
     }
   }

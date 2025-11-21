@@ -35,7 +35,7 @@ class DependencyInjection {
   static ClockService get _getClockServiceInstance {
     const useMockData = bool.fromEnvironment('USE_MOCK_DATA');
     _staticClockService ??=
-        useMockData ? MockClockService(DateTime(2025, 1, 6, 7, 0)) : SystemClockService();
+        useMockData ? MockClockService(DateTime(2025, 1, 6, 7)) : SystemClockService();
     return _staticClockService!;
   }
 

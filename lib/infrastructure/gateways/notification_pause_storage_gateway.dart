@@ -39,8 +39,8 @@ class NotificationPauseStorageGateway implements NotificationPauseStorage {
       for (final pauseData in pausesList) {
         try {
           validPauses.add(_pauseFromJson(pauseData as Map<String, dynamic>));
-        } catch (e) {
-          debugPrint('Erreur lors du décodage d\'une pause: $e');
+        } on Object catch (e) {
+          debugPrint("Erreur lors du décodage d'une pause: $e");
         }
       }
 
@@ -51,7 +51,7 @@ class NotificationPauseStorageGateway implements NotificationPauseStorage {
       }
 
       return validPauses;
-    } catch (e) {
+    } on Object catch (e) {
       debugPrint('Erreur lors de la lecture des pauses: $e');
       return [];
     }

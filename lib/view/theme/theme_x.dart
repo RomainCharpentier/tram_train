@@ -15,7 +15,7 @@ class AppThemeColors {
   Color get error {
     final color = _bc.error;
     return Theme.of(context).brightness == Brightness.dark
-        ? color.withOpacity(0.75)
+        ? color.withValues(alpha:0.75)
         : color;
   }
   Color get onPrimary => _cs.onPrimary;
@@ -23,13 +23,13 @@ class AppThemeColors {
   Color get textPrimary {
     final color = _ap.onSurface;
     return Theme.of(context).brightness == Brightness.dark
-        ? color.withOpacity(0.95)
+        ? color.withValues(alpha:0.95)
         : color;
   }
   Color get textSecondary {
     final color = _ap.muted;
     return Theme.of(context).brightness == Brightness.dark
-        ? color.withOpacity(0.80)
+        ? color.withValues(alpha:0.80)
         : color;
   }
   Color get textOnPrimary => _cs.onPrimary;
@@ -42,20 +42,20 @@ class AppThemeColors {
   Color get outline {
     final color = _ap.outline;
     return Theme.of(context).brightness == Brightness.dark
-        ? color.withOpacity(0.60)
+        ? color.withValues(alpha:0.60)
         : color;
   }
   Color get muted {
     final color = _ap.muted;
     return Theme.of(context).brightness == Brightness.dark
-        ? color.withOpacity(0.80)
+        ? color.withValues(alpha:0.80)
         : color;
   }
 
   Color get success {
     final color = _bc.success;
     return Theme.of(context).brightness == Brightness.dark
-        ? color.withOpacity(0.70)
+        ? color.withValues(alpha:0.70)
         : color;
   }
   

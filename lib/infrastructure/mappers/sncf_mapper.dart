@@ -154,7 +154,6 @@ class SncfMapper {
       departurePlatform: departurePlatform,
       arrivalPlatform: arrivalPlatform,
       externalUrl: externalUrl,
-      intermediateStops: const [],
     );
   }
 
@@ -205,9 +204,7 @@ class SncfMapper {
       departureTime: departureTime,
       baseDepartureTime: departureTime,
       status: TrainStatus.unknown,
-      additionalInfo: [],
       station: station,
-      intermediateStops: const [],
     );
   }
 
@@ -699,7 +696,6 @@ class SncfMapper {
       departurePlatform: departurePlatform,
       arrivalPlatform: arrivalPlatform,
       externalUrl: externalUrl,
-      intermediateStops: const [],
     );
   }
 

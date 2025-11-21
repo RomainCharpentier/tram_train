@@ -5,73 +5,73 @@ import '../../../domain/services/station_search_service.dart';
 /// Implémentation mock de StationSearchGateway
 class MockStationSearchGateway implements StationSearchGateway {
   final List<Station> _mockStations = [
-    Station(
+    const Station(
       id: 'stop_point:SNCF:87384008',
       name: 'Paris Nord',
       latitude: 48.8809,
       longitude: 2.3553,
     ),
-    Station(
+    const Station(
       id: 'stop_point:SNCF:87286025',
       name: 'Lille Europe',
       latitude: 50.6394,
       longitude: 3.0758,
     ),
-    Station(
+    const Station(
       id: 'stop_point:SNCF:87751008',
       name: 'Lyon Part-Dieu',
       latitude: 45.7606,
       longitude: 4.8604,
     ),
-    Station(
+    const Station(
       id: 'stop_point:SNCF:87751000',
       name: 'Marseille St-Charles',
       latitude: 43.3032,
       longitude: 5.3842,
     ),
-    Station(
+    const Station(
       id: 'stop_point:SNCF:87581009',
       name: 'Bordeaux St-Jean',
       latitude: 44.8258,
       longitude: -0.5563,
     ),
-    Station(
+    const Station(
       id: 'stop_point:SNCF:87471003',
       name: 'Paris Gare de Lyon',
       latitude: 48.8445,
       longitude: 2.3732,
     ),
-    Station(
+    const Station(
       id: 'stop_point:SNCF:87113001',
       name: 'Paris Montparnasse',
       latitude: 48.8412,
       longitude: 2.3216,
     ),
-    Station(
+    const Station(
       id: 'stop_point:SNCF:87384008',
       name: 'Paris Est',
       latitude: 48.8786,
       longitude: 2.3592,
     ),
-    Station(
+    const Station(
       id: 'stop_point:SNCF:87722025',
       name: 'Nantes',
       latitude: 47.2184,
       longitude: -1.5416,
     ),
-    Station(
+    const Station(
       id: 'stop_point:SNCF:87758001',
       name: 'Toulouse Matabiau',
       latitude: 43.6110,
       longitude: 1.4538,
     ),
-    Station(
+    const Station(
       id: 'stop_point:SNCF:87686006',
       name: 'Strasbourg',
       latitude: 48.5734,
       longitude: 7.7521,
     ),
-    Station(
+    const Station(
       id: 'stop_point:SNCF:87547000',
       name: 'Rennes',
       latitude: 48.1035,

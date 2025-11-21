@@ -1,3 +1,4 @@
+// ignore_for_file: avoid_print
 import 'package:train_qil/domain/models/trip.dart';
 import 'package:train_qil/domain/models/station.dart';
 
@@ -31,7 +32,7 @@ String formatRefLabel(DateTime dt) {
 
 void main() {
   // Simule: aujourd'hui = Samedi 01/11/2025 20:00
-  final simulatedNow = DateTime(2025, 11, 1, 20, 0);
+  final simulatedNow = DateTime(2025, 11, 1, 20);
 
   const from = Station(id: 'SNCF:87590349', name: 'Babinière');
   const to = Station(id: 'SNCF:87481002', name: 'Nantes');

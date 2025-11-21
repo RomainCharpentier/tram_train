@@ -19,7 +19,7 @@ class StationHistoryGatewayImpl implements StationHistoryGateway {
       try {
         final decoded = json.decode(historyJson) as List<dynamic>;
         history = decoded.cast<String>();
-      } catch (e) {
+      } on Object catch (_) {
         // En cas d'erreur de décodage, on repart avec une liste vide
         history = [];
       }
@@ -50,7 +50,7 @@ class StationHistoryGatewayImpl implements StationHistoryGateway {
     try {
       final decoded = json.decode(historyJson) as List<dynamic>;
       return decoded.cast<String>();
-    } catch (e) {
+    } on Object catch (_) {
       return [];
     }
   }

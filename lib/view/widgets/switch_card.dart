@@ -22,15 +22,14 @@ class SwitchCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: context.theme.card,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: context.theme.outline, width: 1),
+        border: Border.all(color: context.theme.outline),
         boxShadow: [
           BoxShadow(
             color: Theme.of(context).brightness == Brightness.dark
-                ? Colors.black.withOpacity(0.3)
-                : Colors.black.withOpacity(0.08),
+                ? Colors.black.withValues(alpha:0.3)
+                : Colors.black.withValues(alpha:0.08),
             blurRadius: 8,
             offset: const Offset(0, 2),
-            spreadRadius: 0,
           ),
         ],
       ),
@@ -47,7 +46,7 @@ class SwitchCard extends StatelessWidget {
             : null,
         value: value,
         onChanged: onChanged,
-        activeColor: context.theme.primary,
+        activeThumbColor: context.theme.primary,
       ),
     );
   }

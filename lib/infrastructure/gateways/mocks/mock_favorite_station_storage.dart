@@ -25,7 +25,7 @@ class MockFavoriteStationStorage implements FavoriteStationStorage {
   @override
   Future<void> addFavoriteStation(Station station) async {
     if (station.id.startsWith('TEMP_')) {
-      throw ArgumentError('Impossible d\'ajouter une station temporaire aux favoris');
+      throw ArgumentError("Impossible d'ajouter une station temporaire aux favoris");
     }
     if (_favorites.any((s) => s.id == station.id)) {
       return;

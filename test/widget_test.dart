@@ -11,7 +11,7 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   testWidgets(
     'Placeholder widget test (UI covered elsewhere)',
-    (WidgetTester tester) async {
+    (tester) async {
       await tester.pumpWidget(const SizedBox.shrink());
       expect(find.byType(SizedBox), findsOneWidget);
     },

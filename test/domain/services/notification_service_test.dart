@@ -22,14 +22,14 @@ void main() {
 
     messenger.setMockMethodCallHandler(
       notificationsChannel,
-      (MethodCall call) async {
+      (call) async {
         notificationCalls.add(call);
         return true;
       },
     );
     messenger.setMockMethodCallHandler(
       notificationsAndroidChannel,
-      (MethodCall call) async {
+      (call) async {
         notificationCalls.add(call);
         return true;
       },

@@ -52,7 +52,7 @@ class FavoriteStationStorageGateway implements FavoriteStationStorage {
       }
 
       return validStations;
-    } catch (e) {
+    } on Object catch (_) {
       return [];
     }
   }

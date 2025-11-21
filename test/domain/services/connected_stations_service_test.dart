@@ -7,8 +7,8 @@ import 'package:train_qil/infrastructure/dependency_injection.dart';
 
 void main() {
   late FakeTrainService fakeTrainService;
-  final departure = Station(id: 'dep', name: 'Paris');
-  final arrival = Station(id: 'arr', name: 'Lyon');
+  const departure = Station(id: 'dep', name: 'Paris');
+  const arrival = Station(id: 'arr', name: 'Lyon');
 
   setUpAll(() {
     fakeTrainService = FakeTrainService();
@@ -36,7 +36,7 @@ void main() {
   test('checkConnection returns connected when direct journey exists',
       () async {
     fakeTrainService.journeysBetween = [
-      _train(direction: 'Lyon', isDirect: true),
+      _train(direction: 'Lyon'),
       _train(direction: 'Lyon', isDirect: false),
     ];
 
@@ -86,7 +86,7 @@ Train _train({
     direction: direction,
     departureTime: DateTime.now(),
     status: TrainStatus.onTime,
-    station: Station(id: 's', name: 'Station'),
+    station: const Station(id: 's', name: 'Station'),
     additionalInfo: [
       isDirect ? 'Type: Direct' : 'Type: Correspondance',
     ],

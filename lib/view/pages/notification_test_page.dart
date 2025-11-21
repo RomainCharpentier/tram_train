@@ -35,7 +35,7 @@ class _NotificationTestPageState extends State<NotificationTestPage> {
       setState(() {
         _statusMessage = '✅ Notifications initialisées avec succès';
       });
-    } catch (e) {
+    } on Object catch (e) {
       setState(() {
         _statusMessage = '❌ Erreur: $e';
       });
@@ -64,7 +64,7 @@ class _NotificationTestPageState extends State<NotificationTestPage> {
         _statusMessage =
             "✅ Notification envoyée ! Vérifiez la barre de notifications de Chrome (icône cadenas dans la barre d'adresse).";
       });
-    } catch (e) {
+    } on Object catch (e) {
       setState(() {
         _statusMessage =
             '❌ Erreur: $e\n\nVérifiez que les permissions sont accordées dans les paramètres du site.';
@@ -82,7 +82,7 @@ class _NotificationTestPageState extends State<NotificationTestPage> {
       setState(() {
         _statusMessage = '✅ Notification de retard envoyée !';
       });
-    } catch (e) {
+    } on Object catch (e) {
       setState(() {
         _statusMessage = '❌ Erreur: $e';
       });
@@ -99,7 +99,7 @@ class _NotificationTestPageState extends State<NotificationTestPage> {
       setState(() {
         _statusMessage = "✅ Notification d'annulation envoyée !";
       });
-    } catch (e) {
+    } on Object catch (e) {
       setState(() {
         _statusMessage = '❌ Erreur: $e';
       });

@@ -76,6 +76,7 @@ class _EditTripPageState extends State<EditTripPage> {
     );
 
     if (result != null) {
+      if (!mounted) return;
       setState(() {
         if (isDeparture) {
           _departureStation = result;
@@ -97,7 +98,7 @@ class _EditTripPageState extends State<EditTripPage> {
         _arrivalStation,
         directOnly: false,
       );
-    } catch (e) {}
+    } on Object catch (_) {}
   }
 
   void _swapStations() {
@@ -115,6 +116,7 @@ class _EditTripPageState extends State<EditTripPage> {
     );
 
     if (time != null) {
+      if (!mounted) return;
       setState(() {
         _selectedTime = time;
       });
@@ -156,7 +158,7 @@ class _EditTripPageState extends State<EditTripPage> {
         _showSnackBar('✅ Trajet modifié avec succès !',
             Theme.of(context).colorScheme.primary);
       }
-    } catch (e) {
+    } on Object catch (e) {
       if (mounted) {
         _showSnackBar('Erreur lors de la modification : $e',
             Theme.of(context).colorScheme.error);
@@ -176,7 +178,7 @@ class _EditTripPageState extends State<EditTripPage> {
           ),
         ),
         backgroundColor: isDark
-            ? backgroundColor.withOpacity(0.75)
+            ? backgroundColor.withValues(alpha:0.75)
             : backgroundColor,
         duration: const Duration(seconds: 5),
       ),
@@ -244,15 +246,14 @@ class _EditTripPageState extends State<EditTripPage> {
       decoration: BoxDecoration(
         color: context.theme.card,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: context.theme.outline, width: 1),
+        border: Border.all(color: context.theme.outline),
         boxShadow: [
           BoxShadow(
             color: Theme.of(context).brightness == Brightness.dark
-                ? Colors.black.withOpacity(0.3)
-                : Colors.black.withOpacity(0.08),
+                ? Colors.black.withValues(alpha:0.3)
+                : Colors.black.withValues(alpha:0.08),
             blurRadius: 8,
             offset: const Offset(0, 2),
-            spreadRadius: 0,
           ),
         ],
       ),
@@ -278,15 +279,14 @@ class _EditTripPageState extends State<EditTripPage> {
       decoration: BoxDecoration(
         color: context.theme.card,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: context.theme.outline, width: 1),
+        border: Border.all(color: context.theme.outline),
         boxShadow: [
           BoxShadow(
             color: Theme.of(context).brightness == Brightness.dark
-                ? Colors.black.withOpacity(0.3)
-                : Colors.black.withOpacity(0.08),
+                ? Colors.black.withValues(alpha:0.3)
+                : Colors.black.withValues(alpha:0.08),
             blurRadius: 8,
             offset: const Offset(0, 2),
-            spreadRadius: 0,
           ),
         ],
       ),
@@ -370,15 +370,14 @@ class _EditTripPageState extends State<EditTripPage> {
       decoration: BoxDecoration(
         color: context.theme.card,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: context.theme.outline, width: 1),
+        border: Border.all(color: context.theme.outline),
         boxShadow: [
           BoxShadow(
             color: Theme.of(context).brightness == Brightness.dark
-                ? Colors.black.withOpacity(0.3)
-                : Colors.black.withOpacity(0.08),
+                ? Colors.black.withValues(alpha:0.3)
+                : Colors.black.withValues(alpha:0.08),
             blurRadius: 8,
             offset: const Offset(0, 2),
-            spreadRadius: 0,
           ),
         ],
       ),
@@ -400,15 +399,14 @@ class _EditTripPageState extends State<EditTripPage> {
       decoration: BoxDecoration(
         color: context.theme.card,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: context.theme.outline, width: 1),
+        border: Border.all(color: context.theme.outline),
         boxShadow: [
           BoxShadow(
             color: Theme.of(context).brightness == Brightness.dark
-                ? Colors.black.withOpacity(0.3)
-                : Colors.black.withOpacity(0.08),
+                ? Colors.black.withValues(alpha:0.3)
+                : Colors.black.withValues(alpha:0.08),
             blurRadius: 8,
             offset: const Offset(0, 2),
-            spreadRadius: 0,
           ),
         ],
       ),
@@ -423,7 +421,7 @@ class _EditTripPageState extends State<EditTripPage> {
         ),
         value: _isActive,
         onChanged: (value) => setState(() => _isActive = value),
-        activeColor: context.theme.primary,
+        activeThumbColor: context.theme.primary,
       ),
     );
   }
@@ -434,15 +432,14 @@ class _EditTripPageState extends State<EditTripPage> {
       decoration: BoxDecoration(
         color: context.theme.card,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: context.theme.outline, width: 1),
+        border: Border.all(color: context.theme.outline),
         boxShadow: [
           BoxShadow(
             color: Theme.of(context).brightness == Brightness.dark
-                ? Colors.black.withOpacity(0.3)
-                : Colors.black.withOpacity(0.08),
+                ? Colors.black.withValues(alpha:0.3)
+                : Colors.black.withValues(alpha:0.08),
             blurRadius: 8,
             offset: const Offset(0, 2),
-            spreadRadius: 0,
           ),
         ],
       ),
@@ -457,7 +454,7 @@ class _EditTripPageState extends State<EditTripPage> {
         ),
         value: _notificationsEnabled,
         onChanged: (value) => setState(() => _notificationsEnabled = value),
-        activeColor: context.theme.primary,
+        activeThumbColor: context.theme.primary,
       ),
     );
   }

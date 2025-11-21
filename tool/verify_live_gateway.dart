@@ -1,4 +1,5 @@
 import 'dart:async';
+// ignore_for_file: avoid_print
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:train_qil/infrastructure/mappers/sncf_mapper.dart';
@@ -15,9 +16,9 @@ Future<void> main() async {
   final gateway =
       SncfGateway(httpClient: httpClient, apiKey: apiKey, mapper: mapper);
 
-  final from = const Station(id: 'SNCF:87590349', name: 'Babinière');
-  final to = const Station(id: 'SNCF:87481002', name: 'Nantes');
-  final requested = DateTime(2025, 11, 3, 8, 0, 0); // Lundi 03/11/2025 08:00
+  const from = Station(id: 'SNCF:87590349', name: 'Babinière');
+  const to = Station(id: 'SNCF:87481002', name: 'Nantes');
+  final requested = DateTime(2025, 11, 3, 8); // Lundi 03/11/2025 08:00
 
   print('🔐 API key starts with: ${apiKey.substring(0, 6)}…');
   print(
@@ -43,7 +44,7 @@ Future<void> main() async {
             '${t.departureTime.toIso8601String()} (wd=${t.departureTime.weekday})')
         .join('\n');
     print('   next times (up to 5):\n$preview');
-  } catch (e) {
+  } on Object catch (e) {
     print('❌ Error: $e');
   } finally {
     httpClient.close();

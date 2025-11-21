@@ -29,11 +29,12 @@ class _NotificationPausePageState extends State<NotificationPausePage> {
 
     try {
       final pauses = await DependencyInjection.instance.notificationPauseService.getAllPauses();
+      if (!mounted) return;
       setState(() {
         _pauses = pauses;
         _isLoading = false;
       });
-    } catch (e) {
+    } on Object catch (e) {
       setState(() {
         _error = e.toString();
         _isLoading = false;
@@ -128,15 +129,14 @@ class _NotificationPausePageState extends State<NotificationPausePage> {
       decoration: BoxDecoration(
         color: context.theme.card,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: context.theme.outline, width: 1),
+        border: Border.all(color: context.theme.outline),
         boxShadow: [
           BoxShadow(
             color: Theme.of(context).brightness == Brightness.dark
-                ? Colors.black.withOpacity(0.3)
-                : Colors.black.withOpacity(0.08),
+                ? Colors.black.withValues(alpha:0.3)
+                : Colors.black.withValues(alpha:0.08),
             blurRadius: 8,
             offset: const Offset(0, 2),
-            spreadRadius: 0,
           ),
         ],
       ),
@@ -259,7 +259,7 @@ class _NotificationPausePageState extends State<NotificationPausePage> {
         );
         _loadPauses();
       }
-    } catch (e) {
+    } on Object catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -271,7 +271,7 @@ class _NotificationPausePageState extends State<NotificationPausePage> {
               ),
             ),
             backgroundColor: Theme.of(context).brightness == Brightness.dark
-                ? context.theme.error.withOpacity(0.75)
+                ? context.theme.error.withValues(alpha:0.75)
                 : context.theme.error,
           ),
         );
@@ -319,7 +319,7 @@ class _NotificationPausePageState extends State<NotificationPausePage> {
           );
           _loadPauses();
         }
-      } catch (e) {
+      } on Object catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -331,7 +331,7 @@ class _NotificationPausePageState extends State<NotificationPausePage> {
                 ),
               ),
               backgroundColor: Theme.of(context).brightness == Brightness.dark
-                  ? context.theme.error.withOpacity(0.75)
+                  ? context.theme.error.withValues(alpha:0.75)
                   : context.theme.error,
             ),
           );
@@ -529,6 +529,7 @@ class _CreatePauseDialogState extends State<_CreatePauseDialog> {
     );
 
     if (date != null) {
+      if (!mounted) return;
       setState(() {
         _startDate = date;
       });
@@ -544,6 +545,7 @@ class _CreatePauseDialogState extends State<_CreatePauseDialog> {
     );
 
     if (date != null) {
+      if (!mounted) return;
       setState(() {
         _endDate = date;
       });
@@ -561,7 +563,7 @@ class _CreatePauseDialogState extends State<_CreatePauseDialog> {
             ),
           ),
           backgroundColor: Theme.of(context).brightness == Brightness.dark
-              ? context.theme.error.withOpacity(0.75)
+              ? context.theme.error.withValues(alpha:0.75)
               : context.theme.error,
         ),
       );
@@ -578,7 +580,7 @@ class _CreatePauseDialogState extends State<_CreatePauseDialog> {
             ),
           ),
           backgroundColor: Theme.of(context).brightness == Brightness.dark
-              ? context.theme.error.withOpacity(0.75)
+              ? context.theme.error.withValues(alpha:0.75)
               : context.theme.error,
         ),
       );
@@ -611,12 +613,12 @@ class _CreatePauseDialogState extends State<_CreatePauseDialog> {
               ),
             ),
             backgroundColor: Theme.of(context).brightness == Brightness.dark
-                ? context.theme.success.withOpacity(0.75)
+                ? context.theme.success.withValues(alpha:0.75)
                 : context.theme.success,
           ),
         );
       }
-    } catch (e) {
+    } on Object catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -628,7 +630,7 @@ class _CreatePauseDialogState extends State<_CreatePauseDialog> {
               ),
             ),
             backgroundColor: Theme.of(context).brightness == Brightness.dark
-                ? context.theme.error.withOpacity(0.75)
+                ? context.theme.error.withValues(alpha:0.75)
                 : context.theme.error,
           ),
         );

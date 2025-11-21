@@ -148,9 +148,7 @@ class MockData {
         baseArrivalTime: now.add(const Duration(hours: 1, minutes: 5)),
         status: TrainStatus.onTime,
         station: parisNord,
-        additionalInfo: [],
         externalUrl: buildExternalUrl('5300', parisNord),
-        intermediateStops: const [],
       ),
       Train(
         id: 'mock_train_2',
@@ -161,9 +159,7 @@ class MockData {
         baseArrivalTime: now.add(const Duration(hours: 1, minutes: 35)),
         status: TrainStatus.onTime,
         station: parisNord,
-        additionalInfo: [],
         externalUrl: buildExternalUrl('5302', parisNord),
-        intermediateStops: const [],
       ),
       // Trains depuis Paris Nord vers Lyon (pour le trajet 2)
       Train(
@@ -176,11 +172,9 @@ class MockData {
         status: TrainStatus.delayed,
         delayMinutes: 2,
         station: parisNord,
-        additionalInfo: [],
         departurePlatform: '12',
         arrivalPlatform: 'H',
         externalUrl: buildExternalUrl('6612', parisNord),
-        intermediateStops: const [],
       ),
       Train(
         id: 'mock_train_4',
@@ -191,11 +185,9 @@ class MockData {
         baseArrivalTime: now.add(const Duration(hours: 2, minutes: 43)),
         status: TrainStatus.onTime,
         station: parisNord,
-        additionalInfo: [],
         departurePlatform: '14',
         arrivalPlatform: 'J',
         externalUrl: buildExternalUrl('6614', parisNord),
-        intermediateStops: const [],
       ),
       Train(
         id: 'mock_train_5',
@@ -207,11 +199,9 @@ class MockData {
         status: TrainStatus.delayed,
         delayMinutes: 5,
         station: parisNord,
-        additionalInfo: [],
         departurePlatform: '6',
         arrivalPlatform: 'K',
         externalUrl: buildExternalUrl('6616', parisNord),
-        intermediateStops: const [],
       ),
       // Train depuis Lille vers Paris (pour le trajet 5)
       Train(
@@ -223,9 +213,7 @@ class MockData {
         baseArrivalTime: now.add(const Duration(hours: 4, minutes: 10)),
         status: TrainStatus.onTime,
         station: lilleEurope,
-        additionalInfo: [],
         externalUrl: buildExternalUrl('7910', lilleEurope),
-        intermediateStops: const [],
       ),
       // Train annulé pour tester ce cas
       Train(
@@ -235,9 +223,8 @@ class MockData {
         baseDepartureTime: now.add(const Duration(hours: 3)),
         status: TrainStatus.cancelled,
         station: parisNord,
-        additionalInfo: ['Train annulé'],
+        additionalInfo: const ['Train annulé'],
         externalUrl: buildExternalUrl('6620', parisNord),
-        intermediateStops: const [],
       ),
       // Train en cours (départ dans le passé, arrivée dans le futur) - Paris → Lille
       Train(
@@ -249,9 +236,7 @@ class MockData {
         baseArrivalTime: now.add(const Duration(minutes: 35)),
         status: TrainStatus.onTime,
         station: parisNord,
-        additionalInfo: [],
         externalUrl: buildExternalUrl('5308', parisNord),
-        intermediateStops: const [],
       ),
     ];
   }

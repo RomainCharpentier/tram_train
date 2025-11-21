@@ -24,7 +24,7 @@ void main() async {
     await DependencyInjection.initialize();
     await initializeDateFormatting('fr_FR');
     runApp(const MyApp());
-  } catch (e) {
+  } on Object catch (e) {
     runApp(MaterialApp(
       home: Scaffold(
         body: Center(
@@ -65,7 +65,7 @@ class MyApp extends StatelessWidget {
       animation: themeService,
       builder: (context, child) {
         return MaterialApp(
-          title: 'Train\'Qil',
+          title: "Train'Qil",
           theme: themeService.lightTheme,
           darkTheme: themeService.darkTheme,
           themeMode: themeService.themeMode,
