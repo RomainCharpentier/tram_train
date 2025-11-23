@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../mappers/sncf_mapper.dart';
 import '../../domain/models/train.dart';
@@ -138,8 +139,7 @@ class SncfGateway implements TrainGateway {
     );
 
     try {
-      // ignore: avoid_print
-      print('🔗 Journeys(departure) URL: $uri');
+      debugPrint('🔗 Journeys(departure) URL: $uri');
       final response = await _makeApiCallUri(uri);
       return _mapper.mapJourneysToTrains(response, fromStation, toStation);
     } catch (e) {
@@ -169,8 +169,7 @@ class SncfGateway implements TrainGateway {
       },
     );
 
-    // ignore: avoid_print
-    print('🔗 Journeys($represents) URL: $uri');
+    debugPrint('🔗 Journeys($represents) URL: $uri');
     return await _makeApiCallUri(uri);
   }
 
@@ -180,8 +179,7 @@ class SncfGateway implements TrainGateway {
     Station fromStation,
     Station toStation,
   ) async {
-    // ignore: avoid_print
-    print('🔗 Journeys(page) HREF: $href');
+    debugPrint('🔗 Journeys(page) HREF: $href');
     final response = await _makeApiCall(href);
     return _mapper.mapJourneysToTrains(response, fromStation, toStation);
   }
@@ -206,8 +204,7 @@ class SncfGateway implements TrainGateway {
     );
 
     try {
-      // ignore: avoid_print
-      print('🔗 Journeys(arrival) URL: $uri');
+      debugPrint('🔗 Journeys(arrival) URL: $uri');
       final response = await _makeApiCallUri(uri);
       return _mapper.mapJourneysToTrains(response, fromStation, toStation);
     } catch (e) {
@@ -389,7 +386,7 @@ class SncfGateway implements TrainGateway {
   /// Effectue un appel API avec authentification
   Future<Map<String, dynamic>> _makeApiCall(String url) async {
     // ignore: avoid_print
-    print('➡️ GET $url');
+    debugPrint('➡️ GET $url');
     final response = await _httpClient.get(
       Uri.parse(url),
       headers: {
@@ -407,7 +404,7 @@ class SncfGateway implements TrainGateway {
   /// Effectue un appel API (URI déjà encodée)
   Future<Map<String, dynamic>> _makeApiCallUri(Uri uri) async {
     // ignore: avoid_print
-    print('➡️ GET $uri');
+    debugPrint('➡️ GET $uri');
     final response = await _httpClient.get(
       uri,
       headers: {

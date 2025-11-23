@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../theme/theme_x.dart';
+import '../theme/page_theme_provider.dart';
 import '../../domain/models/station.dart';
 import '../../domain/models/search_result.dart';
 import '../../domain/services/station_search_service.dart';
@@ -10,6 +12,7 @@ import '../widgets/search_bar.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/error_state.dart';
 import '../widgets/info_banner.dart';
+import '../widgets/glass_container.dart';
 
 class StationSearchPage extends StatefulWidget {
   final Station? departureStation;
@@ -204,13 +207,9 @@ class _StationSearchPageState extends State<StationSearchPage> {
   }
 
   Widget _buildSuggestions() {
-    return Container(
+    return GlassContainer(
       margin: const EdgeInsets.only(top: 8),
-      decoration: BoxDecoration(
-        color: context.theme.surface,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: context.theme.outline),
-      ),
+      opacity: 0.9,
       child: ListView.builder(
         shrinkWrap: true,
         itemCount: _suggestions.length,
@@ -230,20 +229,14 @@ class _StationSearchPageState extends State<StationSearchPage> {
   }
 
   Widget _buildAdvancedFilters() {
-    return Container(
+    return GlassContainer(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: context.theme.surface,
-        border: Border(
-          top: BorderSide(color: context.theme.outline),
-        ),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Filtres avancés',
-            style: TextStyle(fontWeight: FontWeight.bold),
+            style: TextStyle(fontWeight: FontWeight.bold, color: context.theme.textPrimary),
           ),
           const SizedBox(height: 12),
           _buildTransportTypeFilters(),
@@ -263,7 +256,7 @@ class _StationSearchPageState extends State<StationSearchPage> {
             type.displayName,
             style: TextStyle(
               color: _selectedTransportType == type
-                  ? context.theme.primary
+                  ? Colors.white
                   : context.theme.textPrimary,
             ),
           ),
@@ -273,8 +266,15 @@ class _StationSearchPageState extends State<StationSearchPage> {
               _searchByTransportType(type);
             }
           },
-          selectedColor: context.theme.primary.withValues(alpha:0.2),
-          checkmarkColor: context.theme.primary,
+          selectedColor: context.theme.primary,
+          checkmarkColor: Colors.white,
+          backgroundColor: context.theme.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: BorderSide(
+              color: _selectedTransportType == type ? Colors.transparent : context.theme.outline,
+            ),
+          ),
         );
       }).toList(),
     );
@@ -287,6 +287,12 @@ class _StationSearchPageState extends State<StationSearchPage> {
         onPressed: _advancedSearch,
         icon: const Icon(Icons.search),
         label: const Text('Recherche avancée'),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: context.theme.primary,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
       ),
     );
   }
@@ -312,8 +318,12 @@ class _StationSearchPageState extends State<StationSearchPage> {
           InfoBanner(text: 'Gares connectées à ${widget.departureStation!.name}'),
         Expanded(
           child: ListView.builder(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             itemCount: _searchResults.length,
-            itemBuilder: (context, index) => _buildStationCard(_searchResults[index]),
+            itemBuilder: (context, index) => _buildStationCard(_searchResults[index])
+                .animate()
+                .fadeIn(delay: (50 * index).ms)
+                .slideY(begin: 0.1, end: 0),
           ),
         ),
       ],
@@ -335,35 +345,62 @@ class _StationSearchPageState extends State<StationSearchPage> {
     final station = result.data;
     final isSuggestion = result.metadata?['suggestion'] == true;
 
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      decoration: BoxDecoration(
-        color: context.theme.card,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: context.theme.outline),
-      ),
-      child: ListTile(
-        leading: _buildStationLeading(result, isSuggestion),
-        title: Text(
-          station.name,
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: context.theme.textPrimary,
+    return GlassContainer(
+      margin: const EdgeInsets.only(bottom: 12),
+      opacity: 0.8,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: () => _handleStationTap(station, isSuggestion),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                _buildStationLeading(result, isSuggestion),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        station.name,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: context.theme.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      _buildStationSubtitle(result, station, isSuggestion),
+                    ],
+                  ),
+                ),
+                if (widget.showFavoriteButton) ...[
+                  const SizedBox(width: 8),
+                  _buildStationTrailing(station) ?? const SizedBox.shrink(),
+                ],
+              ],
+            ),
           ),
         ),
-        subtitle: _buildStationSubtitle(result, station, isSuggestion),
-        trailing: _buildStationTrailing(station),
-        onTap: () => _handleStationTap(station, isSuggestion),
       ),
     );
   }
 
   Widget _buildStationLeading(SearchResult<Station> result, bool isSuggestion) {
-    return CircleAvatar(
-      backgroundColor: isSuggestion ? context.theme.warning : _getTypeColor(result.type),
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: isSuggestion
+            ? context.theme.warning.withValues(alpha: 0.1)
+            : _getTypeColor(result.type).withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Icon(
         isSuggestion ? Icons.lightbulb_outline : _getTypeIcon(result.type),
-        color: Colors.white,
+        color: isSuggestion ? context.theme.warning : _getTypeColor(result.type),
+        size: 24,
       ),
     );
   }
@@ -372,38 +409,41 @@ class _StationSearchPageState extends State<StationSearchPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          station.description ?? '',
-          style: TextStyle(color: context.theme.textSecondary),
-        ),
+        if (station.description != null)
+          Text(
+            station.description!,
+            style: TextStyle(color: context.theme.textSecondary, fontSize: 13),
+          ),
         if (isSuggestion)
           Text(
-            'Suggestion - Cliquez pour rechercher cette gare',
-            style: TextStyle(color: context.theme.warning, fontStyle: FontStyle.italic),
+            'Suggestion - Cliquez pour rechercher',
+            style: TextStyle(color: context.theme.warning, fontStyle: FontStyle.italic, fontSize: 12),
           ),
         if (result.metadata?['distance'] != null)
           Text(
             'Distance: ${(result.metadata!['distance'] as double).toStringAsFixed(1)} km',
-            style: TextStyle(color: context.theme.muted),
+            style: TextStyle(color: context.theme.muted, fontSize: 12),
           ),
         if (result.highlight != null)
           Text(
             'Correspondance: ${result.highlight}',
-            style: TextStyle(color: context.theme.primary),
+            style: TextStyle(color: context.theme.primary, fontSize: 12),
           ),
       ],
     );
   }
 
   Widget? _buildStationTrailing(Station station) {
-    if (widget.showFavoriteButton && _favoriteStatus[station.id] == true) {
-      return Icon(
-        Icons.star,
-        color:
-            Theme.of(context).brightness == Brightness.dark ? Colors.amber.shade300 : Colors.amber,
-      );
-    }
-    return null;
+    final isFavorite = _favoriteStatus[station.id] == true;
+    return IconButton(
+      icon: Icon(
+        isFavorite ? Icons.star : Icons.star_border,
+        color: isFavorite
+            ? (Theme.of(context).brightness == Brightness.dark ? Colors.amber.shade300 : Colors.amber)
+            : context.theme.textSecondary,
+      ),
+      onPressed: () => _toggleFavorite(station),
+    );
   }
 
   void _handleStationTap(Station station, bool isSuggestion) {
@@ -420,7 +460,8 @@ class _StationSearchPageState extends State<StationSearchPage> {
     if (widget.onStationTap != null) {
       widget.onStationTap!(station);
     } else if (widget.showFavoriteButton) {
-      _toggleFavorite(station);
+      // If just toggling favorite, do that. But usually tapping selects it.
+      // Let's assume tapping selects it, and the star button toggles favorite.
       _selectStation(station);
     } else {
       _selectStation(station);
@@ -587,14 +628,32 @@ class _StationSearchPageState extends State<StationSearchPage> {
   }
 
   Widget _buildScaffold() {
+    final pageColors = PageThemeProvider.of(context);
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: _buildAppBar(),
-      body: Column(
-        children: [
-          _buildSearchBar(),
-          if (_showAdvancedFilters) _buildAdvancedFilters(),
-          Expanded(child: _buildBody()),
-        ],
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              pageColors.primary.withValues(alpha: 0.2),
+              context.theme.surface,
+              pageColors.accent.withValues(alpha: 0.1),
+            ],
+            stops: const [0.0, 0.5, 1.0],
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              _buildSearchBar(),
+              if (_showAdvancedFilters) _buildAdvancedFilters(),
+              Expanded(child: _buildBody()),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -602,22 +661,28 @@ class _StationSearchPageState extends State<StationSearchPage> {
   PreferredSizeWidget _buildAppBar() {
     final canPop = Navigator.of(context).canPop();
     return AppBar(
-      title: Text(
+      title: const Text(
         'Recherche de Gares',
-        style: TextStyle(
-          color: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
+        style: TextStyle(color: Colors.white),
+      ),
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      flexibleSpace: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              context.theme.primary,
+              context.theme.primary.withValues(alpha: 0.8),
+            ],
+          ),
         ),
       ),
-      backgroundColor: context.theme.primary,
-      foregroundColor:
-          Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
+      foregroundColor: Colors.white,
       leading: canPop
           ? IconButton(
-              icon: Icon(
-                Icons.arrow_back,
-                color:
-                    Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
-              ),
+              icon: const Icon(Icons.arrow_back, color: Colors.white),
               onPressed: () => Navigator.of(context).maybePop(),
             )
           : null,
@@ -625,7 +690,7 @@ class _StationSearchPageState extends State<StationSearchPage> {
         IconButton(
           icon: Icon(
             _showAdvancedFilters ? Icons.filter_list_off : Icons.filter_list,
-            color: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
+            color: Colors.white,
           ),
           onPressed: () {
             setState(() {

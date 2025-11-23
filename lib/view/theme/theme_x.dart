@@ -70,6 +70,48 @@ class AppThemeColors {
 
   Color get gradientStart => _ap.gradientStart;
   Color get gradientEnd => _ap.gradientEnd;
+
+  BoxDecoration get glass => BoxDecoration(
+        color: card.withValues(alpha: 0.85),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: outline.withValues(alpha: 0.5)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      );
+
+  BoxDecoration get glassStrong => BoxDecoration(
+        color: card.withValues(alpha: 0.98),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: outline.withValues(alpha: 0.8)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      );
+
+  BoxDecoration get gradientCard => BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [gradientStart, gradientEnd],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: gradientStart.withValues(alpha: 0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      );
 }
 
 extension AppThemeX on BuildContext {

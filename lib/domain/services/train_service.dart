@@ -170,4 +170,20 @@ class TrainService {
     }
     return null;
   }
+
+  /// Récupère les informations de trafic en temps réel
+  Future<List<Map<String, dynamic>>> getTrafficReports() async {
+    final gw = _gateway;
+    if (gw is SncfGateway) {
+      return await gw.getTrafficReports();
+    }
+    
+    // Support pour MockTrainGateway
+    if (gw.runtimeType.toString() == 'MockTrainGateway') {
+      // Retourner une liste vide ou des données mockées si nécessaire
+      return [];
+    }
+
+    return [];
+  }
 }

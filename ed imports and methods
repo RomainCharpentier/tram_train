@@ -1,0 +1,40 @@
+warning: in the working copy of '.metadata', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'lib/domain/services/train_service.dart', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'lib/infrastructure/background/trip_status_worker.dart', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'lib/infrastructure/dependency_injection.dart', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'lib/infrastructure/gateways/sncf_gateway.dart', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'lib/main.dart', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'lib/view/pages/add_trip_page.dart', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'lib/view/pages/edit_trip_page.dart', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'lib/view/pages/station_search_page.dart', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'lib/view/pages/trip_progress_page.dart', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'lib/view/pages/trip_schedule_page.dart', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'lib/view/widgets/trip_card.dart', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'lib/view/widgets/trip_status_card.dart', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'pubspec.yaml', LF will be replaced by CRLF the next time Git touches it
+ .metadata                                          |   26 [32m+[m[31m-[m
+ lib/domain/services/clock_service.dart             |    2 [32m+[m
+ lib/domain/services/train_service.dart             |   16 [32m+[m
+ .../background/trip_status_worker.dart             |   42 [32m+[m[31m-[m
+ lib/infrastructure/dependency_injection.dart       |    5 [32m+[m
+ lib/infrastructure/gateways/sncf_gateway.dart      |   17 [32m+[m[31m-[m
+ lib/main.dart                                      |    6 [32m+[m[31m-[m
+ lib/view/pages/add_trip_page.dart                  | 1209 [32m+++++++++[m[31m-----------[m
+ lib/view/pages/edit_trip_page.dart                 |  254 [32m++[m[31m--[m
+ lib/view/pages/home_page.dart                      |  498 [32m++++[m[31m----[m
+ lib/view/pages/notifications_page.dart             |  332 [32m++++[m[31m--[m
+ lib/view/pages/profile_page.dart                   |  229 [32m++[m[31m--[m
+ lib/view/pages/root_navigation_page.dart           |   83 [32m+[m[31m-[m
+ lib/view/pages/station_search_page.dart            |  213 [32m++[m[31m--[m
+ lib/view/pages/trip_progress_page.dart             |  291 [32m+++[m[31m--[m
+ lib/view/pages/trip_schedule_page.dart             |  162 [32m+[m[31m--[m
+ lib/view/theme/app_palette.dart                    |   42 [32m+[m[31m-[m
+ lib/view/theme/page_theme_provider.dart            |   11 [32m+[m[31m-[m
+ lib/view/theme/theme_x.dart                        |   42 [32m+[m
+ lib/view/widgets/empty_state.dart                  |  104 [32m+[m[31m-[m
+ lib/view/widgets/save_button.dart                  |   60 [32m+[m[31m-[m
+ lib/view/widgets/switch_card.dart                  |   68 [32m+[m[31m-[m
+ lib/view/widgets/trip_card.dart                    |  352 [32m+++[m[31m---[m
+ lib/view/widgets/trip_status_card.dart             |   15 [32m+[m[31m-[m
+ pubspec.yaml                                       |    3 [32m+[m
+ 25 files changed, 2165 insertions(+), 1917 deletions(-)

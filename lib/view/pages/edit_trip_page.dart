@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart' hide TimeOfDay;
 import '../theme/theme_x.dart';
+import '../theme/page_theme_provider.dart';
 import 'package:flutter/material.dart' as flutter show TimeOfDay;
 import '../../domain/models/trip.dart' as domain;
 import '../../domain/models/station.dart';
 import '../../domain/services/connected_stations_service.dart';
 import '../../infrastructure/dependency_injection.dart';
 import 'station_search_page.dart';
+import '../widgets/page_header.dart';
+import '../widgets/glass_container.dart';
+import '../widgets/save_button.dart';
+import '../utils/app_snackbar.dart';
 
 class EditTripPage extends StatefulWidget {
   final domain.Trip trip;
@@ -41,28 +46,6 @@ class _EditTripPageState extends State<EditTripPage> {
     _notificationsEnabled = widget.trip.notificationsEnabled;
   }
 
-  Widget _buildSaveButton() {
-    final canSave = _selectedDays.isNotEmpty;
-
-    return ElevatedButton(
-      onPressed: canSave ? _saveTrip : null,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        foregroundColor: Theme.of(context).brightness == Brightness.dark
-            ? Colors.black
-            : Colors.white,
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-      ),
-      child: const Text(
-        'Enregistrer les modifications',
-        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-      ),
-    );
-  }
-
   Future<void> _selectStation(bool isDeparture) async {
     final result = await Navigator.push<Station>(
       context,
@@ -76,7 +59,6 @@ class _EditTripPageState extends State<EditTripPage> {
     );
 
     if (result != null) {
-      if (!mounted) return;
       setState(() {
         if (isDeparture) {
           _departureStation = result;
@@ -98,7 +80,9 @@ class _EditTripPageState extends State<EditTripPage> {
         _arrivalStation,
         directOnly: false,
       );
-    } on Object catch (_) {}
+    } catch (e) {
+      // Ignorer les erreurs silencieusement lors du chargement initial
+    }
   }
 
   void _swapStations() {
@@ -116,7 +100,6 @@ class _EditTripPageState extends State<EditTripPage> {
     );
 
     if (time != null) {
-      if (!mounted) return;
       setState(() {
         _selectedTime = time;
       });
@@ -133,7 +116,11 @@ class _EditTripPageState extends State<EditTripPage> {
 
       if (!result.isConnected) {
         if (mounted) {
-          _showSnackBar('⚠️ ${result.message}', context.theme.warning);
+          AppSnackBar.showWarning(
+            context,
+            message: '⚠️ ${result.message}',
+            duration: const Duration(seconds: 5),
+          );
         }
         return;
       }
@@ -155,108 +142,78 @@ class _EditTripPageState extends State<EditTripPage> {
 
       if (mounted) {
         Navigator.pop(context, true);
-        _showSnackBar('✅ Trajet modifié avec succès !',
-            Theme.of(context).colorScheme.primary);
+        AppSnackBar.showSuccess(
+          context,
+          message: '✅ Trajet modifié avec succès !',
+        );
       }
-    } on Object catch (e) {
+    } catch (e) {
       if (mounted) {
-        _showSnackBar('Erreur lors de la modification : $e',
-            Theme.of(context).colorScheme.error);
+        AppSnackBar.showError(
+          context,
+          message: 'Erreur lors de la modification : $e',
+        );
       }
     }
   }
 
-  void _showSnackBar(String message, Color backgroundColor) {
-    if (!mounted) return;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          message,
-          style: TextStyle(
-            color: isDark ? Colors.black : Colors.white,
-          ),
-        ),
-        backgroundColor: isDark
-            ? backgroundColor.withValues(alpha:0.75)
-            : backgroundColor,
-        duration: const Duration(seconds: 5),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: _buildAppBar(),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _buildDepartureStationCard(),
-            const SizedBox(height: 8),
-            _buildSwapButton(),
-            const SizedBox(height: 8),
-            _buildArrivalStationCard(),
-            const SizedBox(height: 24),
-            _buildDaysSection(),
-            const SizedBox(height: 24),
-            _buildTimeCard(),
-            const SizedBox(height: 24),
-            _buildActiveSwitch(),
-            _buildNotificationsSwitch(),
-            const Spacer(),
-            _buildSaveButton(),
-          ],
-        ),
-      ),
-    );
-  }
+    final pageColors = PageThemeProvider.of(context);
+    final canSave = _selectedDays.isNotEmpty;
 
-  PreferredSizeWidget _buildAppBar() {
-    return AppBar(
-      title: Text(
-        'Modifier le trajet',
-        style: TextStyle(
-          color: Theme.of(context).brightness == Brightness.dark
-              ? Colors.black
-              : Colors.white,
+    return Scaffold(
+      extendBodyBehindAppBar: true,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              pageColors.primary.withValues(alpha: 0.15),
+              context.theme.surface,
+            ],
+            stops: const [0.0, 0.3],
+          ),
         ),
-      ),
-      backgroundColor: Theme.of(context).colorScheme.primary,
-      foregroundColor: Theme.of(context).brightness == Brightness.dark
-          ? Colors.black
-          : Colors.white,
-      leading: IconButton(
-        icon: Icon(
-          Icons.arrow_back,
-          color: Theme.of(context).brightness == Brightness.dark
-              ? Colors.black
-              : Colors.white,
+        child: SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.all(16.0),
+            children: [
+              PageHeader(
+                title: 'Modifier le trajet',
+                subtitle: 'Modifiez les informations de votre trajet',
+              ),
+              const SizedBox(height: 24),
+              _buildDepartureStationCard(),
+              const SizedBox(height: 8),
+              _buildSwapButton(),
+              const SizedBox(height: 8),
+              _buildArrivalStationCard(),
+              const SizedBox(height: 24),
+              _buildDaysSection(),
+              const SizedBox(height: 24),
+              _buildTimeCard(),
+              const SizedBox(height: 24),
+              _buildActiveSwitch(),
+              _buildNotificationsSwitch(),
+              const SizedBox(height: 24),
+              SaveButton(
+                label: 'Enregistrer les modifications',
+                enabled: canSave,
+                onPressed: _saveTrip,
+              ),
+            ],
+          ),
         ),
-        onPressed: () => Navigator.of(context).pop(),
       ),
     );
   }
 
   Widget _buildDepartureStationCard() {
-    return Container(
+    return GlassContainer(
       margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: context.theme.card,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: context.theme.outline),
-        boxShadow: [
-          BoxShadow(
-            color: Theme.of(context).brightness == Brightness.dark
-                ? Colors.black.withValues(alpha:0.3)
-                : Colors.black.withValues(alpha:0.08),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      opacity: 0.98,
       child: ListTile(
         leading: Icon(Icons.train, color: context.theme.primary),
         title: Text(
@@ -274,22 +231,9 @@ class _EditTripPageState extends State<EditTripPage> {
   }
 
   Widget _buildArrivalStationCard() {
-    return Container(
+    return GlassContainer(
       margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: context.theme.card,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: context.theme.outline),
-        boxShadow: [
-          BoxShadow(
-            color: Theme.of(context).brightness == Brightness.dark
-                ? Colors.black.withValues(alpha:0.3)
-                : Colors.black.withValues(alpha:0.08),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      opacity: 0.98,
       child: ListTile(
         leading: Icon(Icons.location_on, color: context.theme.secondary),
         title: Text(
@@ -318,9 +262,7 @@ class _EditTripPageState extends State<EditTripPage> {
           ),
           child: Icon(
             Icons.swap_vert,
-            color: Theme.of(context).brightness == Brightness.dark
-                ? Colors.black
-                : Colors.white,
+            color: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
             size: 24,
           ),
         ),
@@ -354,8 +296,7 @@ class _EditTripPageState extends State<EditTripPage> {
                   }
                 });
               },
-              selectedColor:
-                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+              selectedColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
               checkmarkColor: Theme.of(context).colorScheme.primary,
             );
           }).toList(),
@@ -365,22 +306,9 @@ class _EditTripPageState extends State<EditTripPage> {
   }
 
   Widget _buildTimeCard() {
-    return Container(
+    return GlassContainer(
       margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: context.theme.card,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: context.theme.outline),
-        boxShadow: [
-          BoxShadow(
-            color: Theme.of(context).brightness == Brightness.dark
-                ? Colors.black.withValues(alpha:0.3)
-                : Colors.black.withValues(alpha:0.08),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      opacity: 0.98,
       child: ListTile(
         leading: Icon(Icons.access_time, color: context.theme.primary),
         title: Text(
@@ -394,22 +322,9 @@ class _EditTripPageState extends State<EditTripPage> {
   }
 
   Widget _buildActiveSwitch() {
-    return Container(
+    return GlassContainer(
       margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: context.theme.card,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: context.theme.outline),
-        boxShadow: [
-          BoxShadow(
-            color: Theme.of(context).brightness == Brightness.dark
-                ? Colors.black.withValues(alpha:0.3)
-                : Colors.black.withValues(alpha:0.08),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      opacity: 0.98,
       child: SwitchListTile(
         title: Text(
           'Trajet actif',
@@ -427,22 +342,9 @@ class _EditTripPageState extends State<EditTripPage> {
   }
 
   Widget _buildNotificationsSwitch() {
-    return Container(
+    return GlassContainer(
       margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: context.theme.card,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: context.theme.outline),
-        boxShadow: [
-          BoxShadow(
-            color: Theme.of(context).brightness == Brightness.dark
-                ? Colors.black.withValues(alpha:0.3)
-                : Colors.black.withValues(alpha:0.08),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      opacity: 0.98,
       child: SwitchListTile(
         title: Text(
           'Notifications activées',

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
 import '../../domain/models/trip.dart' as domain;
 import '../../domain/models/train.dart';
@@ -8,8 +9,10 @@ import 'edit_trip_page.dart';
 import 'trip_progress_page.dart';
 import '../widgets/logo_widget.dart';
 import '../widgets/trip_card.dart';
+import '../widgets/glass_container.dart';
 import '../theme/theme_x.dart';
 import '../theme/page_theme_provider.dart';
+import '../utils/page_transitions.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -223,39 +226,92 @@ class _HomePageState extends State<HomePage> {
     return null;
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return _buildScaffold();
-  }
-
   Widget _buildBody() {
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (_error != null) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error, size: 64, color: Theme.of(context).colorScheme.error),
-            const SizedBox(height: 16),
-            Text(
-              _error!,
-              style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.error),
-              textAlign: TextAlign.center,
+            CircularProgressIndicator(
+              strokeWidth: 3,
+              valueColor: AlwaysStoppedAnimation<Color>(
+                PageThemeProvider.of(context).primary,
+              ),
             ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _loadActiveTrips,
-              child: const Text('Réessayer'),
+            const SizedBox(height: 24),
+            Text(
+              'Chargement de vos trajets...',
+              style: TextStyle(
+                fontSize: 14,
+                color: context.theme.textSecondary,
+                letterSpacing: 0.2,
+              ),
             ),
           ],
         ),
       );
     }
 
-    // Afficher l'état vide seulement si aucun trajet existant
+    if (_error != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: context.theme.error.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.error_outline_rounded,
+                  size: 48,
+                  color: context.theme.error,
+                ),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                'Oups !',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w700,
+                  color: context.theme.textPrimary,
+                  letterSpacing: -0.5,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                _error!,
+                style: TextStyle(
+                  fontSize: 15,
+                  color: context.theme.textSecondary,
+                  height: 1.5,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 32),
+              FilledButton.icon(
+                onPressed: _loadActiveTrips,
+                icon: const Icon(Icons.refresh_rounded),
+                label: const Text('Réessayer'),
+                style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 16,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     if (_allTrips.isEmpty) {
       return _buildEmptyState();
     }
@@ -268,26 +324,37 @@ class _HomePageState extends State<HomePage> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const LogoWidget(size: 150),
-          const SizedBox(height: 24),
+          const LogoWidget(size: 120),
+          const SizedBox(height: 32),
           Text(
             'Aucun trajet actif',
-            style: TextStyle(fontSize: 18, color: context.theme.muted),
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: context.theme.textPrimary,
+            ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           Text(
-            'Ajoutez vos trajets pour voir les prochains départs',
-            style: TextStyle(color: context.theme.muted),
+            'Ajoutez vos trajets pour voir les\nprochains départs en temps réel',
+            style: TextStyle(
+              fontSize: 16,
+              color: context.theme.textSecondary,
+              height: 1.5,
+            ),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 24),
-          ElevatedButton.icon(
+          const SizedBox(height: 32),
+          FilledButton.icon(
             onPressed: () => _navigateToAddTrip(context),
             icon: const Icon(Icons.add),
             label: const Text('Ajouter un trajet'),
+            style: FilledButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            ),
           ),
         ],
-      ),
+      ).animate().fadeIn(duration: 600.ms).slideY(begin: 0.1, end: 0),
     );
   }
 
@@ -299,20 +366,17 @@ class _HomePageState extends State<HomePage> {
       const useMockData = bool.fromEnvironment('USE_MOCK_DATA');
       now = useMockData ? DateTime(2025, 1, 6, 7) : DateTime.now();
     }
-    final formattedNow = DateFormat("EEEE d MMMM yyyy 'à' HH:mm", 'fr_FR').format(now);
+    final formattedNow = DateFormat("EEEE d MMMM", 'fr_FR').format(now);
 
-    // Trier les trajets par heure du prochain train (du plus proche au plus éloigné)
     final sortedTrips = _allTrips.where((trip) => trip.isActive).toList()
       ..sort((a, b) {
         final trainA = _tripNextTrains[a.id];
         final trainB = _tripNextTrains[b.id];
 
-        // Si un trajet n'a pas de train, le mettre à la fin
         if (trainA == null && trainB == null) return 0;
         if (trainA == null) return 1;
         if (trainB == null) return -1;
 
-        // Trier par heure de départ
         return trainA.departureTime.compareTo(trainB.departureTime);
       });
 
@@ -321,39 +385,107 @@ class _HomePageState extends State<HomePage> {
     return RefreshIndicator(
       onRefresh: _loadActiveTrips,
       child: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
         children: [
+          Text(
+            formattedNow.replaceFirst(formattedNow[0], formattedNow[0].toUpperCase()),
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: context.theme.primary,
+              letterSpacing: 0.8,
+            ),
+          ).animate().fadeIn(duration: 300.ms).slideX(begin: -0.05, end: 0),
+          const SizedBox(height: 6),
+          ShaderMask(
+            shaderCallback: (bounds) => LinearGradient(
+              colors: [
+                PageThemeProvider.of(context).primaryDark,
+                PageThemeProvider.of(context).primary,
+              ],
+            ).createShader(bounds),
+            child: Text(
+              'Vos Trajets',
+              style: TextStyle(
+                fontSize: 36,
+                fontWeight: FontWeight.w900,
+                color: Colors.white,
+                height: 1.1,
+                letterSpacing: -1.2,
+              ),
+            ),
+          )
+              .animate()
+              .fadeIn(delay: 100.ms, duration: 400.ms)
+              .slideX(begin: -0.05, end: 0, duration: 400.ms, curve: Curves.easeOutCubic),
+          const SizedBox(height: 28),
           if (useMockData) ...[
             Container(
-              margin: const EdgeInsets.only(bottom: 12),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              margin: const EdgeInsets.only(bottom: 20),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: context.theme.card,
+                color: Colors.blue.shade50, // Bleu clair au lieu d'orange pour contraste
+                border: Border.all(color: Colors.blue.shade300),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: context.theme.outline),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.access_time, color: context.theme.info, size: 20),
+                  Icon(Icons.science_outlined,
+                      color: Colors.blue.shade700), // Bleu au lieu d'orange
                   const SizedBox(width: 12),
                   Expanded(
-                    child: Text(
-                      'Heure actuelle (mock) : ${formattedNow[0].toUpperCase()}${formattedNow.substring(1)}',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                        color: context.theme.textPrimary,
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Mode Démo Actif',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blue.shade800, // Bleu foncé au lieu d'orange
+                            fontSize: 16,
+                          ),
+                        ),
+                        Text(
+                          'Les données affichées sont simulées',
+                          style: TextStyle(
+                            color: Colors.blue.shade700, // Bleu au lieu d'orange
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
-            ),
+            ).animate().fadeIn(delay: 200.ms),
           ],
           if (sortedTrips.isEmpty) ...[
             _buildEmptyTripsMessage(),
           ] else ...[
-            ...sortedTrips.map((trip) => _buildTripCard(trip)),
+            ...sortedTrips.asMap().entries.map((entry) {
+              final index = entry.key;
+              final trip = entry.value;
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: _buildTripCard(trip)
+                    .animate()
+                    .fadeIn(delay: (200 + (index * 80)).ms, duration: 400.ms)
+                    .slideY(
+                      begin: 0.08,
+                      end: 0,
+                      delay: (200 + (index * 80)).ms,
+                      duration: 400.ms,
+                      curve: Curves.easeOutCubic,
+                    )
+                    .scale(
+                      begin: const Offset(0.96, 0.96),
+                      end: const Offset(1, 1),
+                      delay: (200 + (index * 80)).ms,
+                      duration: 400.ms,
+                      curve: Curves.easeOutCubic,
+                    ),
+              );
+            }),
           ],
         ],
       ),
@@ -361,44 +493,55 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildEmptyTripsMessage() {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        color: context.theme.card,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: context.theme.outline),
+    final pageColors = PageThemeProvider.of(context);
+
+    return GlassContainer(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 24,
+        vertical: 32,
       ),
-      child: Row(
+      child: Column(
         children: [
-          Icon(Icons.info_outline, color: context.theme.info, size: 20),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Aucun trajet actif',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                    color: context.theme.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  'Utilisez le bouton + pour ajouter un trajet',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: context.theme.textSecondary,
-                  ),
-                ),
-              ],
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: pageColors.primary.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.train_outlined,
+              size: 40,
+              color: pageColors.primary,
+            ),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            'Aucun trajet actif',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: context.theme.textPrimary,
+              letterSpacing: -0.2,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Utilisez le bouton + pour ajouter un trajet',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: context.theme.textSecondary,
+              fontSize: 14,
+              height: 1.4,
             ),
           ),
         ],
       ),
-    );
+    ).animate().fadeIn(duration: 400.ms).scale(
+          begin: const Offset(0.96, 0.96),
+          end: const Offset(1, 1),
+          duration: 400.ms,
+          curve: Curves.easeOutCubic,
+        );
   }
 
   Widget _buildTripCard(domain.Trip trip) {
@@ -416,8 +559,9 @@ class _HomePageState extends State<HomePage> {
   Future<void> _navigateToAddTrip(BuildContext context) async {
     final result = await Navigator.push<bool>(
       context,
-      MaterialPageRoute(
-        builder: (context) => const AddTripPage(),
+      PageTransitions.slideRoute(
+        const AddTripPage(),
+        begin: const Offset(0.0, 0.05),
       ),
     );
     if (result == true) {
@@ -431,8 +575,9 @@ class _HomePageState extends State<HomePage> {
       case 'edit':
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (context) => EditTripPage(trip: trip),
+          PageTransitions.slideRoute(
+            EditTripPage(trip: trip),
+            begin: const Offset(0.0, 0.05),
           ),
         );
         break;
@@ -447,16 +592,9 @@ class _HomePageState extends State<HomePage> {
         _loadActiveTrips();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              'Trajet dupliqué',
-              style: TextStyle(
-                color:
-                    Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
-              ),
-            ),
-            backgroundColor: Theme.of(context).brightness == Brightness.dark
-                ? context.theme.success.withValues(alpha:0.75)
-                : context.theme.success,
+            content: const Text('Trajet dupliqué'),
+            backgroundColor: context.theme.success,
+            behavior: SnackBarBehavior.floating,
           ),
         );
         break;
@@ -468,16 +606,9 @@ class _HomePageState extends State<HomePage> {
         _loadActiveTrips();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              'Trajet ${updatedTrip.isActive ? 'activé' : 'désactivé'}',
-              style: TextStyle(
-                color:
-                    Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
-              ),
-            ),
-            backgroundColor: Theme.of(context).brightness == Brightness.dark
-                ? context.theme.info.withValues(alpha:0.75)
-                : context.theme.info,
+            content: Text('Trajet ${updatedTrip.isActive ? 'activé' : 'désactivé'}'),
+            backgroundColor: context.theme.info,
+            behavior: SnackBarBehavior.floating,
           ),
         );
         break;
@@ -485,13 +616,12 @@ class _HomePageState extends State<HomePage> {
         final confirmed = await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
-            title: Text('Supprimer le trajet', style: TextStyle(color: context.theme.textPrimary)),
-            content: Text('Êtes-vous sûr de vouloir supprimer ce trajet ?',
-                style: TextStyle(color: context.theme.textPrimary)),
+            title: const Text('Supprimer le trajet'),
+            content: const Text('Êtes-vous sûr de vouloir supprimer ce trajet ?'),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
-                child: Text('Annuler', style: TextStyle(color: context.theme.primary)),
+                child: const Text('Annuler'),
               ),
               TextButton(
                 onPressed: () => Navigator.pop(context, true),
@@ -507,16 +637,9 @@ class _HomePageState extends State<HomePage> {
           _loadActiveTrips();
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(
-                'Trajet supprimé (doublons inclus)',
-                style: TextStyle(
-                  color:
-                      Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
-                ),
-              ),
-              backgroundColor: Theme.of(context).brightness == Brightness.dark
-                  ? context.theme.success.withValues(alpha:0.75)
-                  : context.theme.success,
+              content: const Text('Trajet supprimé'),
+              backgroundColor: context.theme.success,
+              behavior: SnackBarBehavior.floating,
             ),
           );
         }
@@ -528,8 +651,8 @@ class _HomePageState extends State<HomePage> {
     final nextTrain = _tripNextTrains[trip.id];
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => TripProgressPage(
+      PageTransitions.scaleRoute(
+        TripProgressPage(
           trip: trip,
           currentTrain: nextTrain,
         ),
@@ -537,91 +660,62 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildScaffold() {
+  @override
+  Widget build(BuildContext context) {
+    final pageColors = PageThemeProvider.of(context);
+
     return Scaffold(
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Builder(
-                    builder: (context) {
-                      final pageColors = PageThemeProvider.of(context);
-                      return Row(
-                        children: [
-                          Container(
-                            width: 4,
-                            height: 28,
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: [
-                                  pageColors.primaryDark,
-                                  pageColors.primaryLight,
-                                ],
-                              ),
-                              borderRadius: BorderRadius.circular(2),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          ShaderMask(
-                            shaderCallback: (bounds) => LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [
-                                pageColors.primaryDark,
-                                pageColors.primary,
-                              ],
-                            ).createShader(bounds),
-                            child: const Text(
-                              'Mes trajets',
-                              style: TextStyle(
-                                fontSize: 28,
-                                fontWeight: FontWeight.w800,
-                                color: Colors.white,
-                                letterSpacing: -0.5,
-                                height: 1.2,
-                              ),
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Consultez vos trajets actifs et suivez les prochains départs en temps réel.',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: context.theme.textSecondary,
-                      height: 1.4,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(child: _buildBody()),
-          ],
+      extendBodyBehindAppBar: true,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              pageColors.primary.withValues(alpha: 0.15),
+              context.theme.surface,
+            ],
+            stops: const [0.0, 0.3],
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 20),
+              Expanded(child: _buildBody()),
+            ],
+          ),
         ),
       ),
-      floatingActionButton: Builder(
-        builder: (context) {
-          final pageColors = PageThemeProvider.of(context);
-          return FloatingActionButton(
-            onPressed: () => _navigateToAddTrip(context),
-            backgroundColor: pageColors.primary,
-            child: Icon(
-              Icons.add,
-              color: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
-            ),
-          );
-        },
-      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _navigateToAddTrip(context),
+        backgroundColor: pageColors.primary,
+        icon: const Icon(Icons.add_rounded, color: Colors.white, size: 24),
+        label: const Text(
+          'Nouveau',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w700,
+            fontSize: 15,
+            letterSpacing: 0.3,
+          ),
+        ),
+        elevation: 6,
+        highlightElevation: 8,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+      )
+          .animate()
+          .scale(
+            delay: 400.ms,
+            duration: 500.ms,
+            curve: Curves.easeOutBack,
+            begin: const Offset(0, 0),
+            end: const Offset(1, 1),
+          )
+          .fadeIn(delay: 400.ms, duration: 300.ms),
     );
   }
 }

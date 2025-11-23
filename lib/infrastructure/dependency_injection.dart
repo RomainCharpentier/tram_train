@@ -8,6 +8,7 @@ import 'package:train_qil/domain/services/notification_service.dart';
 import 'package:train_qil/domain/services/favorite_station_service.dart';
 import 'package:train_qil/domain/services/trip_reminder_service.dart';
 import 'package:train_qil/domain/services/clock_service.dart';
+import 'package:train_qil/infrastructure/services/home_screen_widget_service.dart';
 import 'package:train_qil/infrastructure/gateways/local_storage_gateway.dart';
 import 'package:train_qil/infrastructure/gateways/sncf_gateway.dart';
 import 'package:train_qil/infrastructure/gateways/sncf_search_gateway.dart';
@@ -50,6 +51,7 @@ class DependencyInjection {
   late final NotificationService notificationService;
   late final FavoriteStationService favoriteStationService;
   late final TripReminderService tripReminderService;
+  late final HomeScreenWidgetService homeScreenWidgetService;
 
   // Gateways (utiliser les interfaces pour permettre le mocking)
   late final LocalStorageGateway localStorageGateway;
@@ -154,5 +156,8 @@ class DependencyInjection {
     await instance.themeService.initialize();
     await instance.notificationService.initialize();
     await instance.tripReminderService.refreshSchedules();
+    
+    // Initialiser le service de widget (pas d'await nécessaire pour l'instanciation)
+    instance.homeScreenWidgetService = HomeScreenWidgetService();
   }
 }

@@ -24,7 +24,7 @@ void main() async {
     await DependencyInjection.initialize();
     await initializeDateFormatting('fr_FR');
     runApp(const MyApp());
-  } on Object catch (e) {
+  } catch (e) {
     runApp(MaterialApp(
       home: Scaffold(
         body: Center(
@@ -70,6 +70,10 @@ class MyApp extends StatelessWidget {
           darkTheme: themeService.darkTheme,
           themeMode: themeService.themeMode,
           home: const RootNavigationPage(),
+          debugShowCheckedModeBanner: false,
+          // Transitions de page améliorées
+          themeAnimationDuration: const Duration(milliseconds: 300),
+          themeAnimationCurve: Curves.easeInOutCubic,
         );
       },
     );

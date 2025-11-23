@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../theme/theme_x.dart';
 import '../../domain/models/train.dart';
 import '../../domain/models/trip.dart' as domain;
@@ -172,11 +173,7 @@ class _TripSchedulePageState extends State<TripSchedulePage> {
   Widget _buildTripInfo() {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: context.theme.card,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: context.theme.outline),
-      ),
+      decoration: context.theme.glassStrong,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -288,7 +285,7 @@ class _TripSchedulePageState extends State<TripSchedulePage> {
           train: train,
           showAdditionalInfo: true,
           onTap: () => _showTrainDetails(train),
-        );
+        ).animate().fadeIn(delay: (50 * index).ms).slideY(begin: 0.1, end: 0);
       },
     );
   }
@@ -364,92 +361,111 @@ class _TripSchedulePageState extends State<TripSchedulePage> {
 
   Widget _buildScaffold() {
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: Text(
           '${widget.trip.departureStation.name} → ${widget.trip.arrivalStation.name}',
-          style: TextStyle(
-            color: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
+          style: const TextStyle(color: Colors.white),
+        ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                context.theme.primary,
+                context.theme.primary.withValues(alpha: 0.8),
+              ],
+            ),
           ),
         ),
-        backgroundColor: context.theme.primary,
-        foregroundColor:
-            Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
+        foregroundColor: Colors.white,
         leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back,
-            color: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
-          ),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.of(context).pop(),
         ),
         actions: [
           IconButton(
-            icon: Icon(
-              Icons.refresh,
-              color: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
-            ),
+            icon: const Icon(Icons.refresh, color: Colors.white),
             onPressed: _loadTrains,
             tooltip: 'Actualiser',
           ),
         ],
       ),
-      body: Column(
-        children: [
-          _buildSearchBar(),
-          _buildTripInfo(),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                // Toujours afficher la cible choisie (jour + heure sélectionnés)
-                'Affichage pour: ${_formatRefLabel(_lastRequestedRef ?? _computeReferenceDateTime(widget.trip))}',
-                style: TextStyle(color: context.theme.textSecondary),
-              ),
-            ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              context.theme.surface,
+              context.theme.surface.withValues(alpha: 0.95),
+            ],
           ),
-          if (_lastRequestedRef != null)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'Demandée: ${_formatRefLabel(_lastRequestedRef!)}',
-                  style: TextStyle(color: context.theme.textSecondary),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              _buildSearchBar(),
+              _buildTripInfo(),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    // Toujours afficher la cible choisie (jour + heure sélectionnés)
+                    'Affichage pour: ${_formatRefLabel(_lastRequestedRef ?? _computeReferenceDateTime(widget.trip))}',
+                    style: TextStyle(color: context.theme.textSecondary),
+                  ),
                 ),
               ),
-            ),
-          if (_filteredTrains.isNotEmpty)
-            Builder(builder: (context) {
-              final ref = _lastRequestedRef ?? _computeReferenceDateTime(widget.trip);
-              DateTime? before;
-              DateTime? after;
-              for (final t in _filteredTrains) {
-                final dt = t.departureTime;
-                if (dt.isBefore(ref)) {
-                  if (before == null || dt.isAfter(before)) before = dt;
-                } else {
-                  if (after == null || dt.isBefore(after)) after = dt;
-                }
-              }
-              // plus de badge avant/après
-              return const SizedBox.shrink();
-            }),
-          if (_filteredTrains.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Builder(builder: (context) {
-                  final first = _filteredTrains.first.departureTime;
-                  return Text(
-                    'Premier départ trouvé: ${_formatRefLabel(first)}',
-                    style: TextStyle(color: context.theme.textSecondary),
-                  );
+              if (_lastRequestedRef != null)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Demandée: ${_formatRefLabel(_lastRequestedRef!)}',
+                      style: TextStyle(color: context.theme.textSecondary),
+                    ),
+                  ),
+                ),
+              if (_filteredTrains.isNotEmpty)
+                Builder(builder: (context) {
+                  final ref = _lastRequestedRef ?? _computeReferenceDateTime(widget.trip);
+                  DateTime? before;
+                  DateTime? after;
+                  for (final t in _filteredTrains) {
+                    final dt = t.departureTime;
+                    if (dt.isBefore(ref)) {
+                      if (before == null || dt.isAfter(before)) before = dt;
+                    } else {
+                      if (after == null || dt.isBefore(after)) after = dt;
+                    }
+                  }
+                  // plus de badge avant/après
+                  return const SizedBox.shrink();
                 }),
-              ),
-            ),
-          Expanded(child: _buildTrainsList()),
-        ],
+              if (_filteredTrains.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Builder(builder: (context) {
+                      final first = _filteredTrains.first.departureTime;
+                      return Text(
+                        'Premier départ trouvé: ${_formatRefLabel(first)}',
+                        style: TextStyle(color: context.theme.textSecondary),
+                      );
+                    }),
+                  ),
+                ),
+              Expanded(child: _buildTrainsList()),
+            ],
+          ),
+        ),
       ),
     );
   }

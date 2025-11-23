@@ -145,18 +145,46 @@ class _TripProgressPageState extends State<TripProgressPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: Text(
           'Trajet ${widget.trip.description}',
-          style: TextStyle(
-            color: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
+          style: const TextStyle(color: Colors.white),
+        ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                context.theme.primary,
+                context.theme.primary.withValues(alpha: 0.8),
+              ],
+            ),
           ),
         ),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        foregroundColor:
-            Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
       ),
-      body: _buildBody(),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              context.theme.surface,
+              context.theme.surface.withValues(alpha: 0.95),
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: _buildBody(),
+        ),
+      ),
     );
   }
 
@@ -192,16 +220,23 @@ class _TripProgressPageState extends State<TripProgressPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.info_outline,
-              size: 64,
-              color: context.theme.muted,
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: context.theme.surface.withValues(alpha: 0.5),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.info_outline,
+                size: 64,
+                color: context.theme.muted,
+              ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
             Text(
               'Aucune information disponible',
               style: TextStyle(
-                fontSize: 18,
+                fontSize: 20,
                 fontWeight: FontWeight.bold,
                 color: context.theme.textSecondary,
               ),
@@ -210,14 +245,22 @@ class _TripProgressPageState extends State<TripProgressPage> {
             Text(
               "Le prochain train pour ce trajet n'a pas encore été trouvé.",
               textAlign: TextAlign.center,
-              style: TextStyle(color: context.theme.muted),
+              style: TextStyle(color: context.theme.muted, fontSize: 16),
             ),
-            const SizedBox(height: 24),
-            Text(
-              '${widget.trip.daysName} à ${widget.trip.timeFormatted}',
-              style: TextStyle(
-                fontSize: 16,
-                color: context.theme.textSecondary,
+            const SizedBox(height: 32),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: context.theme.primary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                '${widget.trip.daysName} à ${widget.trip.timeFormatted}',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: context.theme.primary,
+                ),
               ),
             ),
           ],
@@ -237,11 +280,32 @@ class _TripProgressPageState extends State<TripProgressPage> {
         if (train.externalUrl != null && train.externalUrl!.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(top: 8),
-            child: OutlinedButton.icon(
-              onPressed: () => _openExternalUrl(train.externalUrl!),
-              icon: Icon(Icons.open_in_new, color: context.theme.primary),
-              label: Text('Voir ce trajet sur SNCF.com',
-                  style: TextStyle(color: context.theme.primary)),
+            child: Container(
+      decoration: context.theme.glassStrong,
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () => _openExternalUrl(train.externalUrl!),
+                  borderRadius: BorderRadius.circular(12),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.open_in_new, color: context.theme.primary, size: 20),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Voir ce trajet sur SNCF.com',
+                          style: TextStyle(
+                            color: context.theme.primary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
             ),
           ),
       ],
@@ -252,11 +316,7 @@ class _TripProgressPageState extends State<TripProgressPage> {
     if (_isLoadingStops) {
       return Container(
         margin: const EdgeInsets.only(bottom: 12),
-        decoration: BoxDecoration(
-          color: context.theme.card,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: context.theme.outline),
-        ),
+        decoration: context.theme.glass,
         child: const Padding(
           padding: EdgeInsets.all(20),
           child: Center(child: CircularProgressIndicator()),
@@ -274,25 +334,27 @@ class _TripProgressPageState extends State<TripProgressPage> {
   Widget _buildFullJourneyPlan(Train train, bool isInProgress, double progress) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: context.theme.card,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: context.theme.outline),
-      ),
+      decoration: context.theme.glass,
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Parcours du train',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: context.theme.textPrimary,
-              ),
+            Row(
+              children: [
+                Icon(Icons.route, color: context.theme.primary),
+                const SizedBox(width: 8),
+                Text(
+                  'Parcours du train',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: context.theme.textPrimary,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
             ..._journeyStops.asMap().entries.map((entry) {
               final index = entry.key;
               final stop = entry.value;
@@ -322,16 +384,16 @@ class _TripProgressPageState extends State<TripProgressPage> {
       dotColor = presentation.primaryColor;
       dotIcon = Icons.train;
     } else if (isPassed) {
-      dotColor = TrainStatusColors.getPunctualityColor(TrainStatus.onTime, context);
-      dotIcon = Icons.check_circle;
+      dotColor = context.theme.success; // Use theme success color
+      dotIcon = Icons.check;
     } else {
       dotColor = context.theme.outline;
       dotIcon = null;
     }
 
-    final stationOpacity = isPassed ? 0.5 : 1.0;
+    final stationOpacity = isPassed ? 0.6 : 1.0;
     final textColor = isPassed
-        ? context.theme.textSecondary.withValues(alpha: stationOpacity)
+        ? context.theme.textSecondary
         : (isCurrent ? presentation.primaryColor : context.theme.textPrimary);
 
     return Opacity(
@@ -344,33 +406,32 @@ class _TripProgressPageState extends State<TripProgressPage> {
             height: 32,
             decoration: BoxDecoration(
               color: isPassed
-                  ? (Theme.of(context).brightness == Brightness.dark
-                      ? Colors.grey.shade700.withValues(alpha:0.1)
-                      : Colors.grey.withValues(alpha: 0.1))
-                  : dotColor.withValues(alpha: 0.1),
+                  ? dotColor.withValues(alpha: 0.1)
+                  : (isCurrent ? dotColor.withValues(alpha: 0.1) : context.theme.surface),
               shape: BoxShape.circle,
               border: Border.all(
-                color: isPassed
-                    ? (Theme.of(context).brightness == Brightness.dark
-                        ? Colors.grey.shade600
-                        : Colors.grey)
-                    : dotColor,
-                width: 2,
+                color: dotColor,
+                width: isCurrent ? 3 : 2,
               ),
+              boxShadow: isCurrent
+                  ? [
+                      BoxShadow(
+                        color: dotColor.withValues(alpha: 0.3),
+                        blurRadius: 8,
+                        spreadRadius: 2,
+                      )
+                    ]
+                  : null,
             ),
             child: dotIcon != null
                 ? Icon(
                     dotIcon,
-                    color: isPassed
-                        ? (Theme.of(context).brightness == Brightness.dark
-                            ? Colors.grey.shade400
-                            : Colors.grey)
-                        : dotColor,
-                    size: 18,
+                    color: dotColor,
+                    size: 16,
                   )
                 : null,
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -381,8 +442,8 @@ class _TripProgressPageState extends State<TripProgressPage> {
                       child: Text(
                         stop.station.name,
                         style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
+                          fontSize: 16,
+                          fontWeight: isCurrent ? FontWeight.bold : FontWeight.w500,
                           color: textColor,
                         ),
                       ),
@@ -413,16 +474,16 @@ class _TripProgressPageState extends State<TripProgressPage> {
                   Text(
                     'Départ: ${_formatTime(stop.departureTime!)}',
                     style: TextStyle(
-                      fontSize: 12,
-                      color: context.theme.textSecondary.withValues(alpha: stationOpacity),
+                      fontSize: 13,
+                      color: context.theme.textSecondary,
                     ),
                   ),
                 ] else if (stop.arrivalTime != null) ...[
                   Text(
                     'Arrivée: ${_formatTime(stop.arrivalTime!)}',
                     style: TextStyle(
-                      fontSize: 12,
-                      color: context.theme.textSecondary.withValues(alpha: stationOpacity),
+                      fontSize: 13,
+                      color: context.theme.textSecondary,
                     ),
                   ),
                 ],
@@ -456,7 +517,7 @@ class _TripProgressPageState extends State<TripProgressPage> {
 
     final journeyColor = widget.currentTrain != null
         ? TrainStatusColors.getJourneyStateColor(widget.currentTrain!, context)
-        : TrainStatusColors.getPunctualityColor(TrainStatus.unknown, context);
+        : context.theme.primary;
 
     return Padding(
       padding: const EdgeInsets.only(left: 15, top: 4, bottom: 4),
@@ -469,13 +530,11 @@ class _TripProgressPageState extends State<TripProgressPage> {
                 bottom: 0,
                 left: 0,
                 child: Container(
-                  width: 3,
+                  width: 2,
                   height: greyHeight,
                   decoration: BoxDecoration(
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? Colors.grey.shade600.withValues(alpha:0.3)
-                        : Colors.grey.withValues(alpha: 0.3),
-                    borderRadius: BorderRadius.circular(1.5),
+                    color: context.theme.outline.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(1),
                   ),
                 ),
               ),
@@ -485,14 +544,14 @@ class _TripProgressPageState extends State<TripProgressPage> {
                 bottom: 0,
                 left: 0,
                 child: Container(
-                  width: 3,
+                  width: 2,
                   height: coloredHeight,
                   decoration: BoxDecoration(
                     color: journeyColor,
-                    borderRadius: BorderRadius.circular(1.5),
+                    borderRadius: BorderRadius.circular(1),
                     boxShadow: [
                       BoxShadow(
-                        color: journeyColor.withValues(alpha: 0.3),
+                        color: journeyColor.withValues(alpha: 0.5),
                         blurRadius: 4,
                         spreadRadius: 1,
                       ),
@@ -510,11 +569,7 @@ class _TripProgressPageState extends State<TripProgressPage> {
   Widget _buildSimpleJourneyPlan(Train train, bool isInProgress, double progress) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: context.theme.card,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: context.theme.outline),
-      ),
+      decoration: context.theme.glass,
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -694,32 +749,36 @@ class _TripProgressPageState extends State<TripProgressPage> {
   Widget _buildScheduleDetails(Train train) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: context.theme.card,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: context.theme.outline),
-      ),
+      decoration: context.theme.glass,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Horaires',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: context.theme.textPrimary,
-              ),
+            Row(
+              children: [
+                Icon(Icons.schedule, color: context.theme.primary),
+                const SizedBox(width: 8),
+                Text(
+                  'Horaires',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: context.theme.textPrimary,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             _buildScheduleRow(
               'Départ',
               train.departureTimeFormatted,
               _formatOptionalTime(TrainStatusColors.getScheduledDepartureTime(train)),
             ),
             if (train.arrivalTimeFormatted != null) ...[
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
+              const Divider(),
+              const SizedBox(height: 12),
               _buildScheduleRow(
                 'Arrivée',
                 train.arrivalTimeFormatted!,
@@ -727,23 +786,31 @@ class _TripProgressPageState extends State<TripProgressPage> {
               ),
             ],
             if (train.delayMinutes != null && train.delayMinutes! > 0) ...[
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Icon(
-                    Icons.schedule,
-                    size: 16,
-                    color: context.theme.warning,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Retard: +${train.delayMinutes} minutes',
-                    style: TextStyle(
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: context.theme.warning.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: context.theme.warning.withValues(alpha: 0.5)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.warning_amber_rounded,
+                      size: 20,
                       color: context.theme.warning,
-                      fontWeight: FontWeight.w500,
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 8),
+                    Text(
+                      'Retard: +${train.delayMinutes} minutes',
+                      style: TextStyle(
+                        color: context.theme.warning,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ],

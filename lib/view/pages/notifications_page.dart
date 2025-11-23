@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
 
 import '../theme/theme_x.dart';
-import '../theme/page_theme_provider.dart';
 import '../../domain/models/notification_pause.dart';
 import '../../domain/models/station.dart';
 import '../../domain/models/trip.dart' as domain;
@@ -80,6 +80,8 @@ class _NotificationsPageState extends State<NotificationsPage> {
           content: Text(enabled
               ? 'Notifications activées pour ${trip.description}'
               : 'Notifications désactivées pour ${trip.description}'),
+          backgroundColor: Colors.blue.shade700, // Bleu au lieu d'orange pour contraste
+          behavior: SnackBarBehavior.floating,
         ),
       );
     } on Object catch (e) {
@@ -218,6 +220,8 @@ class _NotificationsPageState extends State<NotificationsPage> {
           content: Text(
             "Notifications en pause jusqu'au ${_formatDateTime(pause.endDate)}",
           ),
+          backgroundColor: Colors.blue.shade700, // Bleu au lieu d'orange pour contraste
+          behavior: SnackBarBehavior.floating,
         ),
       );
     } on Object catch (e) {
@@ -250,7 +254,11 @@ class _NotificationsPageState extends State<NotificationsPage> {
       });
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Pause désactivée')),
+        SnackBar(
+          content: const Text('Pause désactivée'),
+          backgroundColor: Colors.blue.shade700, // Bleu au lieu d'orange pour contraste
+          behavior: SnackBarBehavior.floating,
+        ),
       );
     } on Object catch (e) {
       if (!mounted) return;
@@ -270,23 +278,41 @@ class _NotificationsPageState extends State<NotificationsPage> {
   Widget build(BuildContext context) {
     final activeTrips = _trips.where((t) => t.isActive).toList();
 
-    return SafeArea(
-      child: RefreshIndicator(
-        onRefresh: _loadData,
-        child: ListView(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          physics: const AlwaysScrollableScrollPhysics(),
-          children: [
-            _buildHeader(context),
-            const SizedBox(height: 20),
-            _buildNotificationsSection(context, activeTrips),
-            const SizedBox(height: 16),
-            _buildPauseSection(context),
-            if (const bool.fromEnvironment('USE_MOCK_DATA')) ...[
-              const SizedBox(height: 16),
-              _buildTestCard(context),
+    return Scaffold(
+      extendBodyBehindAppBar: true,
+
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Colors.blue.shade50.withValues(alpha: 0.3), // Bleu clair au lieu d'orange pour éviter le conflit
+              context.theme.surface,
             ],
-          ],
+            stops: const [0.0, 0.3],
+          ),
+        ),
+        child: SafeArea(
+          child: RefreshIndicator(
+            onRefresh: _loadData,
+            color: Colors.blue.shade600, // Bleu au lieu d'orange pour contraste
+            child: ListView(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              physics: const AlwaysScrollableScrollPhysics(),
+              children: [
+                _buildHeader(context),
+                const SizedBox(height: 20),
+                _buildNotificationsSection(context, activeTrips),
+                const SizedBox(height: 16),
+                _buildPauseSection(context),
+                if (const bool.fromEnvironment('USE_MOCK_DATA')) ...[
+                  const SizedBox(height: 16),
+                  _buildTestCard(context),
+                ],
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -298,56 +324,29 @@ class _NotificationsPageState extends State<NotificationsPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Builder(
-            builder: (context) {
-              final pageColors = PageThemeProvider.of(context);
-              return Row(
-                children: [
-                  Container(
-                    width: 4,
-                    height: 28,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          pageColors.primaryDark,
-                          pageColors.primaryLight,
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  ShaderMask(
-                    shaderCallback: (bounds) => LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        pageColors.primaryDark,
-                        pageColors.primary,
-                      ],
-                    ).createShader(bounds),
-                    child: const Text(
-                      'Notifications',
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.white,
-                        letterSpacing: -0.5,
-                        height: 1.2,
-                      ),
-                    ),
-                  ),
-                ],
-              );
-            },
-          ),
+          ShaderMask(
+            shaderCallback: (bounds) => LinearGradient(
+              colors: [
+                Colors.blue.shade700, // Bleu foncé au lieu d'orange pour contraste
+                Colors.blue.shade600, // Bleu au lieu d'orange pour contraste
+              ],
+            ).createShader(bounds),
+            child: Text(
+              'Notifications',
+              style: TextStyle(
+                fontSize: 36,
+                fontWeight: FontWeight.w900,
+                color: Colors.white,
+                height: 1.1,
+                letterSpacing: -1.0,
+              ),
+            ),
+          ).animate().fadeIn().slideX(begin: -0.1, end: 0),
           const SizedBox(height: 6),
           Text(
             'Gérez les alertes pour chaque trajet et mettez-les en pause si besoin.',
             style: TextStyle(
-              fontSize: 13,
+              fontSize: 14,
               color: context.theme.textSecondary,
             ),
           ),
@@ -373,20 +372,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
       children: activeTrips.map((trip) {
         return Container(
           margin: const EdgeInsets.only(bottom: 12),
-          decoration: BoxDecoration(
-            color: context.theme.card,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: context.theme.outline),
-            boxShadow: [
-              BoxShadow(
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? Colors.black.withValues(alpha:0.3)
-                    : Colors.black.withValues(alpha:0.08),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
+          decoration: context.theme.glassStrong,
           child: Material(
             color: context.theme.card,
             child: InkWell(
@@ -443,6 +429,8 @@ class _NotificationsPageState extends State<NotificationsPage> {
                     Switch(
                       value: trip.notificationsEnabled,
                       onChanged: (value) => _toggleNotifications(trip, value),
+                      activeThumbColor: Colors.blue.shade600, // Bleu au lieu d'orange pour contraste
+                      activeTrackColor: Colors.blue.shade600.withValues(alpha: 0.5),
                     ),
                   ],
                 ),
@@ -482,8 +470,23 @@ class _NotificationsPageState extends State<NotificationsPage> {
             const SizedBox(height: 12),
             ElevatedButton.icon(
               onPressed: _loadData,
-              icon: Icon(Icons.refresh, color: context.theme.onPrimary),
-              label: Text('Réessayer', style: TextStyle(color: context.theme.onPrimary)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue.shade600, // Bleu au lieu d'orange pour contraste
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 2,
+              ),
+              icon: const Icon(Icons.refresh),
+              label: const Text(
+                'Réessayer',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.2,
+                ),
+              ),
             ),
           ],
         ),
@@ -537,16 +540,14 @@ class _NotificationsPageState extends State<NotificationsPage> {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: context.theme.card,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: context.theme.outline),
+        color: context.theme.card.withValues(alpha: 0.85),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: context.theme.outline.withValues(alpha: 0.5)),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).brightness == Brightness.dark
-                ? Colors.black.withValues(alpha:0.3)
-                : Colors.black.withValues(alpha:0.08),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -561,14 +562,12 @@ class _NotificationsPageState extends State<NotificationsPage> {
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    color: context.theme.warning,
+                    color: Colors.blue.shade600, // Bleu au lieu d'orange pour contraste
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
                     Icons.pause_circle,
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? Colors.black
-                        : Colors.white,
+                    color: Colors.white,
                     size: 24,
                   ),
                 ),
@@ -600,21 +599,33 @@ class _NotificationsPageState extends State<NotificationsPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     decoration: BoxDecoration(
                       color: _currentPause!.isCurrentlyActive
                           ? context.theme.error
-                          : context.theme.warning,
-                      borderRadius: BorderRadius.circular(4),
+                          : Colors.blue.shade700, // Bleu au lieu d'orange pour contraste avec fond orange
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(
+                        color: _currentPause!.isCurrentlyActive
+                            ? context.theme.error
+                            : Colors.blue.shade900,
+                        width: 1,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.15),
+                          blurRadius: 3,
+                          offset: const Offset(0, 1),
+                        ),
+                      ],
                     ),
                     child: Text(
                       _currentPause!.isCurrentlyActive ? 'PAUSE ACTIVE' : 'PAUSE À VENIR',
-                      style: TextStyle(
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? Colors.black
-                            : Colors.white,
+                      style: const TextStyle(
+                        color: Colors.white,
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
                       ),
                     ),
                   ),
@@ -635,16 +646,44 @@ class _NotificationsPageState extends State<NotificationsPage> {
                 Expanded(
                   child: OutlinedButton.icon(
                     onPressed: _isPauseUpdating ? null : _showPauseOptions,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.blue.shade700, // Bleu au lieu d'orange
+                      side: BorderSide(color: Colors.blue.shade300, width: 1.5),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
                     icon: const Icon(Icons.add),
-                    label: Text(_currentPause == null ? 'Programmer' : 'Modifier la pause'),
+                    label: Text(
+                      _currentPause == null ? 'Programmer' : 'Modifier la pause',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.2,
+                      ),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: OutlinedButton.icon(
                     onPressed: _currentPause == null || _isPauseUpdating ? null : _cancelPause,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.red.shade700, // Rouge pour action destructive
+                      side: BorderSide(color: Colors.red.shade300, width: 1.5),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
                     icon: const Icon(Icons.close),
-                    label: const Text('Désactiver'),
+                    label: const Text(
+                      'Désactiver',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.2,
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -659,16 +698,14 @@ class _NotificationsPageState extends State<NotificationsPage> {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: context.theme.card,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: context.theme.outline),
+        color: context.theme.card.withValues(alpha: 0.85),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: context.theme.outline.withValues(alpha: 0.5)),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).brightness == Brightness.dark
-                ? Colors.black.withValues(alpha:0.3)
-                : Colors.black.withValues(alpha:0.08),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -711,14 +748,55 @@ class _NotificationsPageState extends State<NotificationsPage> {
             ),
             if (_testMessage != null) ...[
               const SizedBox(height: 12),
-              Text(
-                _testMessage!,
-                style: TextStyle(
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
                   color: _testMessage!.startsWith('✅')
-                      ? context.theme.success
+                      ? context.theme.success.withValues(alpha: 0.1)
                       : _testMessage!.startsWith('❌')
-                          ? context.theme.error
-                          : context.theme.warning,
+                          ? context.theme.error.withValues(alpha: 0.1)
+                          : Colors.blue.shade50, // Fond bleu clair au lieu d'orange
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: _testMessage!.startsWith('✅')
+                        ? context.theme.success.withValues(alpha: 0.3)
+                        : _testMessage!.startsWith('❌')
+                            ? context.theme.error.withValues(alpha: 0.3)
+                            : Colors.blue.shade200,
+                    width: 1,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      _testMessage!.startsWith('✅')
+                          ? Icons.check_circle
+                          : _testMessage!.startsWith('❌')
+                              ? Icons.error
+                              : Icons.info,
+                      size: 18,
+                      color: _testMessage!.startsWith('✅')
+                          ? context.theme.success
+                          : _testMessage!.startsWith('❌')
+                              ? context.theme.error
+                              : Colors.blue.shade700, // Texte bleu foncé au lieu d'orange
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        _testMessage!,
+                        style: TextStyle(
+                          color: _testMessage!.startsWith('✅')
+                              ? context.theme.success
+                              : _testMessage!.startsWith('❌')
+                                  ? context.theme.error
+                                  : Colors.blue.shade800, // Texte bleu foncé au lieu d'orange
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -726,16 +804,26 @@ class _NotificationsPageState extends State<NotificationsPage> {
             ElevatedButton.icon(
               onPressed: _isTestingNotification ? null : _sendTestNotification,
               style: ElevatedButton.styleFrom(
-                backgroundColor: context.theme.primary,
-                foregroundColor:
-                    Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
+                backgroundColor: Colors.blue.shade600, // Bleu au lieu d'orange pour contraste
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 2,
               ),
               icon: Icon(
-                _isTestingNotification ? Icons.hourglass_top : Icons.play_arrow,
+                _isTestingNotification ? Icons.hourglass_top : Icons.play_arrow_rounded,
               ),
-              label: Text(_isTestingNotification
-                  ? 'Notification dans 5 secondes...'
-                  : 'Envoyer une notification test'),
+              label: Text(
+                _isTestingNotification
+                    ? 'Notification dans 5 secondes...'
+                    : 'Envoyer une notification test',
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.2,
+                ),
+              ),
             ),
           ],
         ),

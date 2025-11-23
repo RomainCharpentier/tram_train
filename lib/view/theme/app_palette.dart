@@ -29,31 +29,31 @@ class AppPalette extends ThemeExtension<AppPalette> {
   });
 
   factory AppPalette.light() => const AppPalette(
-        primary: Color(0xFF4A90E2),
-        secondary: Color(0xFF2E5BBA),
-        tertiary: Color(0xFF1E3A8A),
-        gradientStart: Color(0xFF4A90E2),
-        gradientEnd: Color(0xFF2E5BBA),
-        surface: Color(0xFFF0F2F5),
+        primary: Color(0xFF6366F1), // Indigo 500
+        secondary: Color(0xFF14B8A6), // Teal 500
+        tertiary: Color(0xFF8B5CF6), // Violet 500
+        gradientStart: Color(0xFF6366F1),
+        gradientEnd: Color(0xFF8B5CF6),
+        surface: Color(0xFFF8FAFC), // Slate 50
         card: Colors.white,
-        onSurface: Color(0xFF1A202C),
-        outline: Color(0xFFD1D5DB),
-        muted: Color(0xFF6B7280),
-        textPrimary: Color(0xFF1A202C),
+        onSurface: Color(0xFF0F172A), // Slate 900
+        outline: Color(0xFFE2E8F0), // Slate 200
+        muted: Color(0xFF64748B), // Slate 500
+        textPrimary: Color(0xFF0F172A),
       );
 
   factory AppPalette.dark() => const AppPalette(
-        primary: Color(0xFF7BB3F5),
-        secondary: Color(0xFF6BA3E8),
-        tertiary: Color(0xFF6BA3E8),
-        gradientStart: Color(0xFF7BB3F5),
-        gradientEnd: Color(0xFF6BA3E8),
-        surface: Color(0xFF1A1A1A),
-        card: Color(0xFF2A2A2A),
-        onSurface: Color(0xFFE5E7EB),
-        outline: Color(0xFF4B5563),
-        muted: Color(0xFF9CA3AF),
-        textPrimary: Color(0xFFE5E7EB),
+        primary: Color(0xFF818CF8), // Indigo 400
+        secondary: Color(0xFF2DD4BF), // Teal 400
+        tertiary: Color(0xFFA78BFA), // Violet 400
+        gradientStart: Color(0xFF6366F1),
+        gradientEnd: Color(0xFF8B5CF6),
+        surface: Color(0xFF0F172A), // Slate 900
+        card: Color(0xFF1E293B), // Slate 800
+        onSurface: Color(0xFFF1F5F9), // Slate 100
+        outline: Color(0xFF334155), // Slate 700
+        muted: Color(0xFF94A3B8), // Slate 400
+        textPrimary: Color(0xFFF1F5F9),
       );
 
   @override

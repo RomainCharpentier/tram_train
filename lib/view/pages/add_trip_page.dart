@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart' hide TimeOfDay;
 import 'package:flutter/material.dart' as flutter show TimeOfDay;
+import 'package:flutter_animate/flutter_animate.dart';
 import '../../domain/models/trip.dart' as domain;
 import '../../domain/models/train.dart' as domain_train;
 import '../../domain/models/station.dart';
@@ -8,7 +9,12 @@ import '../../infrastructure/dependency_injection.dart';
 import 'station_search_page.dart';
 import '../widgets/switch_card.dart';
 import '../widgets/save_button.dart';
+import '../widgets/page_header.dart';
 import '../theme/theme_x.dart';
+import '../theme/page_theme_provider.dart';
+import '../theme/design_tokens.dart';
+import '../utils/app_snackbar.dart';
+import '../utils/page_transitions.dart';
 
 enum TimeConstraintMode { departure, arrival }
 
@@ -48,676 +54,560 @@ class _AddTripPageState extends State<AddTripPage> {
   }
 
   Widget _buildScaffold() {
+    final pageColors = PageThemeProvider.of(context);
+
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Ajouter un favori',
-          style: TextStyle(
-            color: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
+      extendBodyBehindAppBar: true,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              pageColors.primary.withValues(alpha: 0.15),
+              context.theme.surface,
+            ],
+            stops: const [0.0, 0.3],
           ),
         ),
-        backgroundColor: context.theme.primary,
-        foregroundColor:
-            Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back,
-            color: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
+        child: SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.all(16.0),
+            children: [
+              PageHeader(
+                title: 'Ajouter un trajet',
+                subtitle: 'Créez un nouveau trajet pour suivre vos déplacements',
+                showBackButton: true,
+              ),
+              const SizedBox(height: 24),
+              _buildStationSelectionCard(),
+              const SizedBox(height: 24),
+              _buildDaysSection(),
+              const SizedBox(height: 24),
+              _buildTimeSection(),
+              const SizedBox(height: 24),
+              _buildOptionsSection(),
+              const SizedBox(height: 8),
+              if (_departureStation != null && _arrivalStation != null && _selectedTime != null)
+                _buildSummaryCard(),
+              const SizedBox(height: 24),
+              SaveButton(
+                label: 'Enregistrer le trajet',
+                enabled: _departureStation != null &&
+                    _arrivalStation != null &&
+                    _selectedDays.isNotEmpty &&
+                    _selectedTime != null,
+                onPressed: _saveTrip,
+              ),
+            ],
           ),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: ListView(
-          children: [
-            Card(
-              color: _connectionError != null
-                  ? (_connectionError!.startsWith('✅')
-                      ? context.theme.successBg
-                      : context.theme.errorBg)
-                  : null,
-              child: ListTile(
-                leading: Icon(
-                  Icons.train,
-                  color: _connectionError != null
-                      ? (_connectionError!.startsWith('✅')
-                          ? context.theme.success
-                          : context.theme.error)
-                      : context.theme.primary,
-                ),
-                title: Text(
-                  _departureStation?.name ?? 'Sélectionner la station de départ',
-                  style: TextStyle(
-                    color: _connectionError != null
-                        ? (_connectionError!.startsWith('✅')
-                            ? context.theme.success
-                            : context.theme.error)
-                        : context.theme.textPrimary,
-                  ),
-                ),
-                subtitle: _departureStation != null
-                    ? Text(
-                        _departureStation!.description ?? '',
-                        style: TextStyle(
-                          color: _connectionError != null
-                              ? (_connectionError!.startsWith('✅')
-                                  ? context.theme.success
-                                  : context.theme.error)
-                              : context.theme.textSecondary,
-                        ),
-                      )
-                    : Text(
-                        'Choisissez votre station de départ',
-                        style: TextStyle(
-                          color: _connectionError != null
-                              ? (_connectionError!.startsWith('✅')
-                                  ? context.theme.success
-                                  : context.theme.error)
-                              : context.theme.textSecondary,
-                        ),
-                      ),
-                trailing: Icon(
-                  Icons.arrow_forward_ios,
-                  color: _connectionError != null
-                      ? (_connectionError!.startsWith('✅')
-                          ? context.theme.success
-                          : context.theme.error)
-                      : context.theme.textSecondary,
-                ),
-                onTap: () => _selectStation(true),
-              ),
-            ),
-
-            const SizedBox(height: 8),
-
-            Center(
-              child: IconButton(
-                onPressed: _swapStations,
-                icon: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: context.theme.primary,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Icon(
-                    Icons.swap_vert,
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? Colors.black
-                        : Colors.white,
-                    size: 24,
-                  ),
-                ),
-                tooltip: 'Inverser les stations',
-              ),
-            ),
-
-            const SizedBox(height: 8),
-
-            Card(
-              color: _connectionError != null
-                  ? (_connectionError!.startsWith('✅')
-                      ? context.theme.successBg
-                      : context.theme.errorBg)
-                  : null,
-              child: ListTile(
-                leading: Icon(
-                  Icons.location_on,
-                  color: _connectionError != null
-                      ? (_connectionError!.startsWith('✅')
-                          ? context.theme.success
-                          : context.theme.error)
-                      : (_departureStation != null ? context.theme.secondary : context.theme.muted),
-                ),
-                title: Text(
-                  _arrivalStation?.name ?? "Sélectionner la station d'arrivée",
-                  style: TextStyle(
-                    color: _connectionError != null
-                        ? (_connectionError!.startsWith('✅')
-                            ? context.theme.success
-                            : context.theme.error)
-                        : (_departureStation != null
-                            ? context.theme.textPrimary
-                            : context.theme.muted),
-                  ),
-                ),
-                subtitle: _arrivalStation != null
-                    ? Text(
-                        _arrivalStation!.description ?? '',
-                        style: TextStyle(
-                          color: _connectionError != null
-                              ? (_connectionError!.startsWith('✅')
-                                  ? context.theme.success
-                                  : context.theme.error)
-                              : context.theme.textSecondary,
-                        ),
-                      )
-                    : Text(
-                        _departureStation != null
-                            ? "Choisissez votre station d'arrivée"
-                            : "Sélectionnez d'abord la station de départ",
-                        style: TextStyle(
-                          color: _connectionError != null
-                              ? (_connectionError!.startsWith('✅')
-                                  ? context.theme.success
-                                  : context.theme.error)
-                              : (_departureStation != null
-                                  ? context.theme.textSecondary
-                                  : context.theme.muted),
-                        ),
-                      ),
-                trailing: Icon(
-                  Icons.arrow_forward_ios,
-                  color: _connectionError != null
-                      ? (_connectionError!.startsWith('✅')
-                          ? context.theme.success
-                          : context.theme.error)
-                      : (_departureStation != null
-                          ? context.theme.textSecondary
-                          : context.theme.muted),
-                ),
-                onTap: _departureStation != null
-                    ? () => _selectStation(false)
-                    : () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              "Veuillez d'abord sélectionner la station de départ",
-                              style: TextStyle(
-                                color: Theme.of(context).brightness == Brightness.dark
-                                    ? Colors.black
-                                    : Colors.white,
-                              ),
-                            ),
-                            backgroundColor: Theme.of(context).brightness == Brightness.dark
-                                ? context.theme.warning.withValues(alpha:0.75)
-                                : context.theme.warning,
-                          ),
-                        );
-                      },
-              ),
-            ),
-
-            // Message d'erreur/succès de connexion
-            if (_connectionError != null) ...[
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: _connectionError!.startsWith('✅')
-                      ? context.theme.successBg
-                      : context.theme.errorBg,
-                  border: Border.all(
-                      color: _connectionError!.startsWith('✅')
-                          ? context.theme.successBorder
-                          : context.theme.errorBorder),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  children: [
-                    Icon(_connectionError!.startsWith('✅') ? Icons.check_circle : Icons.warning,
-                        color: _connectionError!.startsWith('✅')
-                            ? context.theme.success
-                            : context.theme.error),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        _connectionError!,
-                        style: TextStyle(
-                          color: _connectionError!.startsWith('✅')
-                              ? context.theme.success
-                              : context.theme.error,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-
-            const SizedBox(height: 24),
-
-            const Text(
-              'Jours de la semaine',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              children: domain.DayOfWeek.values.map((day) {
-                final isSelected = _selectedDays.contains(day);
-                return FilterChip(
-                  label: Text(day.displayName),
-                  selected: isSelected,
-                  onSelected: (selected) {
-                    setState(() {
-                      if (selected) {
-                        _selectedDays
-                          ..clear()
-                          ..add(day);
-                      } else {
-                        _selectedDays.remove(day);
-                      }
-                    });
-                    _maybeAutoSearch();
-                  },
-                  selectedColor: context.theme.primary.withValues(alpha: 0.3),
-                  checkmarkColor: context.theme.primary,
-                );
-              }).toList(),
-            ),
-
-            const SizedBox(height: 24),
-
-            Container(
-              margin: const EdgeInsets.only(bottom: 12),
-              decoration: BoxDecoration(
-                color: context.theme.card,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: context.theme.outline),
-                boxShadow: [
-                  BoxShadow(
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? Colors.black.withValues(alpha:0.3)
-                        : Colors.black.withValues(alpha:0.08),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: ListTile(
-                leading: Icon(Icons.access_time, color: context.theme.primary),
-                title: Text(
-                  _timeMode == TimeConstraintMode.departure
-                      ? (_selectedTime != null
-                          ? 'Départ vers ${_selectedTime!.format(context)}'
-                          : "Sélectionner l'heure de départ")
-                      : (_selectedTime != null
-                          ? 'Arrivée vers ${_selectedTime!.format(context)}'
-                          : "Sélectionner l'heure d'arrivée"),
-                  style: TextStyle(color: context.theme.textPrimary),
-                ),
-                trailing: Icon(Icons.arrow_forward_ios, color: context.theme.textSecondary),
-                onTap: _selectTime,
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
-            Container(
-              margin: const EdgeInsets.only(bottom: 12),
-              decoration: BoxDecoration(
-                color: context.theme.card,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: context.theme.outline),
-                boxShadow: [
-                  BoxShadow(
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? Colors.black.withValues(alpha:0.3)
-                        : Colors.black.withValues(alpha:0.08),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
-                child: Center(
-                  child: ToggleButtons(
-                    isSelected: [
-                      _timeMode == TimeConstraintMode.departure,
-                      _timeMode == TimeConstraintMode.arrival,
-                    ],
-                    onPressed: (i) {
-                      setState(() => _timeMode =
-                          i == 0 ? TimeConstraintMode.departure : TimeConstraintMode.arrival);
-                      _maybeAutoSearch();
-                    },
-                    color: context.theme.textSecondary,
-                    selectedColor: context.theme.primary,
-                    fillColor: context.theme.primary.withValues(alpha:0.1),
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        child: Text('Départ', style: TextStyle(color: context.theme.textPrimary)),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        child: Text('Arrivée', style: TextStyle(color: context.theme.textPrimary)),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-
-            // Bouton "Filtrer par heure" retiré (recherche auto)
-
-            // Liste des candidats
-            // État de chargement / vide / liste
-            if (_isLoadingCandidates) ...[
-              const SizedBox(height: 8),
-              const Center(child: CircularProgressIndicator()),
-            ] else if (_hasSearchedCandidates && _candidateTrains.isEmpty) ...[
-              const SizedBox(height: 8),
-              Container(
-                margin: const EdgeInsets.only(bottom: 12),
-                decoration: BoxDecoration(
-                  color: context.theme.card,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: context.theme.outline),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? Colors.black.withValues(alpha:0.3)
-                          : Colors.black.withValues(alpha:0.08),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: Row(
-                    children: [
-                      Icon(Icons.info_outline, color: context.theme.warning),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          "Aucun train trouvé autour de l'horaire choisi.",
-                          style: TextStyle(color: context.theme.textPrimary),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ] else if (_candidateTrains.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Container(
-                margin: const EdgeInsets.only(bottom: 12),
-                decoration: BoxDecoration(
-                  color: context.theme.card,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: context.theme.outline),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? Colors.black.withValues(alpha:0.3)
-                          : Colors.black.withValues(alpha:0.08),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.only(bottom: 8.0),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // liste des 2 trajets candidats
-                      ConstrainedBox(
-                        constraints: const BoxConstraints(maxHeight: 160),
-                        child: ListView.separated(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: _candidateTrains.length > 2 ? 2 : _candidateTrains.length,
-                          separatorBuilder: (_, __) => Divider(
-                            height: 1,
-                            color: context.theme.outline,
-                          ),
-                          itemBuilder: (context, index) {
-                            final t = _candidateTrains[index];
-                            final arr = t.arrivalTime;
-                            final depStr = _formatHHmm(t.departureTime);
-                            final arrStr = arr != null ? _formatHHmm(arr) : '??:??';
-                            final key = _candidateKey(t);
-                            final already = _isAlreadySavedTrain(t);
-                            final isSelected = _selectedCandidateId == key;
-                            return Column(
-                              children: [
-                                // ignore: deprecated_member_use
-                                RadioListTile<String>(
-                                  value: key,
-                                  // ignore: deprecated_member_use
-                                  groupValue: _selectedCandidateId,
-                                  // ignore: deprecated_member_use
-                                  onChanged: already
-                                      ? null
-                                      : (val) {
-                                          setState(() {
-                                            _selectedCandidateId = key;
-                                            _selectedTime = flutter.TimeOfDay(
-                                              hour: t.departureTime.hour,
-                                              minute: t.departureTime.minute,
-                                            );
-                                          });
-                                        },
-                                  activeColor: context.theme.primary,
-                                  secondary: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(Icons.schedule, color: context.theme.textSecondary),
-                                      if (already) const SizedBox(width: 8),
-                                      if (already)
-                                        Chip(
-                                          label: Text(
-                                            'Déjà enregistré',
-                                            style: TextStyle(
-                                              color: context.theme.textPrimary,
-                                              fontSize: 12,
-                                            ),
-                                          ),
-                                          backgroundColor: context.theme.muted.withValues(alpha:0.2),
-                                        ),
-                                    ],
-                                  ),
-                                  title: Text(
-                                    '$depStr → $arrStr',
-                                    style: TextStyle(color: context.theme.textPrimary),
-                                  ),
-                                  subtitle: Text(
-                                    '${_formatDayLabel(t.departureTime)} • ${t.direction} • ${t.statusText}',
-                                    style: TextStyle(color: context.theme.textSecondary),
-                                  ),
-                                ),
-                                // Afficher les arrêts intermédiaires si le trajet est sélectionné
-                                if (isSelected && t.intermediateStops.isNotEmpty) ...[
-                                  Padding(
-                                    padding:
-                                        const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          'Arrêts intermédiaires:',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.bold,
-                                            color: context.theme.textSecondary,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Wrap(
-                                          spacing: 4,
-                                          runSpacing: 4,
-                                          children: t.intermediateStops.map((stop) {
-                                            final time = stop.departureTime ?? stop.arrivalTime;
-                                            final timeStr = time != null ? _formatHHmm(time) : '';
-                                            return Chip(
-                                              label: Text(
-                                                timeStr.isNotEmpty
-                                                    ? '${stop.station.name} ($timeStr)'
-                                                    : stop.station.name,
-                                                style: TextStyle(
-                                                  fontSize: 11,
-                                                  color: context.theme.textPrimary,
-                                                ),
-                                              ),
-                                              backgroundColor:
-                                                  context.theme.primary.withValues(alpha:0.1),
-                                              padding: const EdgeInsets.symmetric(
-                                                  horizontal: 8, vertical: 4),
-                                            );
-                                          }).toList(),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ],
-                            );
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-
-            SwitchCard(
-              title: 'Trajet actif',
-              subtitle: 'Ce trajet sera affiché sur le tableau de bord',
-              value: _isActive,
-              onChanged: (v) => setState(() => _isActive = v),
-            ),
-
-            SwitchCard(
-              title: 'Notifications activées',
-              subtitle: 'Recevoir des notifications pour ce trajet',
-              value: _notificationsEnabled,
-              onChanged: (v) => setState(() => _notificationsEnabled = v),
-            ),
-
-            const SizedBox(height: 16),
-
-            SwitchCard(
-              title: 'Trajets directs uniquement',
-              subtitle: 'Exclure les trajets avec correspondances',
-              value: _directTrainsOnly,
-              onChanged: (v) {
-                setState(() => _directTrainsOnly = v);
-                if (_departureStation != null && _arrivalStation != null) {
-                  _validateConnection();
-                }
-              },
-            ),
-
-            const SizedBox(height: 8),
-
-            if (_departureStation != null && _arrivalStation != null && _selectedTime != null) ...[
-              Container(
-                margin: const EdgeInsets.only(bottom: 12),
-                decoration: BoxDecoration(
-                  color: context.theme.card,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: context.theme.outline),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? Colors.black.withValues(alpha:0.3)
-                          : Colors.black.withValues(alpha:0.08),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(Icons.star, color: context.theme.warning),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              '${_departureStation!.name} → ${_arrivalStation!.name}',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: context.theme.textPrimary,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 4,
-                        children: [
-                          Chip(
-                            avatar: Icon(Icons.access_time,
-                                size: 16, color: context.theme.textSecondary),
-                            label: Text(
-                              _selectedTime!.format(context),
-                              style: TextStyle(color: context.theme.textPrimary),
-                            ),
-                            backgroundColor: context.theme.primary.withValues(alpha:0.1),
-                          ),
-                          if (_selectedDays.isNotEmpty)
-                            Chip(
-                              avatar:
-                                  Icon(Icons.event, size: 16, color: context.theme.textSecondary),
-                              label: Text(
-                                _selectedDays.length == domain.DayOfWeek.values.length
-                                    ? 'Tous les jours'
-                                    : _selectedDays.map((d) => d.displayName).join(', '),
-                                style: TextStyle(color: context.theme.textPrimary),
-                              ),
-                              backgroundColor: context.theme.primary.withValues(alpha:0.1),
-                            ),
-                          Chip(
-                            avatar: Icon(Icons.directions_railway,
-                                size: 16, color: context.theme.textSecondary),
-                            label: Text(
-                              _directTrainsOnly ? 'Direct uniquement' : 'Avec correspondances',
-                              style: TextStyle(color: context.theme.textPrimary),
-                            ),
-                            backgroundColor: context.theme.primary.withValues(alpha:0.1),
-                          ),
-                          Chip(
-                            avatar: Icon(
-                              Icons.notifications_active_outlined,
-                              size: 16,
-                              color: _notificationsEnabled
-                                  ? context.theme.warning
-                                  : context.theme.textSecondary,
-                            ),
-                            label: Text(
-                              _notificationsEnabled ? 'Notifications ON' : 'Notifications OFF',
-                              style: TextStyle(color: context.theme.textPrimary),
-                            ),
-                            backgroundColor: _notificationsEnabled
-                                ? context.theme.warning.withValues(alpha:0.1)
-                                : context.theme.primary.withValues(alpha:0.1),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-            ],
-
-            // Bouton de sauvegarde
-            SaveButton(
-              label: 'Enregistrer le trajet',
-              enabled: _departureStation != null &&
-                  _arrivalStation != null &&
-                  _selectedDays.isNotEmpty &&
-                  _selectedTime != null,
-              onPressed: _saveTrip,
-            ),
-          ],
         ),
       ),
     );
+  }
+
+  Widget _buildStationSelectionCard() {
+    return Container(
+      decoration: context.theme.glassStrong,
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          _buildStationTile(
+            isDeparture: true,
+            station: _departureStation,
+            placeholder: 'Station de départ',
+            icon: Icons.train,
+            iconColor: context.theme.primary,
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Row(
+              children: [
+                const Expanded(child: Divider()),
+                Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: _swapStations,
+                    borderRadius: BorderRadius.circular(20),
+                    child: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: context.theme.primary.withValues(alpha: 0.12),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: context.theme.primary.withValues(alpha: 0.2),
+                          width: 1,
+                        ),
+                      ),
+                      child: Icon(
+                        Icons.swap_vert_rounded,
+                        color: context.theme.primary,
+                        size: 22,
+                      ),
+                    ),
+                  ),
+                ),
+                const Expanded(child: Divider()),
+              ],
+            ),
+          ),
+          _buildStationTile(
+            isDeparture: false,
+            station: _arrivalStation,
+            placeholder: "Station d'arrivée",
+            icon: Icons.location_on,
+            iconColor: context.theme.secondary,
+          ),
+          if (_connectionError != null) ...[
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: _connectionError!.startsWith('✅')
+                    ? context.theme.success.withValues(alpha: 0.1)
+                    : context.theme.error.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: _connectionError!.startsWith('✅')
+                      ? context.theme.success.withValues(alpha: 0.3)
+                      : context.theme.error.withValues(alpha: 0.3),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    _connectionError!.startsWith('✅') ? Icons.check_circle : Icons.warning,
+                    color: _connectionError!.startsWith('✅')
+                        ? context.theme.success
+                        : context.theme.error,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      _connectionError!,
+                      style: TextStyle(
+                        color: _connectionError!.startsWith('✅')
+                            ? context.theme.success
+                            : context.theme.error,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStationTile({
+    required bool isDeparture,
+    required Station? station,
+    required String placeholder,
+    required IconData icon,
+    required Color iconColor,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          if (!isDeparture && _departureStation == null) {
+            AppSnackBar.showWarning(
+              context,
+              message: "Veuillez d'abord sélectionner la station de départ",
+            );
+            return;
+          }
+          _selectStation(isDeparture);
+        },
+        borderRadius: BorderRadius.circular(12),
+        splashColor: iconColor.withValues(alpha: 0.1),
+        highlightColor: iconColor.withValues(alpha: 0.05),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: iconColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: iconColor.withValues(alpha: 0.2),
+                    width: 1,
+                  ),
+                ),
+                child: Icon(icon, color: iconColor, size: 24),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      station?.name ?? placeholder,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: station != null ? FontWeight.w600 : FontWeight.w500,
+                        color: station != null
+                            ? context.theme.textPrimary
+                            : context.theme.textSecondary,
+                        letterSpacing: 0.1,
+                      ),
+                    ),
+                    if (station?.description != null) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        station!.description!,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: context.theme.textSecondary,
+                          height: 1.3,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: context.theme.textSecondary.withValues(alpha: 0.6),
+                size: 20,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDaysSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 12),
+          child: Text(
+            'Jours de circulation',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: context.theme.textPrimary,
+              letterSpacing: 0.1,
+            ),
+          ),
+        ),
+        Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          children: domain.DayOfWeek.values.map((day) {
+            final isSelected = _selectedDays.contains(day);
+            return FilterChip(
+              label: Text(
+                day.displayName,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                  letterSpacing: 0.2,
+                ),
+              ),
+              selected: isSelected,
+              onSelected: (selected) {
+                setState(() {
+                  if (selected) {
+                    _selectedDays
+                      ..clear()
+                      ..add(day);
+                  } else {
+                    _selectedDays.remove(day);
+                  }
+                });
+                _maybeAutoSearch();
+              },
+              selectedColor: context.theme.primary,
+              labelStyle: TextStyle(
+                color: isSelected ? Colors.white : context.theme.textPrimary,
+              ),
+              backgroundColor: context.theme.surface,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
+                side: BorderSide(
+                  color: isSelected
+                      ? Colors.transparent
+                      : context.theme.outline.withValues(alpha: 0.3),
+                  width: 1,
+                ),
+              ),
+              checkmarkColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTimeSection() {
+    return Container(
+      decoration: context.theme.glassStrong,
+      padding: const EdgeInsets.all(6),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(4),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _buildTimeModeButton(
+                    'Départ',
+                    TimeConstraintMode.departure,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: _buildTimeModeButton(
+                    'Arrivée',
+                    TimeConstraintMode.arrival,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Divider(
+            height: 1,
+            thickness: 1,
+            color: context.theme.outline.withValues(alpha: 0.2),
+          ),
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: _selectTime,
+              borderRadius: BorderRadius.circular(12),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: context.theme.primary.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        Icons.access_time_rounded,
+                        color: context.theme.primary,
+                        size: 22,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _selectedTime != null
+                                ? '${_timeMode == TimeConstraintMode.departure ? "Départ" : "Arrivée"} vers ${_selectedTime!.format(context)}'
+                                : "Choisir l'heure",
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: context.theme.textPrimary,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.1,
+                            ),
+                          ),
+                          if (_selectedTime != null) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              'Appuyez pour modifier',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: context.theme.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    Icon(
+                      Icons.chevron_right_rounded,
+                      color: context.theme.textSecondary.withValues(alpha: 0.6),
+                      size: 20,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTimeModeButton(String label, TimeConstraintMode mode) {
+    final isSelected = _timeMode == mode;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          setState(() => _timeMode = mode);
+          _maybeAutoSearch();
+        },
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? context.theme.primary.withValues(alpha: 0.12)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+            border: isSelected
+                ? Border.all(
+                    color: context.theme.primary.withValues(alpha: 0.3),
+                    width: 1,
+                  )
+                : null,
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            label,
+            style: TextStyle(
+              color: isSelected ? context.theme.primary : context.theme.textSecondary,
+              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+              fontSize: 15,
+              letterSpacing: 0.2,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOptionsSection() {
+    return Column(
+      children: [
+        SwitchCard(
+          title: 'Trajet actif',
+          subtitle: 'Afficher sur le tableau de bord',
+          value: _isActive,
+          onChanged: (v) => setState(() => _isActive = v),
+        ),
+        const SizedBox(height: 8),
+        SwitchCard(
+          title: 'Notifications',
+          subtitle: 'Recevoir des alertes trafic',
+          value: _notificationsEnabled,
+          onChanged: (v) => setState(() => _notificationsEnabled = v),
+        ),
+        const SizedBox(height: 8),
+        SwitchCard(
+          title: 'Direct uniquement',
+          subtitle: 'Exclure les correspondances',
+          value: _directTrainsOnly,
+          onChanged: (v) {
+            setState(() => _directTrainsOnly = v);
+            if (_departureStation != null && _arrivalStation != null) {
+              _validateConnection();
+            }
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSummaryCard() {
+    final pageColors = PageThemeProvider.of(context);
+
+    final card = Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            pageColors.primary,
+            pageColors.primaryDark,
+          ],
+        ),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusXL),
+        boxShadow: DesignTokens.shadowMD,
+      ),
+      padding: const EdgeInsets.all(DesignTokens.spaceMD),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.summarize_rounded, color: Colors.white, size: 20),
+              ),
+              const SizedBox(width: 12),
+              const Text(
+                'Résumé du trajet',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 16,
+                  letterSpacing: 0.2,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Icon(Icons.train_rounded, color: Colors.white.withValues(alpha: 0.9), size: 18),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  '${_departureStation!.name} → ${_arrivalStation!.name}',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.1,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Icon(Icons.schedule_rounded, color: Colors.white.withValues(alpha: 0.8), size: 16),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  '${_selectedDays.length == 7 ? "Tous les jours" : _selectedDays.map((d) => d.displayName).join(", ")} à ${_selectedTime!.format(context)}',
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.9),
+                    fontSize: 14,
+                    height: 1.4,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+
+    return card
+        .animate()
+        .fadeIn(duration: 300.ms)
+        .scale(
+          begin: const Offset(0.98, 0.98),
+          end: const Offset(1, 1),
+          duration: 300.ms,
+          curve: Curves.easeOutCubic,
+        );
   }
 
   void _maybeAutoSearch() {
@@ -732,12 +622,13 @@ class _AddTripPageState extends State<AddTripPage> {
   Future<void> _selectStation(bool isDeparture) async {
     final result = await Navigator.push<Station>(
       context,
-      MaterialPageRoute(
-        builder: (context) => StationSearchPage(
+      PageTransitions.slideRoute(
+        StationSearchPage(
           departureStation: isDeparture ? null : _departureStation,
           showFavoriteButton: false,
           onStationTap: (station) => Navigator.pop(context, station),
         ),
+        begin: const Offset(0.0, 0.1),
       ),
     );
 
@@ -837,19 +728,6 @@ class _AddTripPageState extends State<AddTripPage> {
     return baseToday.add(Duration(days: bestDelta % 7));
   }
 
-  String _formatDayLabel(DateTime dt) {
-    const names = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
-    final name = names[(dt.weekday - 1).clamp(0, 6)];
-    final dd = dt.day.toString().padLeft(2, '0');
-    final mm = dt.month.toString().padLeft(2, '0');
-    return '$name $dd/$mm';
-  }
-
-  String _formatHHmm(DateTime dt) {
-    final h = dt.hour.toString().padLeft(2, '0');
-    final m = dt.minute.toString().padLeft(2, '0');
-    return '$h:$m';
-  }
 
   String _candidateKey(domain_train.Train t) {
     return '${t.id}_${t.departureTime.millisecondsSinceEpoch}';
@@ -903,18 +781,9 @@ class _AddTripPageState extends State<AddTripPage> {
         _hasSearchedCandidates = false;
       });
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Erreur: Station(s) invalide(s). Veuillez re-sélectionner les stations.',
-            style: TextStyle(
-              color: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
-            ),
-          ),
-          backgroundColor: Theme.of(context).brightness == Brightness.dark
-              ? context.theme.error.withValues(alpha:0.75)
-              : context.theme.error,
-        ),
+      AppSnackBar.showError(
+        context,
+        message: 'Erreur: Station(s) invalide(s). Veuillez re-sélectionner les stations.',
       );
       return;
     }
@@ -1031,19 +900,9 @@ class _AddTripPageState extends State<AddTripPage> {
       });
     } on Object catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Erreur lors de la proposition des trains: $e',
-              style: TextStyle(
-                color:
-                    Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
-              ),
-            ),
-            backgroundColor: Theme.of(context).brightness == Brightness.dark
-                ? context.theme.error.withValues(alpha:0.75)
-                : context.theme.error,
-          ),
+        AppSnackBar.showError(
+          context,
+          message: 'Erreur lors de la proposition des trains: $e',
         );
       }
     } finally {
@@ -1069,20 +928,10 @@ class _AddTripPageState extends State<AddTripPage> {
 
       if (!result.isConnected) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                '⚠️ ${result.message}',
-                style: TextStyle(
-                  color:
-                      Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
-                ),
-              ),
-              backgroundColor: Theme.of(context).brightness == Brightness.dark
-                  ? context.theme.warning.withValues(alpha:0.75)
-                  : context.theme.warning,
-              duration: const Duration(seconds: 5),
-            ),
+          AppSnackBar.showWarning(
+            context,
+            message: '⚠️ ${result.message}',
+            duration: const Duration(seconds: 5),
           );
         }
         return; // Bloquer la sauvegarde
@@ -1107,36 +956,16 @@ class _AddTripPageState extends State<AddTripPage> {
 
       if (mounted) {
         Navigator.pop(context, true);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              '✅ Trajet enregistré avec succès !',
-              style: TextStyle(
-                color:
-                    Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
-              ),
-            ),
-            backgroundColor: Theme.of(context).brightness == Brightness.dark
-                ? context.theme.success.withValues(alpha:0.75)
-                : context.theme.success,
-          ),
+        AppSnackBar.showSuccess(
+          context,
+          message: '✅ Trajet enregistré avec succès !',
         );
       }
     } on Object catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              "Erreur lors de l'enregistrement : $e",
-              style: TextStyle(
-                color:
-                    Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
-              ),
-            ),
-            backgroundColor: Theme.of(context).brightness == Brightness.dark
-                ? context.theme.error.withValues(alpha:0.75)
-                : context.theme.error,
-          ),
+        AppSnackBar.showError(
+          context,
+          message: "Erreur lors de l'enregistrement : $e",
         );
       }
     }

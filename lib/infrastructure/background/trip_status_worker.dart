@@ -13,6 +13,7 @@ import 'package:train_qil/infrastructure/gateways/local_storage_gateway.dart';
 import 'package:train_qil/infrastructure/gateways/sncf_gateway.dart';
 import 'package:train_qil/infrastructure/mappers/sncf_mapper.dart';
 import 'package:train_qil/infrastructure/mappers/trip_mapper.dart';
+import 'package:train_qil/infrastructure/services/home_screen_widget_service.dart';
 
 @pragma('vm:entry-point')
 void tripStatusCallbackDispatcher() {
@@ -120,6 +121,14 @@ void tripStatusCallbackDispatcher() {
 
     await _showNotification(notification.title, notification.body);
 
+    // 6. Mettre à jour le widget
+    try {
+      final widgetService = HomeScreenWidgetService();
+      await widgetService.updateWidget(storedTrip, selectedTrain);
+    } catch (e) {
+      debugPrint('Erreur mise à jour widget: $e');
+    }
+
     await _scheduleNextRun(
       trip: storedTrip,
       apiKey: apiKey,
@@ -153,34 +162,37 @@ _NotificationPayload _buildNotificationPayload(
     );
   }
 
+  final scheduledDepartureTime = train.baseDepartureTime ?? train.departureTime;
+  final realDepartureTime = train.departureTime;
+
   switch (train.status) {
-    case TrainStatus.cancelled:
-      return _NotificationPayload(
-        '❌ Train annulé',
-        'Le trajet $departureName → $arrivalName est annulé. Consultez les alternatives.',
-      );
-    case TrainStatus.delayed:
-      final delay = train.delayMinutes ?? 0;
-      return _NotificationPayload(
-        '⏱️ Retard détecté',
-        'Le train $departureName → $arrivalName partira avec ${delay.abs()} min de retard.',
-      );
-    case TrainStatus.early:
-      final advance = train.delayMinutes ?? 0;
-      return _NotificationPayload(
-        '⚠️ Départ avancé',
-        'Le train $departureName → $arrivalName partira ${advance.abs()} min plus tôt.',
-      );
     case TrainStatus.onTime:
       final minutesText = leadMinutes > 0 ? 'dans $leadMinutes min' : 'bientôt';
       return _NotificationPayload(
         "✅ Train à l'heure",
-        "Le train $departureName → $arrivalName est prévu à l'heure, départ $minutesText.",
+        "Votre train de ${scheduledDepartureTime.hour}h${scheduledDepartureTime.minute.toString().padLeft(2, '0')} ($departureName → $arrivalName) est prévu à l'heure, départ $minutesText.",
+      );
+    case TrainStatus.delayed:
+      final delayMinutes = realDepartureTime.difference(scheduledDepartureTime).inMinutes;
+      return _NotificationPayload(
+        "⚠️ Retard de $delayMinutes min",
+        "Attention : Le train de ${scheduledDepartureTime.hour}h${scheduledDepartureTime.minute.toString().padLeft(2, '0')} ($departureName → $arrivalName) partira à ${realDepartureTime.hour}h${realDepartureTime.minute.toString().padLeft(2, '0')}.",
+      );
+    case TrainStatus.early:
+      final advanceMinutes = scheduledDepartureTime.difference(realDepartureTime).inMinutes;
+      return _NotificationPayload(
+        "⚠️ Départ avancé de $advanceMinutes min",
+        "Attention : Le train de ${scheduledDepartureTime.hour}h${scheduledDepartureTime.minute.toString().padLeft(2, '0')} ($departureName → $arrivalName) partira plus tôt, à ${realDepartureTime.hour}h${realDepartureTime.minute.toString().padLeft(2, '0')}.",
+      );
+    case TrainStatus.cancelled:
+      return _NotificationPayload(
+        "❌ Train supprimé",
+        "Alerte : Le train de ${scheduledDepartureTime.hour}h${scheduledDepartureTime.minute.toString().padLeft(2, '0')} ($departureName → $arrivalName) a été supprimé.",
       );
     case TrainStatus.unknown:
       return _NotificationPayload(
-        baseTitle,
-        "Le statut du train $departureName → $arrivalName reste inconnu. Vérifiez l'application.",
+        "ℹ️ Info trajet",
+        "Départ prévu à ${scheduledDepartureTime.hour}h${scheduledDepartureTime.minute.toString().padLeft(2, '0')} ($departureName → $arrivalName). Pas d'info temps réel.",
       );
   }
 }

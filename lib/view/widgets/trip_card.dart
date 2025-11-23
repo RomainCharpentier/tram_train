@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../theme/theme_x.dart';
+import '../theme/design_tokens.dart';
 import '../../domain/models/trip.dart' as domain;
 import '../../domain/models/train.dart';
 import '../utils/train_status_colors.dart';
 import 'train_status_indicator.dart';
+import 'glass_container.dart';
 
 class TripCard extends StatelessWidget {
   final domain.Trip trip;
@@ -30,192 +33,225 @@ class TripCard extends StatelessWidget {
     final presentation =
         nextTrain != null ? TrainStatusColors.buildPresentation(nextTrain!, context) : null;
 
-    final trailingWidgets = <Widget>[];
-    if (nextTrain?.externalUrl != null && nextTrain!.externalUrl!.isNotEmpty) {
-      trailingWidgets.add(
-        IconButton(
-          tooltip: 'Ouvrir sur SNCF.com',
-          icon: Icon(Icons.open_in_new, color: context.theme.textPrimary),
-          onPressed: () => _openExternalUrl(context, nextTrain!.externalUrl!),
-        ),
-      );
-    }
-    if (showActions) {
-      trailingWidgets.add(
-        PopupMenuButton<String>(
-          icon: Icon(Icons.more_vert, color: context.theme.textPrimary),
-          onSelected: (value) => onAction(value, trip),
-          itemBuilder: (context) => [
-            PopupMenuItem(
-              value: 'edit',
-              child: ListTile(
-                leading: Icon(Icons.edit, color: context.theme.textPrimary),
-                title: Text('Modifier', style: TextStyle(color: context.theme.textPrimary)),
-                contentPadding: EdgeInsets.zero,
-              ),
-            ),
-            PopupMenuItem(
-              value: 'duplicate',
-              child: ListTile(
-                leading: Icon(Icons.copy, color: context.theme.textPrimary),
-                title: Text('Dupliquer', style: TextStyle(color: context.theme.textPrimary)),
-                contentPadding: EdgeInsets.zero,
-              ),
-            ),
-            PopupMenuItem(
-              value: 'toggle',
-              child: ListTile(
-                leading: Icon(Icons.play_arrow, color: context.theme.textPrimary),
-                title:
-                    Text('Activer/Désactiver', style: TextStyle(color: context.theme.textPrimary)),
-                contentPadding: EdgeInsets.zero,
-              ),
-            ),
-            PopupMenuItem(
-              value: 'delete',
-              child: ListTile(
-                leading: Icon(Icons.delete, color: context.theme.error),
-                title: Text(
-                  'Supprimer',
-                  style: TextStyle(color: context.theme.error),
-                ),
-                contentPadding: EdgeInsets.zero,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: context.theme.card,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: context.theme.outline),
-        boxShadow: [
-          BoxShadow(
-            color: Theme.of(context).brightness == Brightness.dark
-                ? Colors.black.withValues(alpha:0.3)
-                : Colors.black.withValues(alpha:0.08),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+    return GlassContainer(
+      margin: const EdgeInsets.only(bottom: DesignTokens.spaceMD),
+      opacity: 0.9,
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(DesignTokens.radiusXL),
+          splashColor: context.theme.primary.withValues(alpha: 0.1),
+          highlightColor: context.theme.primary.withValues(alpha: 0.05),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            child: Row(
+            padding: const EdgeInsets.all(DesignTokens.spaceMD),
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (showStatusIndicator) ...[
-                  TrainStatusIndicator(train: nextTrain),
-                  const SizedBox(width: 16),
-                ] else ...[
-                  Icon(Icons.calendar_today, color: context.theme.textSecondary, size: 24),
-                  const SizedBox(width: 16),
-                ],
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        trip.description.isNotEmpty ? trip.description : 'Trajet sans description',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: context.theme.textPrimary,
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (showStatusIndicator) ...[
+                      TrainStatusIndicator(train: nextTrain),
+                      const SizedBox(width: DesignTokens.spaceMD),
+                    ] else ...[
+                      Container(
+                        padding: const EdgeInsets.all(DesignTokens.spaceMD),
+                        decoration: BoxDecoration(
+                          color: context.theme.primary.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(DesignTokens.radiusMD),
+                          border: Border.all(
+                            color: context.theme.primary.withValues(alpha: 0.2),
+                            width: 1,
+                          ),
+                        ),
+                        child: Icon(
+                          Icons.train_outlined,
+                          color: context.theme.primary,
+                          size: DesignTokens.iconMD,
                         ),
                       ),
-                      const SizedBox(height: 6),
-                      if (presentation != null) ...[
-                        Text(
-                          'Prochain départ : ${trip.daysName} à ${trip.timeFormatted}',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: presentation.primaryColor,
-                            fontWeight: presentation.state == TrainJourneyState.cancelled
-                                ? FontWeight.w600
-                                : FontWeight.normal,
-                          ),
-                        ),
-                        if (presentation.scheduleText != null &&
-                            presentation.scheduleColor != null &&
-                            presentation.scheduleIcon != null) ...[
-                          const SizedBox(height: 4),
-                          _buildScheduleBadge(presentation),
-                        ],
-                      ] else ...[
-                        Text(
-                          'Prochain départ : ${trip.daysName} à ${trip.timeFormatted}',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: context.theme.textSecondary,
-                          ),
-                        ),
-                      ],
+                      const SizedBox(width: DesignTokens.spaceMD),
                     ],
-                  ),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  trip.description.isNotEmpty
+                                      ? trip.description
+                                      : 'Trajet sans description',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w700,
+                                    color: context.theme.textPrimary,
+                                    letterSpacing: -0.3,
+                                    height: 1.2,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              if (showActions) _buildActionsMenu(context),
+                            ],
+                          ),
+                          const SizedBox(height: DesignTokens.spaceXS),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.calendar_today,
+                                size: DesignTokens.iconXS,
+                                color: context.theme.textSecondary.withValues(alpha: 0.7),
+                              ),
+                              const SizedBox(width: DesignTokens.spaceXS),
+                              Text(
+                                '${trip.daysName} • ${trip.timeFormatted}',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: context.theme.textSecondary,
+                                  fontWeight: FontWeight.w500,
+                                  letterSpacing: 0.2,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                if (trailingWidgets.isNotEmpty) ...[
-                  const SizedBox(width: 8),
-                  ...trailingWidgets,
+                if (presentation != null) ...[
+                  const SizedBox(height: DesignTokens.spaceMD),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: DesignTokens.spaceMD,
+                      vertical: DesignTokens.spaceSM,
+                    ),
+                    decoration: BoxDecoration(
+                      color: presentation.scheduleColor?.withValues(alpha: 0.08) ??
+                          context.theme.surface.withValues(alpha: 0.6),
+                      borderRadius: BorderRadius.circular(DesignTokens.radiusMD),
+                      border: Border.all(
+                        color: (presentation.scheduleColor ?? context.theme.outline)
+                            .withValues(alpha: 0.2),
+                        width: 1,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        if (presentation.scheduleIcon != null) ...[
+                          Container(
+                            padding: const EdgeInsets.all(DesignTokens.spaceXS),
+                            decoration: BoxDecoration(
+                              color: (presentation.scheduleColor ?? context.theme.primary)
+                                  .withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(DesignTokens.radiusSM),
+                            ),
+                            child: Icon(
+                              presentation.scheduleIcon,
+                              size: DesignTokens.iconSM,
+                              color: presentation.scheduleColor ?? context.theme.primary,
+                            ),
+                          ),
+                          const SizedBox(width: DesignTokens.spaceSM),
+                        ],
+                        Expanded(
+                          child: Text(
+                            presentation.scheduleText ?? 'En attente...',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: presentation.scheduleColor ?? context.theme.textPrimary,
+                              letterSpacing: 0.1,
+                            ),
+                          ),
+                        ),
+                        if (nextTrain?.externalUrl != null)
+                          IconButton(
+                            icon: Icon(Icons.open_in_new, size: 18, color: context.theme.primary),
+                            constraints: const BoxConstraints(),
+                            padding: EdgeInsets.zero,
+                            onPressed: () => _openExternalUrl(context, nextTrain!.externalUrl!),
+                            tooltip: 'Voir sur SNCF',
+                          ),
+                      ],
+                    ),
+                  ),
                 ],
               ],
             ),
           ),
         ),
       ),
+    ).animate()
+        .fadeIn(duration: DesignTokens.animationNormal.inMilliseconds.ms)
+        .slideY(
+          begin: 0.08,
+          end: 0,
+          curve: DesignTokens.curveEaseOutCubic,
+          duration: DesignTokens.animationNormal.inMilliseconds.ms,
+        )
+        .scale(
+          begin: const Offset(0.98, 0.98),
+          end: const Offset(1, 1),
+          curve: DesignTokens.curveEaseOutCubic,
+          duration: DesignTokens.animationNormal.inMilliseconds.ms,
+        );
+  }
+
+  Widget _buildActionsMenu(BuildContext context) {
+    return PopupMenuButton<String>(
+      icon: Icon(Icons.more_horiz, color: context.theme.textSecondary),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      onSelected: (value) => onAction(value, trip),
+      itemBuilder: (context) => [
+        PopupMenuItem(
+          value: 'edit',
+          child: _buildMenuItem(context, Icons.edit_outlined, 'Modifier'),
+        ),
+        PopupMenuItem(
+          value: 'duplicate',
+          child: _buildMenuItem(context, Icons.copy_outlined, 'Dupliquer'),
+        ),
+        PopupMenuItem(
+          value: 'toggle',
+          child: _buildMenuItem(
+            context,
+            trip.isActive ? Icons.notifications_off_outlined : Icons.notifications_active_outlined,
+            trip.isActive ? 'Désactiver' : 'Activer',
+          ),
+        ),
+        const PopupMenuDivider(),
+        PopupMenuItem(
+          value: 'delete',
+          child: _buildMenuItem(context, Icons.delete_outline, 'Supprimer', isDestructive: true),
+        ),
+      ],
     );
   }
 
-  Widget _buildScheduleBadge(TrainStatusPresentation presentation) {
-    final color = presentation.scheduleColor!;
-    final icon = presentation.scheduleIcon!;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha:0.12),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: color, size: 14),
-          const SizedBox(width: 4),
-          Text(
-            presentation.scheduleText!,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: color,
-            ),
-          ),
-        ],
-      ),
+  Widget _buildMenuItem(BuildContext context, IconData icon, String label,
+      {bool isDestructive = false}) {
+    final color = isDestructive ? context.theme.error : context.theme.textPrimary;
+    return Row(
+      children: [
+        Icon(icon, size: 20, color: color),
+        const SizedBox(width: 12),
+        Text(
+          label,
+          style: TextStyle(color: color, fontWeight: FontWeight.w500),
+        ),
+      ],
     );
   }
 
   Future<void> _openExternalUrl(BuildContext context, String url) async {
     final uri = Uri.tryParse(url);
-    if (uri == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Lien inexploitable')),
-      );
-      return;
-    }
-    final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
-    if (!context.mounted) return;
-    if (!launched) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Impossible d'ouvrir le lien SNCF")),
-      );
-    }
+    if (uri == null) return;
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 }

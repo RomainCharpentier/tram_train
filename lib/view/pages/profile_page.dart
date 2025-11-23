@@ -9,6 +9,9 @@ import 'add_trip_page.dart';
 import 'edit_trip_page.dart';
 import 'station_search_page.dart';
 import '../widgets/trip_card.dart';
+import '../widgets/page_header.dart';
+import '../widgets/glass_container.dart';
+import '../utils/app_snackbar.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -55,20 +58,17 @@ class _ProfilePageState extends State<ProfilePage> {
 
     try {
       final trips = await _tripService.getAllTrips();
-      if (!mounted) return;
       setState(() {
         _trips = trips;
       });
-    } on Object catch (e) {
+    } catch (e) {
       setState(() {
         _tripError = 'Erreur lors du chargement des trajets: $e';
       });
     } finally {
-      if (mounted) {
-        setState(() {
-          _isLoadingTrips = false;
-        });
-      }
+      setState(() {
+        _isLoadingTrips = false;
+      });
     }
   }
 
@@ -80,98 +80,59 @@ class _ProfilePageState extends State<ProfilePage> {
 
     try {
       final favorites = await _favoriteService.getAllFavoriteStations();
-      if (!mounted) return;
       setState(() {
         _favoriteStations = favorites;
       });
-    } on Object catch (e) {
+    } catch (e) {
       setState(() {
         _favoritesError = 'Erreur lors du chargement des favoris: $e';
       });
     } finally {
-      if (mounted) {
-        setState(() {
-          _isLoadingFavorites = false;
-        });
-      }
+      setState(() {
+        _isLoadingFavorites = false;
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: RefreshIndicator(
-        onRefresh: _refreshAll,
-        child: ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    final pageColors = PageThemeProvider.of(context);
+
+    return Scaffold(
+      extendBodyBehindAppBar: true,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              pageColors.primary.withValues(alpha: 0.15),
+              context.theme.surface,
+            ],
+            stops: const [0.0, 0.3],
+          ),
+        ),
+        child: SafeArea(
+          child: RefreshIndicator(
+            onRefresh: _refreshAll,
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               children: [
-                Builder(
-                  builder: (context) {
-                    final pageColors = PageThemeProvider.of(context);
-                    return Row(
-                      children: [
-                        Container(
-                          width: 4,
-                          height: 28,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [
-                                pageColors.primaryDark,
-                                pageColors.primaryLight,
-                              ],
-                            ),
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        ShaderMask(
-                          shaderCallback: (bounds) => LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              pageColors.primaryDark,
-                              pageColors.primary,
-                            ],
-                          ).createShader(bounds),
-                          child: const Text(
-                            'Profil',
-                            style: TextStyle(
-                              fontSize: 28,
-                              fontWeight: FontWeight.w800,
-                              color: Colors.white,
-                              letterSpacing: -0.5,
-                              height: 1.2,
-                            ),
-                          ),
-                        ),
-                      ],
-                    );
-                  },
+                PageHeader(
+                  title: 'Profil',
+                  subtitle:
+                      "Gérez vos trajets enregistrés, vos stations favorites et personnalisez l'application.",
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  "Gérez vos trajets enregistrés, vos stations favorites et personnalisez l'application.",
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: context.theme.textSecondary,
-                      height: 1.4,
-                    ),
-                ),
+                const SizedBox(height: 16),
+                _buildTripsSection(context),
+                const SizedBox(height: 12),
+                _buildFavoritesSection(context),
+                const SizedBox(height: 12),
+                _buildSettingsSection(context),
               ],
             ),
-            const SizedBox(height: 16),
-            _buildTripsSection(context),
-            const SizedBox(height: 12),
-            _buildFavoritesSection(context),
-            const SizedBox(height: 12),
-            _buildSettingsSection(context),
-          ],
+          ),
         ),
       ),
     );
@@ -188,22 +149,9 @@ class _ProfilePageState extends State<ProfilePage> {
     Color? iconColor,
   }) {
     final theme = Theme.of(context);
-    return Container(
+    return GlassContainer(
       margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: context.theme.card,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: context.theme.outline),
-        boxShadow: [
-          BoxShadow(
-            color: Theme.of(context).brightness == Brightness.dark
-                ? Colors.black.withValues(alpha:0.3)
-                : Colors.black.withValues(alpha:0.08),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      opacity: 0.98,
       child: Theme(
         data: theme.copyWith(dividerColor: Colors.transparent),
         child: ExpansionTile(
@@ -220,9 +168,7 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
             child: Icon(
               icon,
-              color: Theme.of(context).brightness == Brightness.dark
-                  ? Colors.black
-                  : Colors.white,
+              color: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
               size: 24,
             ),
           ),
@@ -407,22 +353,9 @@ class _ProfilePageState extends State<ProfilePage> {
     return Column(
       children: [
         ..._favoriteStations.map(
-          (station) => Container(
+          (station) => GlassContainer(
             margin: const EdgeInsets.only(bottom: 12),
-            decoration: BoxDecoration(
-              color: context.theme.card,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: context.theme.outline),
-              boxShadow: [
-                BoxShadow(
-                  color: Theme.of(context).brightness == Brightness.dark
-                      ? Colors.black.withValues(alpha:0.3)
-                      : Colors.black.withValues(alpha:0.08),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
+            opacity: 0.98,
             child: Material(
               color: Colors.transparent,
               child: Padding(
@@ -433,7 +366,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: context.theme.info.withValues(alpha:0.15),
+                        color: context.theme.info.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: context.theme.info, width: 1.5),
                       ),
@@ -506,9 +439,8 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
               child: Icon(
                 _themeService.isDarkMode ? Icons.dark_mode : Icons.light_mode,
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? Colors.black
-                    : Colors.white,
+                color:
+                    Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
                 size: 20,
               ),
             ),
@@ -520,7 +452,7 @@ class _ProfilePageState extends State<ProfilePage> {
               _themeService.isDarkMode
                   ? 'Désactivez pour passer en mode clair.'
                   : 'Activez pour un thème sombre.',
-                style: TextStyle(color: context.theme.textSecondary),
+              style: TextStyle(color: context.theme.textSecondary),
             ),
             value: _themeService.isDarkMode,
             onChanged: (_) => _themeService.toggleTheme(),
@@ -535,7 +467,7 @@ class _ProfilePageState extends State<ProfilePage> {
       alignment: Alignment.centerRight,
       padding: const EdgeInsets.symmetric(horizontal: 24),
       decoration: BoxDecoration(
-        color: Colors.red.withValues(alpha:0.1),
+        color: Colors.red.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
       ),
       child: const Row(
@@ -557,7 +489,6 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
     );
     if (result == true) {
-      if (!mounted) return;
       await _loadTrips();
       await _reminderService.refreshSchedules();
     }
@@ -571,7 +502,6 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
     );
     if (result == true) {
-      if (!mounted) return;
       await _loadTrips();
       await _reminderService.refreshSchedules();
     }
@@ -593,34 +523,27 @@ class _ProfilePageState extends State<ProfilePage> {
         );
         await _tripService.saveTrip(duplicatedTrip);
         await _reminderService.refreshSchedules();
-        if (!mounted) return;
         await _loadTrips();
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Trajet dupliqué')),
-          );
+        if (mounted) {
+          AppSnackBar.showSuccess(context, message: 'Trajet dupliqué');
         }
         break;
       case 'toggle':
         final updatedTrip = trip.copyWith(isActive: !trip.isActive);
         await _tripService.saveTrip(updatedTrip);
         await _reminderService.refreshSchedules();
-        if (!mounted) return;
         await _loadTrips();
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Trajet ${updatedTrip.isActive ? 'activé' : 'désactivé'}',
-              ),
-            ),
+        if (mounted) {
+          AppSnackBar.showInfo(
+            context,
+            message: 'Trajet ${updatedTrip.isActive ? 'activé' : 'désactivé'}',
           );
         }
         break;
       case 'delete':
         final confirmed = await _confirmTripDeletion(context, trip);
+        if (!mounted) return;
         if (confirmed == true) {
-          if (!context.mounted) return;
           await _deleteTrip(context, trip);
         }
         break;
@@ -653,12 +576,9 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> _deleteTrip(BuildContext context, domain.Trip trip) async {
     await _tripService.deleteTripAndSimilar(trip);
     await _reminderService.refreshSchedules();
-    if (!mounted) return;
     await _loadTrips();
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Trajet supprimé')),
-      );
+    if (mounted) {
+      AppSnackBar.showSuccess(context, message: 'Trajet supprimé');
     }
   }
 
@@ -671,7 +591,6 @@ class _ProfilePageState extends State<ProfilePage> {
     );
 
     if (result != null) {
-      if (!mounted) return;
       await _loadFavorites();
     }
   }
@@ -702,24 +621,20 @@ class _ProfilePageState extends State<ProfilePage> {
       try {
         await _favoriteService.removeFavoriteStation(station.id);
         await _loadFavorites();
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('${station.name} retirée des favoris'),
-            ),
+        if (mounted) {
+          AppSnackBar.showSuccess(
+            context,
+            message: '${station.name} retirée des favoris',
           );
         }
-      } on Object catch (e) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Erreur lors de la suppression: $e'),
-              backgroundColor: context.theme.error,
-            ),
+      } catch (e) {
+        if (mounted) {
+          AppSnackBar.showError(
+            context,
+            message: 'Erreur lors de la suppression: $e',
           );
         }
       }
     }
   }
 }
-
