@@ -4,60 +4,83 @@ import '../../domain/models/station.dart';
 import '../../domain/models/search_result.dart';
 import '../../domain/services/station_search_service.dart';
 import '../mappers/sncf_mapper.dart';
+import '../services/api_cache_service.dart';
+import '../services/retry_service.dart';
 
 /// Gateway pour la recherche de gares via l'API SNCF
 class SncfSearchGateway implements StationSearchGateway {
   final http.Client _httpClient;
   final String _apiKey;
   final SncfMapper _mapper;
+  final ApiCacheService _cacheService;
 
-  const SncfSearchGateway({
+  SncfSearchGateway({
     required http.Client httpClient,
     required String apiKey,
     required SncfMapper mapper,
+    ApiCacheService? cacheService,
   })  : _httpClient = httpClient,
         _apiKey = apiKey,
-        _mapper = mapper;
+        _mapper = mapper,
+        _cacheService = cacheService ?? ApiCacheService();
 
   @override
   Future<List<SearchResult<Station>>> searchStations(String query) async {
     if (query.trim().isEmpty) return [];
 
-    try {
-      // Recherche via l'API SNCF places
-      final encodedQuery = Uri.encodeComponent(query);
-      final apiUrl =
-          'https://api.sncf.com/v1/coverage/sncf/places?q=$encodedQuery&type[]=stop_area';
+    // Vérifier le cache (TTL: 1 heure pour les recherches de gares)
+    final cacheKey = ApiCacheService.generateKey('search_stations', {'query': query});
+    final cachedResponse = await _cacheService.get<Map<String, dynamic>>(
+      cacheKey,
+      const Duration(hours: 1),
+    );
 
-      final response = await _makeApiCall(apiUrl);
-      final places = response['places'] as List<dynamic>? ?? [];
+    Map<String, dynamic> response;
+    if (cachedResponse != null) {
+      response = cachedResponse;
+    } else {
+      try {
+        // Recherche via l'API SNCF places
+        final encodedQuery = Uri.encodeComponent(query);
+        final apiUrl =
+            'https://api.sncf.com/v1/coverage/sncf/places?q=$encodedQuery&type[]=stop_area';
 
-      final results = <SearchResult<Station>>[];
-
-      for (final place in places) {
-        final station = _mapper.mapPlaceToStation(place);
-        final score = _calculateSearchScore(query, station.name);
-        final highlight = _highlightMatch(query, station.name);
-
-        results.add(SearchResult.partial(
-          station,
-          score,
-          highlight: highlight,
-          metadata: {
-            'place_id': place['id'],
-            'distance': place['distance'],
-            'administrative_regions': place['administrative_regions'],
-          },
-        ));
+        response = await RetryService.retry(
+          operation: () => _makeApiCall(apiUrl),
+          maxAttempts: 3,
+          delay: const Duration(seconds: 2),
+        );
+        // Mettre en cache la réponse brute
+        await _cacheService.set(cacheKey, response, const Duration(hours: 1));
+      } catch (e) {
+        throw SncfSearchException('Erreur lors de la recherche: $e');
       }
-
-      // Trier par score décroissant
-      results.sort((a, b) => b.score.compareTo(a.score));
-
-      return results;
-    } catch (e) {
-      throw SncfSearchException('Erreur lors de la recherche: $e');
     }
+
+    final places = response['places'] as List<dynamic>? ?? [];
+    final results = <SearchResult<Station>>[];
+
+    for (final place in places) {
+      final station = _mapper.mapPlaceToStation(place);
+      final score = _calculateSearchScore(query, station.name);
+      final highlight = _highlightMatch(query, station.name);
+
+      results.add(SearchResult.partial(
+        station,
+        score,
+        highlight: highlight,
+        metadata: {
+          'place_id': place['id'],
+          'distance': place['distance'],
+          'administrative_regions': place['administrative_regions'],
+        },
+      ));
+    }
+
+    // Trier par score décroissant
+    results.sort((a, b) => b.score.compareTo(a.score));
+
+    return results;
   }
 
   @override
@@ -108,11 +131,9 @@ class SncfSearchGateway implements StationSearchGateway {
   }
 
   @override
-  Future<List<SearchResult<Station>>> searchStationsByLine(
-      String lineId) async {
+  Future<List<SearchResult<Station>>> searchStationsByLine(String lineId) async {
     try {
-      final apiUrl =
-          'https://api.sncf.com/v1/coverage/sncf/lines/$lineId/stop_areas';
+      final apiUrl = 'https://api.sncf.com/v1/coverage/sncf/lines/$lineId/stop_areas';
 
       final response = await _makeApiCall(apiUrl);
       final stopAreas = response['stop_areas'] as List<dynamic>? ?? [];
@@ -137,8 +158,7 @@ class SncfSearchGateway implements StationSearchGateway {
   }
 
   @override
-  Future<List<SearchResult<Station>>> searchStationsByType(
-      TransportType type) async {
+  Future<List<SearchResult<Station>>> searchStationsByType(TransportType type) async {
     try {
       String physicalMode = '';
       switch (type) {
@@ -306,8 +326,11 @@ class SncfSearchGateway implements StationSearchGateway {
   Future<Map<String, dynamic>> _makeApiCall(String url) async {
     final response = await _httpClient.get(
       Uri.parse(url),
-      headers: {
-        'Authorization': 'Basic ${base64Encode(utf8.encode('$_apiKey:'))}'
+      headers: {'Authorization': 'Basic ${base64Encode(utf8.encode('$_apiKey:'))}'},
+    ).timeout(
+      const Duration(seconds: 30),
+      onTimeout: () {
+        throw const SncfSearchException('Timeout: La requête a pris trop de temps');
       },
     );
 

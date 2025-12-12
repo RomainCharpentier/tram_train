@@ -1,4 +1,3 @@
-// ignore_for_file: avoid_print
 import 'package:train_qil/domain/models/trip.dart';
 import 'package:train_qil/domain/models/station.dart';
 

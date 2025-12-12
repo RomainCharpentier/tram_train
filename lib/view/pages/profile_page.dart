@@ -5,6 +5,7 @@ import '../theme/page_theme_provider.dart';
 import '../../domain/models/trip.dart' as domain;
 import '../../domain/models/station.dart';
 import '../../infrastructure/dependency_injection.dart';
+import '../../infrastructure/services/api_cache_service.dart';
 import 'add_trip_page.dart';
 import 'edit_trip_page.dart';
 import 'station_search_page.dart';
@@ -423,43 +424,134 @@ class _ProfilePageState extends State<ProfilePage> {
       context: context,
       expanded: _settingsExpanded,
       onChanged: (value) => setState(() => _settingsExpanded = value),
-      icon: Icons.palette,
-      title: 'Personnalisation',
+      icon: Icons.settings,
+      title: 'Paramètres',
+      subtitle: 'Personnalisez l\'application et gérez le cache.',
       iconColor: context.theme.primary,
-      child: AnimatedBuilder(
-        animation: _themeService,
-        builder: (context, child) {
-          return SwitchListTile(
-            secondary: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: context.theme.info,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(
-                _themeService.isDarkMode ? Icons.dark_mode : Icons.light_mode,
-                color:
-                    Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
-                size: 20,
-              ),
-            ),
-            title: Text(
-              'Mode sombre',
-              style: TextStyle(color: context.theme.textPrimary),
-            ),
-            subtitle: Text(
-              _themeService.isDarkMode
-                  ? 'Désactivez pour passer en mode clair.'
-                  : 'Activez pour un thème sombre.',
-              style: TextStyle(color: context.theme.textSecondary),
-            ),
-            value: _themeService.isDarkMode,
-            onChanged: (_) => _themeService.toggleTheme(),
-          );
-        },
+      child: Column(
+        children: [
+          AnimatedBuilder(
+            animation: _themeService,
+            builder: (context, child) {
+              return SwitchListTile(
+                secondary: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: context.theme.info,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    _themeService.isDarkMode ? Icons.dark_mode : Icons.light_mode,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.black
+                        : Colors.white,
+                    size: 20,
+                  ),
+                ),
+                title: Text(
+                  'Mode sombre',
+                  style: TextStyle(color: context.theme.textPrimary),
+                ),
+                subtitle: Text(
+                  _themeService.isDarkMode
+                      ? 'Désactivez pour passer en mode clair.'
+                      : 'Activez pour un thème sombre.',
+                  style: TextStyle(color: context.theme.textSecondary),
+                ),
+                value: _themeService.isDarkMode,
+                onChanged: (_) => _themeService.toggleTheme(),
+              );
+            },
+          ),
+          const Divider(height: 1),
+          _buildCacheSettings(context),
+        ],
       ),
     );
+  }
+
+  Widget _buildCacheSettings(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Cache',
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 14,
+            color: context.theme.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Le cache améliore les performances en stockant temporairement les données.',
+          style: TextStyle(
+            fontSize: 12,
+            color: context.theme.textSecondary,
+          ),
+        ),
+        const SizedBox(height: 12),
+        OutlinedButton.icon(
+          onPressed: () => _clearCache(context),
+          icon: const Icon(Icons.delete_outline),
+          label: const Text('Vider le cache'),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: context.theme.error,
+            side: BorderSide(color: context.theme.error.withValues(alpha: 0.5)),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _clearCache(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Vider le cache'),
+        content: const Text(
+          'Voulez-vous vraiment vider le cache ? Les données seront rechargées lors de la prochaine utilisation.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Annuler'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(
+              'Vider',
+              style: TextStyle(color: context.theme.error),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        final cacheService = ApiCacheService();
+        await cacheService.clear();
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Cache vidé avec succès'),
+            backgroundColor: context.theme.success,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur: $e'),
+            backgroundColor: context.theme.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 
   Widget _buildDismissibleBackground() {

@@ -1,4 +1,3 @@
-// ignore_for_file: avoid_print
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:train_qil/infrastructure/mappers/sncf_mapper.dart';
@@ -32,7 +31,7 @@ Future<void> main() async {
 
     print('⬅️ before = ${before?.departureTime}');
     print('➡️ after  = ${after?.departureTime}');
-  } on Object catch (e) {
+  } catch (e) {
     print('❌ erreur: $e');
   } finally {
     httpClient.close();

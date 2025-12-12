@@ -4,12 +4,15 @@ import 'package:intl/intl.dart';
 import '../../domain/models/trip.dart' as domain;
 import '../../domain/models/train.dart';
 import '../../infrastructure/dependency_injection.dart';
+import '../../infrastructure/utils/error_message_mapper.dart';
 import 'add_trip_page.dart';
 import 'edit_trip_page.dart';
 import 'trip_progress_page.dart';
 import '../widgets/logo_widget.dart';
 import '../widgets/trip_card.dart';
 import '../widgets/glass_container.dart';
+import '../widgets/skeleton_loader.dart';
+import '../widgets/network_status_indicator.dart';
 import '../theme/theme_x.dart';
 import '../theme/page_theme_provider.dart';
 import '../utils/page_transitions.dart';
@@ -26,6 +29,8 @@ class _HomePageState extends State<HomePage> {
   Map<String, Train?> _tripNextTrains = {}; // Map tripId -> nextTrain
   bool _isLoading = false;
   String? _error;
+  bool _isRefreshing = false;
+  bool _hasLoadedOnce = false; // Pour éviter les appels multiples
 
   @override
   void initState() {
@@ -36,34 +41,60 @@ class _HomePageState extends State<HomePage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _loadActiveTrips();
+    // Ne charger qu'une seule fois au démarrage
+    if (!_hasLoadedOnce && _allTrips.isEmpty && !_isLoading) {
+      _hasLoadedOnce = true;
+    }
   }
 
   Future<void> _loadActiveTrips() async {
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
+    // Ne pas afficher le loader si c'est un refresh (pull-to-refresh)
+    if (!_isRefreshing) {
+      setState(() {
+        _isLoading = true;
+        _error = null;
+      });
+    }
 
     try {
       final trips = await DependencyInjection.instance.tripService.getAllTrips();
 
+      if (!mounted) return;
+
       setState(() {
         _allTrips = trips;
         _tripNextTrains = {};
+        _hasLoadedOnce = true;
       });
 
       await _loadNextTrainsForTrips();
     } on Object catch (e) {
+      if (!mounted) return;
       setState(() {
-        _error = 'Erreur lors du chargement des trajets: $e';
+        _error = ErrorMessageMapper.toUserFriendlyMessage(e);
         _isLoading = false;
+        _isRefreshing = false;
       });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isRefreshing = false;
+          _isLoading = false; // Toujours arrêter le loader à la fin
+        });
+      }
     }
   }
 
   Future<void> _loadNextTrainsForTrips() async {
-    final tripNextTrains = <String, Train?>{};
+    final activeTrips = _allTrips.where((t) => t.isActive).toList();
+    if (activeTrips.isEmpty) {
+      setState(() {
+        _tripNextTrains = {};
+        _isLoading = false;
+      });
+      return;
+    }
+
     DateTime now;
     try {
       now = DependencyInjection.instance.clockService.now();
@@ -72,21 +103,28 @@ class _HomePageState extends State<HomePage> {
       now = useMockData ? DateTime(2025, 1, 6, 7) : DateTime.now();
     }
 
-    for (final trip in _allTrips.where((t) => t.isActive)) {
+    // Charger les trains en parallèle pour améliorer les performances
+    final futures = activeTrips.map((trip) async {
       try {
         final Train? currentTrain = await _findCurrentTrain(trip, now);
-
         if (currentTrain != null) {
-          tripNextTrains[trip.id] = currentTrain;
+          return <String, Train?>{trip.id: currentTrain};
         } else {
           final nextTrain = await _findNextScheduledTrain(trip, now);
-          tripNextTrains[trip.id] = nextTrain;
+          return <String, Train?>{trip.id: nextTrain};
         }
       } on Object catch (_) {
-        tripNextTrains[trip.id] = null;
+        return <String, Train?>{trip.id: null};
       }
+    });
+
+    final results = await Future.wait(futures);
+    final tripNextTrains = <String, Train?>{};
+    for (final map in results) {
+      tripNextTrains.addAll(map);
     }
 
+    if (!mounted) return;
     setState(() {
       _tripNextTrains = tripNextTrains;
       _isLoading = false;
@@ -227,93 +265,101 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildBody() {
-    if (_isLoading) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            CircularProgressIndicator(
-              strokeWidth: 3,
-              valueColor: AlwaysStoppedAnimation<Color>(
-                PageThemeProvider.of(context).primary,
-              ),
+    if (_isLoading && _allTrips.isEmpty) {
+      return Column(
+        children: [
+          const NetworkStatusIndicator(),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
+              children: [
+                const SizedBox(height: 20),
+                SkeletonLoader(width: 100, height: 13),
+                const SizedBox(height: 6),
+                SkeletonLoader(width: 200, height: 36),
+                const SizedBox(height: 28),
+                ...List.generate(3, (index) => const TripCardSkeleton()),
+              ],
             ),
-            const SizedBox(height: 24),
-            Text(
-              'Chargement de vos trajets...',
-              style: TextStyle(
-                fontSize: 14,
-                color: context.theme.textSecondary,
-                letterSpacing: 0.2,
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       );
     }
 
     if (_error != null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: context.theme.error.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.error_outline_rounded,
-                  size: 48,
-                  color: context.theme.error,
+      return Column(
+        children: [
+          const NetworkStatusIndicator(),
+          Expanded(
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(32),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: context.theme.error.withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.error_outline_rounded,
+                        size: 48,
+                        color: context.theme.error,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      'Oups !',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w700,
+                        color: context.theme.textPrimary,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      _error!,
+                      style: TextStyle(
+                        fontSize: 15,
+                        color: context.theme.textSecondary,
+                        height: 1.5,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 32),
+                    FilledButton.icon(
+                      onPressed: _loadActiveTrips,
+                      icon: const Icon(Icons.refresh_rounded),
+                      label: const Text('Réessayer'),
+                      style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 16,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 24),
-              Text(
-                'Oups !',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w700,
-                  color: context.theme.textPrimary,
-                  letterSpacing: -0.5,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                _error!,
-                style: TextStyle(
-                  fontSize: 15,
-                  color: context.theme.textSecondary,
-                  height: 1.5,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 32),
-              FilledButton.icon(
-                onPressed: _loadActiveTrips,
-                icon: const Icon(Icons.refresh_rounded),
-                label: const Text('Réessayer'),
-                style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 16,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
+        ],
       );
     }
 
     if (_allTrips.isEmpty) {
-      return _buildEmptyState();
+      return Column(
+        children: [
+          const NetworkStatusIndicator(),
+          Expanded(child: _buildEmptyState()),
+        ],
+      );
     }
 
     return _buildDashboard(context);
@@ -382,113 +428,128 @@ class _HomePageState extends State<HomePage> {
 
     const useMockData = bool.fromEnvironment('USE_MOCK_DATA');
 
-    return RefreshIndicator(
-      onRefresh: _loadActiveTrips,
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
-        children: [
-          Text(
-            formattedNow.replaceFirst(formattedNow[0], formattedNow[0].toUpperCase()),
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: context.theme.primary,
-              letterSpacing: 0.8,
-            ),
-          ).animate().fadeIn(duration: 300.ms).slideX(begin: -0.05, end: 0),
-          const SizedBox(height: 6),
-          ShaderMask(
-            shaderCallback: (bounds) => LinearGradient(
-              colors: [
-                PageThemeProvider.of(context).primaryDark,
-                PageThemeProvider.of(context).primary,
-              ],
-            ).createShader(bounds),
-            child: Text(
-              'Vos Trajets',
-              style: TextStyle(
-                fontSize: 36,
-                fontWeight: FontWeight.w900,
-                color: Colors.white,
-                height: 1.1,
-                letterSpacing: -1.2,
-              ),
-            ),
-          )
-              .animate()
-              .fadeIn(delay: 100.ms, duration: 400.ms)
-              .slideX(begin: -0.05, end: 0, duration: 400.ms, curve: Curves.easeOutCubic),
-          const SizedBox(height: 28),
-          if (useMockData) ...[
-            Container(
-              margin: const EdgeInsets.only(bottom: 20),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.blue.shade50, // Bleu clair au lieu d'orange pour contraste
-                border: Border.all(color: Colors.blue.shade300),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.science_outlined,
-                      color: Colors.blue.shade700), // Bleu au lieu d'orange
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+    return Column(
+      children: [
+        const NetworkStatusIndicator(),
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: () async {
+              if (mounted) {
+                setState(() {
+                  _isRefreshing = true;
+                });
+              }
+              await _loadActiveTrips();
+            },
+            color: PageThemeProvider.of(context).primary,
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
+              children: [
+                Text(
+                  formattedNow.replaceFirst(formattedNow[0], formattedNow[0].toUpperCase()),
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: context.theme.primary,
+                    letterSpacing: 0.8,
+                  ),
+                ).animate().fadeIn(duration: 300.ms).slideX(begin: -0.05, end: 0),
+                const SizedBox(height: 6),
+                ShaderMask(
+                  shaderCallback: (bounds) => LinearGradient(
+                    colors: [
+                      PageThemeProvider.of(context).primaryDark,
+                      PageThemeProvider.of(context).primary,
+                    ],
+                  ).createShader(bounds),
+                  child: Text(
+                    'Vos Trajets',
+                    style: TextStyle(
+                      fontSize: 36,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                      height: 1.1,
+                      letterSpacing: -1.2,
+                    ),
+                  ),
+                )
+                    .animate()
+                    .fadeIn(delay: 100.ms, duration: 400.ms)
+                    .slideX(begin: -0.05, end: 0, duration: 400.ms, curve: Curves.easeOutCubic),
+                const SizedBox(height: 28),
+                if (useMockData) ...[
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 20),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.shade50, // Bleu clair au lieu d'orange pour contraste
+                      border: Border.all(color: Colors.blue.shade300),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
                       children: [
-                        Text(
-                          'Mode Démo Actif',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.blue.shade800, // Bleu foncé au lieu d'orange
-                            fontSize: 16,
-                          ),
-                        ),
-                        Text(
-                          'Les données affichées sont simulées',
-                          style: TextStyle(
-                            color: Colors.blue.shade700, // Bleu au lieu d'orange
-                            fontSize: 12,
+                        Icon(Icons.science_outlined,
+                            color: Colors.blue.shade700), // Bleu au lieu d'orange
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Mode Démo Actif',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.blue.shade800, // Bleu foncé au lieu d'orange
+                                  fontSize: 16,
+                                ),
+                              ),
+                              Text(
+                                'Les données affichées sont simulées',
+                                style: TextStyle(
+                                  color: Colors.blue.shade700, // Bleu au lieu d'orange
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
                     ),
-                  ),
+                  ).animate().fadeIn(delay: 200.ms),
                 ],
-              ),
-            ).animate().fadeIn(delay: 200.ms),
-          ],
-          if (sortedTrips.isEmpty) ...[
-            _buildEmptyTripsMessage(),
-          ] else ...[
-            ...sortedTrips.asMap().entries.map((entry) {
-              final index = entry.key;
-              final trip = entry.value;
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: _buildTripCard(trip)
-                    .animate()
-                    .fadeIn(delay: (200 + (index * 80)).ms, duration: 400.ms)
-                    .slideY(
-                      begin: 0.08,
-                      end: 0,
-                      delay: (200 + (index * 80)).ms,
-                      duration: 400.ms,
-                      curve: Curves.easeOutCubic,
-                    )
-                    .scale(
-                      begin: const Offset(0.96, 0.96),
-                      end: const Offset(1, 1),
-                      delay: (200 + (index * 80)).ms,
-                      duration: 400.ms,
-                      curve: Curves.easeOutCubic,
-                    ),
-              );
-            }),
-          ],
-        ],
-      ),
+                if (sortedTrips.isEmpty) ...[
+                  _buildEmptyTripsMessage(),
+                ] else ...[
+                  ...sortedTrips.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final trip = entry.value;
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: _buildTripCard(trip)
+                          .animate()
+                          .fadeIn(delay: (200 + (index * 80)).ms, duration: 400.ms)
+                          .slideY(
+                            begin: 0.08,
+                            end: 0,
+                            delay: (200 + (index * 80)).ms,
+                            duration: 400.ms,
+                            curve: Curves.easeOutCubic,
+                          )
+                          .scale(
+                            begin: const Offset(0.96, 0.96),
+                            end: const Offset(1, 1),
+                            delay: (200 + (index * 80)).ms,
+                            duration: 400.ms,
+                            curve: Curves.easeOutCubic,
+                          ),
+                    );
+                  }),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -683,7 +744,9 @@ class _HomePageState extends State<HomePage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 20),
-              Expanded(child: _buildBody()),
+              Expanded(
+                child: _buildBody(),
+              ),
             ],
           ),
         ),

@@ -6,6 +6,7 @@ import '../../domain/models/train.dart' as domain_train;
 import '../../domain/models/station.dart';
 import '../../domain/services/connected_stations_service.dart';
 import '../../infrastructure/dependency_injection.dart';
+import '../../infrastructure/utils/error_message_mapper.dart';
 import 'station_search_page.dart';
 import '../widgets/switch_card.dart';
 import '../widgets/save_button.dart';
@@ -460,9 +461,7 @@ class _AddTripPageState extends State<AddTripPage> {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 14),
           decoration: BoxDecoration(
-            color: isSelected
-                ? context.theme.primary.withValues(alpha: 0.12)
-                : Colors.transparent,
+            color: isSelected ? context.theme.primary.withValues(alpha: 0.12) : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
             border: isSelected
                 ? Border.all(
@@ -599,10 +598,7 @@ class _AddTripPageState extends State<AddTripPage> {
       ),
     );
 
-    return card
-        .animate()
-        .fadeIn(duration: 300.ms)
-        .scale(
+    return card.animate().fadeIn(duration: 300.ms).scale(
           begin: const Offset(0.98, 0.98),
           end: const Offset(1, 1),
           duration: 300.ms,
@@ -671,7 +667,7 @@ class _AddTripPageState extends State<AddTripPage> {
       });
     } on Object catch (e) {
       setState(() {
-        _connectionError = 'Erreur lors de la validation: $e';
+        _connectionError = '⚠️ ${ErrorMessageMapper.toUserFriendlyMessage(e)}';
       });
     }
   }
@@ -727,7 +723,6 @@ class _AddTripPageState extends State<AddTripPage> {
 
     return baseToday.add(Duration(days: bestDelta % 7));
   }
-
 
   String _candidateKey(domain_train.Train t) {
     return '${t.id}_${t.departureTime.millisecondsSinceEpoch}';

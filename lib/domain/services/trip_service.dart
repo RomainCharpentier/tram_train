@@ -80,7 +80,7 @@ class TripService {
     DateTime now;
     try {
       now = DependencyInjection.instance.clockService.now();
-    } on Object catch (_) {
+    } catch (e) {
       const useMockData = bool.fromEnvironment('USE_MOCK_DATA');
       now = useMockData ? DateTime(2025, 1, 6, 7) : DateTime.now();
     }
@@ -91,7 +91,7 @@ class TripService {
     DateTime now;
     try {
       now = DependencyInjection.instance.clockService.now();
-    } on Object catch (_) {
+    } catch (e) {
       const useMockData = bool.fromEnvironment('USE_MOCK_DATA');
       now = useMockData ? DateTime(2025, 1, 6, 7) : DateTime.now();
     }

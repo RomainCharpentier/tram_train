@@ -5,6 +5,8 @@ import '../mappers/sncf_mapper.dart';
 import '../../domain/models/train.dart';
 import '../../domain/models/station.dart';
 import '../../domain/services/train_service.dart';
+import '../services/api_cache_service.dart';
+import '../services/retry_service.dart';
 
 /// Gateway pour l'API SNCF
 /// Documentation: https://www.sncf.com/fr/partenaires/partenaires-technologiques
@@ -12,14 +14,17 @@ class SncfGateway implements TrainGateway {
   final http.Client _httpClient;
   final String _apiKey;
   final SncfMapper _mapper;
+  final ApiCacheService _cacheService;
 
-  const SncfGateway({
+  SncfGateway({
     required http.Client httpClient,
     required String apiKey,
     required SncfMapper mapper,
+    ApiCacheService? cacheService,
   })  : _httpClient = httpClient,
         _apiKey = apiKey,
-        _mapper = mapper;
+        _mapper = mapper,
+        _cacheService = cacheService ?? ApiCacheService();
 
   /// Récupère les départs depuis l'API SNCF
   /// Endpoint: GET /v1/coverage/sncf/stop_areas/stop_area:{id}/departures
@@ -34,16 +39,14 @@ class SncfGateway implements TrainGateway {
       final trains = _mapper.mapDeparturesToTrains(response, station);
       return trains;
     } catch (e) {
-      throw SncfGatewayException(
-          'Erreur lors de la récupération des départs: $e');
+      throw SncfGatewayException('Erreur lors de la récupération des départs: $e');
     }
   }
 
   /// Récupère les départs à une date/heure spécifique
   /// Endpoint: GET /v1/coverage/sncf/stop_areas/stop_area:{id}/departures?datetime={datetime}
   @override
-  Future<List<Train>> getDeparturesAt(
-      Station station, DateTime dateTime) async {
+  Future<List<Train>> getDeparturesAt(Station station, DateTime dateTime) async {
     final formattedDateTime = _formatDateTimeForApi(dateTime);
     final stationId = _normalizeStationId(station.id);
     final apiUrl =
@@ -53,8 +56,7 @@ class SncfGateway implements TrainGateway {
       final response = await _makeApiCall(apiUrl);
       return _mapper.mapDeparturesToTrains(response, station);
     } catch (e) {
-      throw SncfGatewayException(
-          'Erreur lors de la récupération des départs: $e');
+      throw SncfGatewayException('Erreur lors de la récupération des départs: $e');
     }
   }
 
@@ -62,8 +64,7 @@ class SncfGateway implements TrainGateway {
   /// Endpoint: GET /v1/coverage/sncf/places?q={query}&type[]=stop_area
   Future<List<Station>> searchStations(String query) async {
     final encodedQuery = Uri.encodeComponent(query);
-    final apiUrl =
-        'https://api.sncf.com/v1/coverage/sncf/places?q=$encodedQuery&type[]=stop_area';
+    final apiUrl = 'https://api.sncf.com/v1/coverage/sncf/places?q=$encodedQuery&type[]=stop_area';
 
     try {
       final response = await _makeApiCall(apiUrl);
@@ -84,15 +85,13 @@ class SncfGateway implements TrainGateway {
       final response = await _makeApiCall(apiUrl);
       return _mapper.mapRouteSchedulesToTrains(response, station);
     } catch (e) {
-      throw SncfGatewayException(
-          'Erreur lors de la récupération des trajets: $e');
+      throw SncfGatewayException('Erreur lors de la récupération des trajets: $e');
     }
   }
 
   /// Recherche de trajets entre deux gares
   /// Endpoint: GET /v1/coverage/sncf/journeys?from=stop_area:{fromId}&to=stop_area:{toId}
-  Future<List<Train>> findJourneysBetween(
-      Station fromStation, Station toStation) async {
+  Future<List<Train>> findJourneysBetween(Station fromStation, Station toStation) async {
     final fromId = _normalizeStationId(fromStation.id);
     final toId = _normalizeStationId(toStation.id);
     final apiUrl =
@@ -126,25 +125,49 @@ class SncfGateway implements TrainGateway {
     final formattedDateTime = _formatDateTimeForApi(departureTime);
     final fromId = _normalizeStationId(fromStation.id);
     final toId = _normalizeStationId(toStation.id);
-    final uri = Uri.https(
-      'api.sncf.com',
-      '/v1/coverage/sncf/journeys',
-      {
-        'from': 'stop_area:$fromId',
-        'to': 'stop_area:$toId',
-        'datetime_represents': 'departure',
-        'datetime': formattedDateTime,
-        'count': '50',
-      },
+
+    // Vérifier le cache (TTL: 5 minutes pour les horaires de trains)
+    final cacheKey = ApiCacheService.generateKey('journeys_departure', {
+      'from': fromId,
+      'to': toId,
+      'datetime': formattedDateTime,
+    });
+    final cachedResponse = await _cacheService.get<Map<String, dynamic>>(
+      cacheKey,
+      const Duration(minutes: 5),
     );
 
-    try {
-      debugPrint('🔗 Journeys(departure) URL: $uri');
-      final response = await _makeApiCallUri(uri);
-      return _mapper.mapJourneysToTrains(response, fromStation, toStation);
-    } catch (e) {
-      throw SncfGatewayException('Erreur lors de la recherche de trajets: $e');
+    Map<String, dynamic> response;
+    if (cachedResponse != null) {
+      response = cachedResponse;
+    } else {
+      final uri = Uri.https(
+        'api.sncf.com',
+        '/v1/coverage/sncf/journeys',
+        {
+          'from': 'stop_area:$fromId',
+          'to': 'stop_area:$toId',
+          'datetime_represents': 'departure',
+          'datetime': formattedDateTime,
+          'count': '50',
+        },
+      );
+
+      try {
+        debugPrint('🔗 Journeys(departure) URL: $uri');
+        response = await RetryService.retry(
+          operation: () => _makeApiCallUri(uri),
+          maxAttempts: 3,
+          delay: const Duration(seconds: 2),
+        );
+        // Mettre en cache la réponse brute
+        await _cacheService.set(cacheKey, response, const Duration(minutes: 5));
+      } catch (e) {
+        throw SncfGatewayException('Erreur lors de la recherche de trajets: $e');
+      }
     }
+
+    return _mapper.mapJourneysToTrains(response, fromStation, toStation);
   }
 
   /// Récupère la réponse brute de journeys (pour pagination via links prev/next)
@@ -223,8 +246,7 @@ class SncfGateway implements TrainGateway {
       final response = await _makeApiCall(apiUrl);
       return _mapper.mapStationInfo(response);
     } catch (e) {
-      throw SncfGatewayException(
-          'Erreur lors de la récupération des informations: $e');
+      throw SncfGatewayException('Erreur lors de la récupération des informations: $e');
     }
   }
 
@@ -237,31 +259,26 @@ class SncfGateway implements TrainGateway {
       final response = await _makeApiCall(apiUrl);
       return _mapper.mapDisruptions(response);
     } catch (e) {
-      throw SncfGatewayException(
-          'Erreur lors de la récupération des perturbations: $e');
+      throw SncfGatewayException('Erreur lors de la récupération des perturbations: $e');
     }
   }
 
   /// Récupère les perturbations pour une ligne spécifique
   /// Endpoint: GET /v1/coverage/sncf/disruptions?filter=line.id:{lineId}
-  Future<List<Map<String, dynamic>>> getDisruptionsForLine(
-      String lineId) async {
-    final apiUrl =
-        'https://api.sncf.com/v1/coverage/sncf/disruptions?filter=line.id:$lineId';
+  Future<List<Map<String, dynamic>>> getDisruptionsForLine(String lineId) async {
+    final apiUrl = 'https://api.sncf.com/v1/coverage/sncf/disruptions?filter=line.id:$lineId';
 
     try {
       final response = await _makeApiCall(apiUrl);
       return _mapper.mapDisruptions(response);
     } catch (e) {
-      throw SncfGatewayException(
-          'Erreur lors de la récupération des perturbations de ligne: $e');
+      throw SncfGatewayException('Erreur lors de la récupération des perturbations de ligne: $e');
     }
   }
 
   /// Récupère les perturbations pour une gare spécifique
   /// Endpoint: GET /v1/coverage/sncf/disruptions?filter=stop_area.id:{stationId}
-  Future<List<Map<String, dynamic>>> getDisruptionsForStation(
-      String stationId) async {
+  Future<List<Map<String, dynamic>>> getDisruptionsForStation(String stationId) async {
     final apiUrl =
         'https://api.sncf.com/v1/coverage/sncf/disruptions?filter=stop_area.id:$stationId';
 
@@ -269,8 +286,7 @@ class SncfGateway implements TrainGateway {
       final response = await _makeApiCall(apiUrl);
       return _mapper.mapDisruptions(response);
     } catch (e) {
-      throw SncfGatewayException(
-          'Erreur lors de la récupération des perturbations de gare: $e');
+      throw SncfGatewayException('Erreur lors de la récupération des perturbations de gare: $e');
     }
   }
 
@@ -283,30 +299,26 @@ class SncfGateway implements TrainGateway {
       final response = await _makeApiCall(apiUrl);
       return _mapper.mapLineInfo(response);
     } catch (e) {
-      throw SncfGatewayException(
-          'Erreur lors de la récupération des informations de ligne: $e');
+      throw SncfGatewayException('Erreur lors de la récupération des informations de ligne: $e');
     }
   }
 
   /// Récupère les arrêts d'une ligne
   /// Endpoint: GET /v1/coverage/sncf/lines/{lineId}/stop_areas
   Future<List<Station>> getLineStations(String lineId) async {
-    final apiUrl =
-        'https://api.sncf.com/v1/coverage/sncf/lines/$lineId/stop_areas';
+    final apiUrl = 'https://api.sncf.com/v1/coverage/sncf/lines/$lineId/stop_areas';
 
     try {
       final response = await _makeApiCall(apiUrl);
       return _mapper.mapLineStations(response);
     } catch (e) {
-      throw SncfGatewayException(
-          'Erreur lors de la récupération des arrêts de ligne: $e');
+      throw SncfGatewayException('Erreur lors de la récupération des arrêts de ligne: $e');
     }
   }
 
   /// Récupère les horaires d'une ligne pour une date donnée
   /// Endpoint: GET /v1/coverage/sncf/lines/{lineId}/schedules?datetime={datetime}
-  Future<List<Map<String, dynamic>>> getLineSchedules(
-      String lineId, DateTime dateTime) async {
+  Future<List<Map<String, dynamic>>> getLineSchedules(String lineId, DateTime dateTime) async {
     final formattedDateTime = dateTime.toIso8601String();
     final apiUrl =
         'https://api.sncf.com/v1/coverage/sncf/lines/$lineId/schedules?datetime=$formattedDateTime';
@@ -315,15 +327,13 @@ class SncfGateway implements TrainGateway {
       final response = await _makeApiCall(apiUrl);
       return _mapper.mapLineSchedules(response);
     } catch (e) {
-      throw SncfGatewayException(
-          'Erreur lors de la récupération des horaires de ligne: $e');
+      throw SncfGatewayException('Erreur lors de la récupération des horaires de ligne: $e');
     }
   }
 
   /// Récupère les prochains passages d'une ligne à une gare
   /// Endpoint: GET /v1/coverage/sncf/stop_areas/{stationId}/arrivals?filter=line.id:{lineId}
-  Future<List<Train>> getNextArrivalsForLine(
-      Station station, String lineId) async {
+  Future<List<Train>> getNextArrivalsForLine(Station station, String lineId) async {
     final stationId = _normalizeStationId(station.id);
     final apiUrl =
         'https://api.sncf.com/v1/coverage/sncf/stop_areas/$stationId/arrivals?filter=line.id:$lineId';
@@ -332,8 +342,7 @@ class SncfGateway implements TrainGateway {
       final response = await _makeApiCall(apiUrl);
       return _mapper.mapArrivalsToTrains(response, station);
     } catch (e) {
-      throw SncfGatewayException(
-          'Erreur lors de la récupération des prochains passages: $e');
+      throw SncfGatewayException('Erreur lors de la récupération des prochains passages: $e');
     }
   }
 
@@ -346,17 +355,14 @@ class SncfGateway implements TrainGateway {
       final response = await _makeApiCall(apiUrl);
       return _mapper.mapTrafficReports(response);
     } catch (e) {
-      throw SncfGatewayException(
-          'Erreur lors de la récupération des rapports de trafic: $e');
+      throw SncfGatewayException('Erreur lors de la récupération des rapports de trafic: $e');
     }
   }
 
   /// Récupère les informations de trafic pour une ligne spécifique
   /// Endpoint: GET /v1/coverage/sncf/traffic_reports?filter=line.id:{lineId}
-  Future<List<Map<String, dynamic>>> getTrafficReportsForLine(
-      String lineId) async {
-    final apiUrl =
-        'https://api.sncf.com/v1/coverage/sncf/traffic_reports?filter=line.id:$lineId';
+  Future<List<Map<String, dynamic>>> getTrafficReportsForLine(String lineId) async {
+    final apiUrl = 'https://api.sncf.com/v1/coverage/sncf/traffic_reports?filter=line.id:$lineId';
 
     try {
       final response = await _makeApiCall(apiUrl);
@@ -369,8 +375,7 @@ class SncfGateway implements TrainGateway {
 
   /// Récupère les informations de trafic pour une gare spécifique
   /// Endpoint: GET /v1/coverage/sncf/traffic_reports?filter=stop_area.id:{stationId}
-  Future<List<Map<String, dynamic>>> getTrafficReportsForStation(
-      String stationId) async {
+  Future<List<Map<String, dynamic>>> getTrafficReportsForStation(String stationId) async {
     final apiUrl =
         'https://api.sncf.com/v1/coverage/sncf/traffic_reports?filter=stop_area.id:$stationId';
 
@@ -389,8 +394,11 @@ class SncfGateway implements TrainGateway {
     debugPrint('➡️ GET $url');
     final response = await _httpClient.get(
       Uri.parse(url),
-      headers: {
-        'Authorization': 'Basic ${base64Encode(utf8.encode('$_apiKey:'))}'
+      headers: {'Authorization': 'Basic ${base64Encode(utf8.encode('$_apiKey:'))}'},
+    ).timeout(
+      const Duration(seconds: 30),
+      onTimeout: () {
+        throw const SncfGatewayException('Timeout: La requête a pris trop de temps');
       },
     );
 
@@ -407,8 +415,11 @@ class SncfGateway implements TrainGateway {
     debugPrint('➡️ GET $uri');
     final response = await _httpClient.get(
       uri,
-      headers: {
-        'Authorization': 'Basic ${base64Encode(utf8.encode('$_apiKey:'))}'
+      headers: {'Authorization': 'Basic ${base64Encode(utf8.encode('$_apiKey:'))}'},
+    ).timeout(
+      const Duration(seconds: 30),
+      onTimeout: () {
+        throw const SncfGatewayException('Timeout: La requête a pris trop de temps');
       },
     );
 

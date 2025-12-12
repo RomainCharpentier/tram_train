@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../theme/theme_x.dart';
@@ -8,11 +9,16 @@ import '../../domain/services/station_search_service.dart';
 import '../../domain/services/connected_stations_service.dart';
 import '../../domain/services/favorite_station_service.dart';
 import '../../infrastructure/dependency_injection.dart';
+import '../../infrastructure/utils/error_message_mapper.dart';
+import '../../infrastructure/services/api_cache_service.dart';
 import '../widgets/search_bar.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/error_state.dart';
 import '../widgets/info_banner.dart';
 import '../widgets/glass_container.dart';
+import '../widgets/skeleton_loader.dart';
+import '../widgets/cache_indicator.dart';
+import '../widgets/network_status_indicator.dart';
 
 class StationSearchPage extends StatefulWidget {
   final Station? departureStation;
@@ -43,6 +49,9 @@ class _StationSearchPageState extends State<StationSearchPage> {
   final FavoriteStationService _favoriteStationService =
       DependencyInjection.instance.favoriteStationService;
   Map<String, bool> _favoriteStatus = {};
+  bool _isFromCache = false;
+
+  Timer? _debounceTimer;
 
   @override
   void initState() {
@@ -72,12 +81,13 @@ class _StationSearchPageState extends State<StationSearchPage> {
         favorites.map((station) => SearchResult.favorite(station)).toList(),
       );
     } on Object catch (e) {
-      _setErrorState('Erreur lors du chargement des favoris: $e');
+      _setErrorState(ErrorMessageMapper.toUserFriendlyMessage(e));
     }
   }
 
   @override
   void dispose() {
+    _debounceTimer?.cancel();
     _searchController.dispose();
     _searchFocusNode.dispose();
     super.dispose();
@@ -101,14 +111,21 @@ class _StationSearchPageState extends State<StationSearchPage> {
       if (!mounted) return;
       _setSearchResults(results);
     } on Object catch (e) {
-      _setErrorState('Erreur lors du chargement des destinations connectées: $e');
+      _setErrorState(ErrorMessageMapper.toUserFriendlyMessage(e));
     }
   }
 
   Future<void> _searchStations([String? query]) async {
     final searchQuery = query ?? _searchController.text.trim();
 
+    // Annuler le debounce en cours
+    _debounceTimer?.cancel();
+
     if (searchQuery.isEmpty) {
+      setState(() {
+        _isFromCache = false;
+        _error = null;
+      });
       if (widget.departureStation != null) {
         await _loadConnectedStations();
       } else {
@@ -118,19 +135,48 @@ class _StationSearchPageState extends State<StationSearchPage> {
     }
 
     _setLoadingState(true);
+    setState(() {
+      _isFromCache = false; // Reset cache indicator
+    });
 
     try {
+      // Vérifier le cache AVANT la recherche pour l'indicateur visuel
+      final cacheService = ApiCacheService();
+      final cacheKey = ApiCacheService.generateKey('search_stations', {'query': searchQuery});
+      final cached = await cacheService.get<Map<String, dynamic>>(
+        cacheKey,
+        const Duration(hours: 1),
+      );
+
+      // Si cache existe, ne pas afficher le loader
+      if (cached != null) {
+        setState(() {
+          _isFromCache = true;
+          _isLoading = false; // Pas de loader si cache
+        });
+      }
+
       final results =
           await DependencyInjection.instance.stationSearchService.searchStations(searchQuery);
       if (!mounted) return;
+
+      // Mettre à jour l'indicateur de cache seulement si on avait un cache au début
+      if (cached != null) {
+        setState(() {
+          _isFromCache = true;
+        });
+      }
+
       _setSearchResults(results);
       _loadFavoriteStatus();
     } on Object catch (e) {
-      _setErrorState('Erreur lors de la recherche: $e');
+      _setErrorState(ErrorMessageMapper.toUserFriendlyMessage(e));
     }
   }
 
   Future<void> _getSuggestions(String query) async {
+    _debounceTimer?.cancel();
+
     if (query.length < 2) {
       setState(() {
         _suggestions = [];
@@ -138,13 +184,16 @@ class _StationSearchPageState extends State<StationSearchPage> {
       return;
     }
 
-    try {
-      final suggestions =
-          await DependencyInjection.instance.stationSearchService.getSearchSuggestions(query);
-      setState(() {
-        _suggestions = suggestions;
-      });
-    } on Object catch (_) {}
+    _debounceTimer = Timer(const Duration(milliseconds: 400), () async {
+      try {
+        final suggestions =
+            await DependencyInjection.instance.stationSearchService.getSearchSuggestions(query);
+        if (!mounted) return;
+        setState(() {
+          _suggestions = suggestions;
+        });
+      } on Object catch (_) {}
+    });
   }
 
   Future<void> _searchByTransportType(TransportType type) async {
@@ -160,7 +209,7 @@ class _StationSearchPageState extends State<StationSearchPage> {
       if (!mounted) return;
       _setSearchResults(results);
     } on Object catch (e) {
-      _setErrorState('Erreur lors de la recherche par type: $e');
+      _setErrorState(ErrorMessageMapper.toUserFriendlyMessage(e));
     }
   }
 
@@ -175,7 +224,7 @@ class _StationSearchPageState extends State<StationSearchPage> {
       if (!mounted) return;
       _setSearchResults(results);
     } on Object catch (e) {
-      _setErrorState('Erreur lors de la recherche avancée: $e');
+      _setErrorState(ErrorMessageMapper.toUserFriendlyMessage(e));
     }
   }
 
@@ -194,11 +243,23 @@ class _StationSearchPageState extends State<StationSearchPage> {
             focusNode: _searchFocusNode,
             hintText: 'Rechercher une gare...',
             onChanged: (v) {
-              setState(() {});
+              setState(() {
+                // Réinitialiser l'indicateur de cache quand on tape
+                if (v.isEmpty) {
+                  _isFromCache = false;
+                }
+              });
               _getSuggestions(v);
             },
-            onSubmitted: _searchStations,
-            onSearchPressed: () => _searchStations(),
+            onSubmitted: (value) {
+              _debounceTimer?.cancel();
+              // Forcer la recherche immédiatement
+              Future.microtask(() => _searchStations(value));
+            },
+            onSearchPressed: () {
+              _debounceTimer?.cancel();
+              _searchStations();
+            },
           ),
           if (_suggestions.isNotEmpty) _buildSuggestions(),
         ],
@@ -255,9 +316,7 @@ class _StationSearchPageState extends State<StationSearchPage> {
           label: Text(
             type.displayName,
             style: TextStyle(
-              color: _selectedTransportType == type
-                  ? Colors.white
-                  : context.theme.textPrimary,
+              color: _selectedTransportType == type ? Colors.white : context.theme.textPrimary,
             ),
           ),
           selected: _selectedTransportType == type,
@@ -298,20 +357,78 @@ class _StationSearchPageState extends State<StationSearchPage> {
   }
 
   Widget _buildBody() {
-    if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
+    // Afficher skeleton si chargement ET (pas de résultats OU pas de cache)
+    if (_isLoading && (!_isFromCache || _searchResults.isEmpty)) {
+      return Column(
+        children: [
+          const NetworkStatusIndicator(),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              children: List.generate(
+                5,
+                (index) => const StationCardSkeleton(),
+              ),
+            ),
+          ),
+        ],
+      );
     }
 
     if (_error != null) {
-      return ErrorState(message: 'Erreur: $_error', onRetry: () => _searchStations());
+      return Column(
+        children: [
+          const NetworkStatusIndicator(),
+          Expanded(
+            child: ErrorState(message: _error!, onRetry: () => _searchStations()),
+          ),
+        ],
+      );
     }
 
-    if (_searchResults.isEmpty) {
-      return _buildEmptyState();
+    if (_searchResults.isEmpty && !_isLoading) {
+      return Column(
+        children: [
+          const NetworkStatusIndicator(),
+          Expanded(child: _buildEmptyState()),
+        ],
+      );
     }
 
     return Column(
       children: [
+        const NetworkStatusIndicator(),
+        if (_isFromCache && _searchResults.isNotEmpty)
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: context.theme.info.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: context.theme.info.withValues(alpha: 0.3),
+                width: 1,
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.cached,
+                  size: 16,
+                  color: context.theme.info,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Résultats en cache',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: context.theme.info,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ).animate().fadeIn(duration: 300.ms).slideY(begin: -0.2, end: 0),
         if (widget.departureStation != null &&
             _searchResults.isNotEmpty &&
             _searchController.text.isEmpty)
@@ -417,7 +534,8 @@ class _StationSearchPageState extends State<StationSearchPage> {
         if (isSuggestion)
           Text(
             'Suggestion - Cliquez pour rechercher',
-            style: TextStyle(color: context.theme.warning, fontStyle: FontStyle.italic, fontSize: 12),
+            style:
+                TextStyle(color: context.theme.warning, fontStyle: FontStyle.italic, fontSize: 12),
           ),
         if (result.metadata?['distance'] != null)
           Text(
@@ -439,7 +557,9 @@ class _StationSearchPageState extends State<StationSearchPage> {
       icon: Icon(
         isFavorite ? Icons.star : Icons.star_border,
         color: isFavorite
-            ? (Theme.of(context).brightness == Brightness.dark ? Colors.amber.shade300 : Colors.amber)
+            ? (Theme.of(context).brightness == Brightness.dark
+                ? Colors.amber.shade300
+                : Colors.amber)
             : context.theme.textSecondary,
       ),
       onPressed: () => _toggleFavorite(station),
@@ -558,7 +678,7 @@ class _StationSearchPageState extends State<StationSearchPage> {
             color: isDark ? Colors.black : Colors.white,
           ),
         ),
-        backgroundColor: isDark ? backgroundColor.withValues(alpha:0.75) : backgroundColor,
+        backgroundColor: isDark ? backgroundColor.withValues(alpha: 0.75) : backgroundColor,
       ),
     );
   }
@@ -602,7 +722,7 @@ class _StationSearchPageState extends State<StationSearchPage> {
 
       Navigator.pop(context, station);
     } on Object catch (e) {
-      _setErrorState('Erreur lors de la recherche de "$destinationName": $e');
+      _setErrorState(ErrorMessageMapper.toUserFriendlyMessage(e));
     }
   }
 
@@ -650,7 +770,9 @@ class _StationSearchPageState extends State<StationSearchPage> {
             children: [
               _buildSearchBar(),
               if (_showAdvancedFilters) _buildAdvancedFilters(),
-              Expanded(child: _buildBody()),
+              Expanded(
+                child: _buildBody(),
+              ),
             ],
           ),
         ),
